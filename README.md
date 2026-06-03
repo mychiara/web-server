@@ -18,7 +18,7 @@ Aplikasi ini dijalankan menggunakan **Docker Compose** dan dikonfigurasi untuk b
 
 **Bagi Pengguna Baru (Install Baru):**
 ```bash
-git clone https://github.com/USERNAME/eka_dashboard.git
+git clone https://github.com/mychiara/web-server.git eka_dashboard
 cd eka_dashboard
 docker compose up --build -d
 ```
