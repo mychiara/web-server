@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Instalasi - MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --accent-primary: #00d2ff;
+            --accent-secondary: #0072ff;
+            --accent-grad: linear-gradient(135deg, #00d2ff 0%, #0072ff 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 210, 255, 0.07) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 114, 255, 0.07) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Layout Container */
+        .container {
+            display: flex;
+            min-height: 100vh;
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(11, 15, 25, 0.85);
+            border-right: 1px solid var(--card-border);
+            padding: 2.5rem 1.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo-icon {
+            background: var(--accent-grad);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateX(3px);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background: rgba(0, 210, 255, 0.1);
+            border-left: 3px solid var(--accent-primary);
+            padding-left: calc(1rem - 3px);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 3rem 4rem;
+            max-width: 960px;
+        }
+
+        /* Header */
+        header {
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(0, 210, 255, 0.1);
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            color: var(--accent-primary);
+            padding: 0.35rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+        }
+
+        /* Documentation Sections */
+        section {
+            padding-top: 2rem;
+            margin-bottom: 4.5rem;
+            scroll-margin-top: 2rem;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        h2 i {
+            background: var(--accent-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.975rem;
+            line-height: 1.7;
+        }
+
+        /* Requirements Grid */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+
+        .req-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .req-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 210, 255, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .req-card i {
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        .req-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .req-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Steps Timeline */
+        .timeline {
+            position: relative;
+            margin: 2rem 0;
+            padding-left: 2.5rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .timeline-step {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .timeline-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            position: absolute;
+            left: -37px;
+            top: -2px;
+            width: 24px;
+            height: 24px;
+            background: var(--bg-color);
+            border: 2px solid var(--accent-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+            z-index: 2;
+        }
+
+        .step-content h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+
+        /* Code Block container */
+        .code-container {
+            background: #090d16;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            margin: 1rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .code-lang {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-copy {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        pre {
+            padding: 1.25rem;
+            overflow-x: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9rem;
+            color: #e5e7eb;
+        }
+
+        code {
+            font-family: inherit;
+        }
+
+        .keyword { color: #f472b6; }
+        .comment { color: #6b7280; font-style: italic; }
+        .string { color: #34d399; }
+        .url { color: #60a5fa; text-decoration: underline; }
+
+        /* Alerts & Notes */
+        .callout {
+            background: rgba(0, 210, 255, 0.03);
+            border-left: 4px solid var(--accent-primary);
+            border-radius: 0 10px 10px 0;
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .callout-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .callout.warning {
+            background: rgba(245, 158, 11, 0.03);
+            border-left-color: var(--warning-color);
+        }
+        .callout.warning .callout-title {
+            color: var(--warning-color);
+        }
+
+        .callout.success {
+            background: rgba(16, 185, 129, 0.03);
+            border-left-color: var(--success-color);
+        }
+        .callout.success .callout-title {
+            color: var(--success-color);
+        }
+
+        .callout p {
+            margin: 0;
+            font-size: 0.925rem;
+            color: var(--text-secondary);
+        }
+
+        /* Accordion / FAQ */
+        .accordion {
+            margin-top: 1.5rem;
+        }
+
+        .accordion-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            margin-bottom: 0.8rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 1.25rem 1.5rem;
+            text-align: left;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .accordion-icon {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .accordion-body {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .accordion-body p {
+            margin-bottom: 0;
+        }
+
+        .accordion-item.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent-primary);
+        }
+
+        .accordion-item.active {
+            border-color: rgba(0, 210, 255, 0.2);
+        }
+
+        /* Floating toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #111827;
+            border: 1px solid var(--success-color);
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Floating action button (To top) */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            left: calc(var(--sidebar-width) + 2rem);
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            z-index: 99;
+            backdrop-filter: blur(5px);
+        }
+
+        .scroll-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-top:hover {
+            color: #fff;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            :root {
+                --sidebar-width: 0px;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+                width: 280px;
+            }
+            .main-content {
+                padding: 2rem;
+            }
+            .scroll-top {
+                left: 2rem;
+            }
+            .menu-toggle {
+                display: flex !important;
+            }
+        }
+
+        /* Mobile Hamburger menu toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 45px;
+            height: 45px;
+            background: #111827;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: #fff;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile menu toggle -->
+    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-terminal"></i>
+                </div>
+                <span class="logo-text">MasanDigital</span>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#pengenalan" class="nav-link active" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-circle-info"></i> Pengenalan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#persiapan" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-list-check"></i> Persiapan Sistem
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#instalasi" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-download"></i> Metode Instalasi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#wizard" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Setup Wizard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#pengelolaan" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-sliders"></i> Pengelolaan Server
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#troubleshooting" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-screwdriver-wrench"></i> Troubleshooting
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <div class="badge">
+                    <i class="fa-solid fa-book"></i> Dokumentasi Resmi
+                </div>
+                <h1>Panduan Instalasi Dashboard</h1>
+                <p class="subtitle">Panduan langkah-demi-langkah dari nol untuk memasang dan menjalankan MasanDigital Dashboard pada server Linux (VPS, STB, Mini PC, atau Local Server).</p>
+            </header>
+
+            <!-- Pengenalan -->
+            <section id="pengenalan">
+                <h2><i class="fa-solid fa-circle-info"></i> Pengenalan</h2>
+                <p><strong>MasanDigital Dashboard</strong> adalah sistem panel web terintegrasi yang memudahkan pemantauan dan pengelolaan layanan server, container Docker, container LXD, website, status keamanan, serta konfigurasi jaringan melalui visualisasi antarmuka yang modern dan responsif.</p>
+                
+                <div class="callout">
+                    <div class="callout-title">
+                        <i class="fa-solid fa-shield-halved"></i> Fitur Utama
+                    </div>
+                    <p>Mendukung pengelolaan kontainer LXD (limit resource CPU/RAM), integrasi CasaOS otomatis, pemantauan status penyimpanan/disks, pengujian jaringan (speedtest), serta pengiriman notifikasi notifikasi bot Telegram/Discord ketika ada anomali sumber daya server.</p>
+                </div>
+            </section>
+
+            <!-- Persiapan -->
+            <section id="persiapan">
+                <h2><i class="fa-solid fa-list-check"></i> 1. Persiapan Sistem</h2>
+                <p>Sebelum memulai proses instalasi, pastikan sistem operasi dan perangkat Anda memenuhi ketentuan berikut:</p>
+                
+                <div class="grid-cards">
+                    <div class="req-card">
+                        <i class="fa-brands fa-linux"></i>
+                        <h3>Sistem Operasi</h3>
+                        <p>Linux (Ubuntu 20.04+, Debian, Armbian, atau OpenWRT berbasis Docker).</p>
+                    </div>
+                    <div class="req-card">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <h3>Akses Administrator</h3>
+                        <p>Hak akses user non-root dengan instruksi sudo, atau login langsung sebagai root.</p>
+                    </div>
+                    <div class="req-card">
+                        <i class="fa-solid fa-network-wired"></i>
+                        <h3>Koneksi Internet</h3>
+                        <p>Diperlukan untuk mengkloning kode repositori dan mendownload image Docker.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Instalasi -->
+            <section id="instalasi">
+                <h2><i class="fa-solid fa-download"></i> 2. Metode Instalasi</h2>
+                <p>Terdapat dua cara untuk menaruh file proyek di server target Anda:</p>
+
+                <div class="timeline">
+                    <!-- Step 1 -->
+                    <div class="timeline-step">
+                        <div class="step-number">A</div>
+                        <div class="step-content">
+                            <h3>Metode Git Clone (Sangat Direkomendasikan)</h3>
+                            <p>Metode ini paling efisien karena mempermudah pembaruan sistem di masa mendatang.</p>
+                            
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Bash</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code><span class="comment"># 1. Update list paket dan pasang git</span>
+sudo apt-get update && sudo apt-get install -y git
+
+<span class="comment"># 2. Clone repositori ke folder masandigital_dashboard</span>
+git clone <span class="url">https://github.com/mychiara/web-server.git</span> masandigital_dashboard
+
+<span class="comment"># 3. Masuk ke folder proyek</span>
+cd masandigital_dashboard
+
+<span class="comment"># 4. Berikan izin eksekusi & jalankan installer</span>
+chmod +x install.sh
+sudo bash install.sh</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="timeline-step">
+                        <div class="step-number">B</div>
+                        <div class="step-content">
+                            <h3>Metode File ZIP (Instalasi Manual)</h3>
+                            <p>Gunakan opsi ini apabila Anda memindahkan file manual (melalui WinSCP, FileZilla, dll) dalam bentuk paket file `.zip`:</p>
+                            
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Bash</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code><span class="comment"># 1. Install utilitas unzip jika belum tersedia</span>
+sudo apt-get update && sudo apt-get install -y unzip
+
+<span class="comment"># 2. Ekstrak file zip ke direktori masandigital_dashboard</span>
+unzip masandigital_dashboard_retail.zip -d masandigital_dashboard
+
+<span class="comment"># 3. Masuk ke direktori dan eksekusi script instalasi</span>
+cd masandigital_dashboard
+chmod +x install.sh
+sudo bash install.sh</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout success">
+                    <div class="callout-title">
+                        <i class="fa-solid fa-square-check"></i> Tugas Script Installer
+                    </div>
+                    <p>Script <code>install.sh</code> akan otomatis mendeteksi CasaOS (memindahkan portnya ke 9999 agar tidak bentrok dengan port 80), memastikan port 80 kosong, memasang Docker (jika belum ada), serta membuild ulang kontainer dashboard.</p>
+                </div>
+            </section>
+
+            <!-- Wizard -->
+            <section id="wizard">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> 3. Login Awal (Setup Wizard)</h2>
+                <p>Setelah instalasi kontainer berhasil diselesaikan oleh script otomatis:</p>
+                <div class="timeline" style="margin: 1.5rem 0;">
+                    <div class="timeline-step" style="margin-bottom: 1.5rem;">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <p>Buka web browser dan arahkan alamat ke IP server Anda (Contoh: <code>http://192.168.1.10</code>).</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" style="margin-bottom: 1.5rem;">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <p>Sistem akan memandu Anda menuju halaman <strong>Setup Wizard</strong> untuk membuat kata sandi administrator pertama kali.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <p>Masukkan kata sandi baru Anda, klik simpan, lalu gunakan kata sandi tersebut untuk proses login.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pengelolaan -->
+            <section id="pengelolaan">
+                <h2><i class="fa-solid fa-sliders"></i> 4. Pengelolaan Layanan Server</h2>
+                <p>Berikut adalah beberapa perintah terminal penting yang sering digunakan untuk memantau, menghentikan, atau memperbarui container dashboard:</p>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-lang">Perintah Docker Compose</span>
+                        <button class="btn-copy" onclick="copyCode(this)">
+                            <i class="fa-regular fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    <pre><code><span class="comment"># Pastikan Anda berada di direktori instalasi:</span>
+cd /root/masandigital_dashboard
+
+<span class="comment"># Menghentikan sementara container dashboard</span>
+sudo docker compose down
+
+<span class="comment"># Menjalankan container di latar belakang (Background)</span>
+sudo docker compose up -d
+
+<span class="comment"># Melihat output logs real-time dashboard</span>
+sudo docker compose logs -f
+
+<span class="comment"># Update & Build ulang container setelah git pull</span>
+git pull origin main
+sudo docker compose up -d --build</code></pre>
+                </div>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section id="troubleshooting">
+                <h2><i class="fa-solid fa-screwdriver-wrench"></i> 5. Troubleshooting (FAQ)</h2>
+                <p>Klik pada pertanyaan untuk melihat solusi penyelesaian masalah:</p>
+
+                <div class="accordion">
+                    <!-- Item 1 -->
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>1. Server saya menggunakan CasaOS, apakah akan bermasalah?</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Tidak. Script installer otomatis mendeteksi CasaOS dan memindahkan port layanannya dari port 80 ke port 9999. Anda tetap dapat membuka CasaOS via browser di <code>http://IP_SERVER:9999</code>.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>2. Bagaimana cara memindahkan port MasanDigital Dashboard agar tidak menggunakan port 80?</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>1. Jalankan <code>nano docker-compose.yml</code> di dalam folder instalasi.<br>
+                                2. Cari baris port <code>- "80:5000"</code> lalu ubah menjadi <code>- "PORT_PILIHAN_ANDA:5000"</code> (contoh: `8080:5000`).<br>
+                                3. Simpan perubahan (Ctrl+X, tekan Y, tekan Enter).<br>
+                                4. Jalankan perintah <code>sudo docker compose up -d</code> untuk menerapkan port baru.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>3. Saya lupa password admin dashboard, bagaimana cara reset?</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Hapus berkas proteksi konfigurasi keamanan lama dan restart kontainer untuk memunculkan kembali wizard set-up admin:
+                                <pre style="background:#111827; padding:0.75rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem;"><code>cd /root/masandigital_dashboard
+sudo rm data/security_config.json
+sudo docker compose restart</code></pre></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>4. Muncul error "port is already allocated" saat deploy?</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Hal ini disebabkan port 80 masih diduduki oleh server lain (seperti Apache/Nginx bawaan OS host). Matikan dengan mengetik <code>sudo systemctl stop apache2</code> atau <code>sudo systemctl stop nginx</code>, kemudian restart proses build container.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 5 -->
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>5. Mengapa dashboard tidak dapat dimuat atau tampilannya berantakan?</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Kemungkinan browser menyimpan cache halaman yang usang. Lakukan hard refresh dengan menekan tombol kombinasi <code>Ctrl + F5</code> (Windows) atau <code>Cmd + Shift + R</code> (macOS).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Floating UI elements -->
+    <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
+        <i class="fa-solid fa-arrow-up"></i>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-circle-check" style="color: var(--success-color);"></i>
+        <span>Teks disalin ke clipboard!</span>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Copy to clipboard function
+        function copyCode(btn) {
+            const pre = btn.closest('.code-container').querySelector('pre');
+            const range = document.createRange();
+            range.selectNode(pre);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            
+            // Clean up selections and write to clipboard
+            const cleanText = pre.innerText.replace(/Salin/g, '').trim();
+            navigator.clipboard.writeText(cleanText).then(() => {
+                showToast();
+            });
+            window.getSelection().removeAllRanges();
+        }
+
+        // Show toast confirmation
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // Expandable FAQ Accordion
+        function toggleAccordion(btn) {
+            const item = btn.parentElement;
+            const content = item.querySelector('.accordion-content');
+            
+            // Check if active
+            const isActive = item.classList.contains('active');
+            
+            // Collapse all other items
+            document.querySelectorAll('.accordion-item').forEach(i => {
+                i.classList.remove('active');
+                i.querySelector('.accordion-content').style.maxHeight = null;
+            });
+
+            if (!isActive) {
+                item.classList.add('active');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+
+        // Scroll to top functionality
+        const scrollTopBtn = document.getElementById('scrollTop');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 400) {
+                scrollTopBtn.classList.add('show');
+            } else {
+                scrollTopBtn.classList.remove('show');
+            }
+
+            // Update active menu link based on scroll position
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            let currentSec = '';
+            sections.forEach(sec => {
+                const top = sec.offsetTop;
+                if (window.scrollY >= top - 150) {
+                    currentSec = sec.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${currentSec}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Responsive Mobile Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menuToggle').querySelector('i');
+            sidebar.classList.toggle('open');
+            
+            if (sidebar.classList.contains('open')) {
+                menuToggle.classList.replace('fa-bars', 'fa-xmark');
+            } else {
+                menuToggle.classList.replace('fa-xmark', 'fa-bars');
+            }
+        }
+
+        function closeSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menuToggle').querySelector('i');
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                menuToggle.classList.replace('fa-xmark', 'fa-bars');
+            }
+        }
+    </script>
+</body>
+</html>
