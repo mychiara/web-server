@@ -1074,6 +1074,86 @@
                             </ol>
                         </div>
                     </div>
+
+                    <!-- Step 2.3 -->
+                    <div class="timeline-step">
+                        <div class="step-number">2.3</div>
+                        <div class="step-content">
+                            <h4>Mengonfigurasi IP Static (IP Tetap) Server</h4>
+                            <p>Secara default, modem IndiHome/IndiBiz akan mengacak IP Address laptop server Anda setiap kali modem dinyalakan ulang. Agar IP Address server Anda tidak berubah-ubah, sangat disarankan menyetel IP Static menggunakan salah satu metode berikut:</p>
+                            
+                            <h5 style="color:var(--accent-blue); font-weight:700; margin-top:1rem; margin-bottom:0.4rem;">Metode A: Menggunakan DHCP Binding di Modem (Sangat Direkomendasikan & Paling Aman)</h5>
+                            <p>Metode ini merekatkan MAC Address kartu LAN laptop ke IP tertentu secara permanen di sisi router modem IndiHome Anda. Tidak ada risiko pemutusan koneksi SSH secara permanen.</p>
+                            <ol>
+                                <li>Ketik perintah ini di terminal SSH untuk melihat <strong>MAC Address</strong> kabel LAN server Anda:
+                                    <div class="code-container">
+                                        <div class="code-header">
+                                            <span class="code-lang">Terminal SSH</span>
+                                            <button class="btn-copy" onclick="copyCode(this)">
+                                                <i class="fa-regular fa-copy"></i> Salin
+                                            </button>
+                                        </div>
+                                        <pre><code>ip link show</code></pre>
+                                    </div>
+                                    Catat baris kode heksadesimal setelah kata <code>link/ether</code> (contoh: <code>00:1a:2b:3c:4d:5e</code>) pada interface ethernet Anda (biasanya bernama <code>eth0</code> atau <code>enp2s0</code>).
+                                </li>
+                                <li>Buka halaman admin modem IndiHome Anda di web browser (biasanya alamat IP di <code>http://192.168.1.1</code>, <code>http://192.168.18.1</code>, atau <code>http://192.168.100.1</code>).</li>
+                                <li>Login dengan kredensial modem Anda (lihat stiker di belakang modem).</li>
+                                <li>Masuk ke menu <strong>Application</strong> / <strong>Network</strong> -> **DHCP Server** -> **DHCP Binding** / **IP & MAC Binding** / **Static Lease**.</li>
+                                <li>Klik <strong>Add New</strong>, masukkan MAC Address server Anda, lalu tentukan IP Address tetap yang Anda kehendaki (misal: <code>192.168.1.15</code>). Simpan perubahan dan restart modem.</li>
+                            </ol>
+
+                            <h5 style="color:var(--accent-blue); font-weight:700; margin-top:1rem; margin-bottom:0.4rem;">Metode B: Mengubah Konfigurasi Netplan di Linux Server</h5>
+                            <p>Metode ini mengunci IP langsung dari konfigurasi internal Linux Server Anda.</p>
+                            <ol>
+                                <li>Buka berkas konfigurasi jaringan Netplan:
+                                    <div class="code-container">
+                                        <div class="code-header">
+                                            <span class="code-lang">Terminal SSH</span>
+                                            <button class="btn-copy" onclick="copyCode(this)">
+                                                <i class="fa-regular fa-copy"></i> Salin
+                                            </button>
+                                        </div>
+                                        <pre><code>sudo nano /etc/netplan/00-installer-config.yaml</code></pre>
+                                    </div>
+                                </li>
+                                <li>Ubah isinya menjadi seperti di bawah ini (sesuaikan interface <code>enp2s0</code> dengan nama interface ethernet Anda, dan <code>192.168.1.1</code> dengan IP gateway modem Anda):
+                                    <div class="code-container">
+                                        <div class="code-header">
+                                            <span class="code-lang">Berkas YAML Netplan</span>
+                                            <button class="btn-copy" onclick="copyCode(this)">
+                                                <i class="fa-regular fa-copy"></i> Salin
+                                            </button>
+                                        </div>
+                                        <pre><code>network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp2s0:
+      dhcp4: no
+      addresses:
+        - 192.168.1.15/24
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1]
+      routes:
+        - to: default
+          via: 192.168.1.1</code></pre>
+                                    </div>
+                                </li>
+                                <li>Simpan perubahan (Ctrl+O, Enter, Ctrl+X), kemudian terapkan konfigurasi jaringan baru:
+                                    <div class="code-container">
+                                        <div class="code-header">
+                                            <span class="code-lang">Terminal SSH</span>
+                                            <button class="btn-copy" onclick="copyCode(this)">
+                                                <i class="fa-regular fa-copy"></i> Salin
+                                            </button>
+                                        </div>
+                                        <pre><code>sudo netplan apply</code></pre>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </section>
 
