@@ -3,27 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panduan Instalasi Lengkap - MasanDigital Dashboard</title>
+    <title>Panduan Instalasi Server & Dashboard - MasanDigital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(17, 24, 39, 0.7);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --accent-primary: #00d2ff;
-            --accent-secondary: #0072ff;
-            --accent-grad: linear-gradient(135deg, #00d2ff 0%, #0072ff 100%);
+            --bg-color: #05070f;
+            --sidebar-bg: rgba(8, 10, 20, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.02);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Curated Harmonious Brand Gradients */
+            --brand-grad: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #06b6d4 100%);
+            --accent-blue: #3b82f6;
+            --accent-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f97316;
+            
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
-            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --sidebar-width: 280px;
+            
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --sidebar-width: 290px;
         }
 
         * {
@@ -39,13 +48,30 @@
         body {
             background-color: var(--bg-color);
             background-image: 
-                radial-gradient(at 0% 0%, rgba(0, 210, 255, 0.07) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(0, 114, 255, 0.07) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
             background-attachment: fixed;
             color: var(--text-primary);
             font-family: var(--font-main);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* Layout Container */
@@ -60,262 +86,355 @@
         /* Sidebar navigation */
         .sidebar {
             width: var(--sidebar-width);
-            background: rgba(11, 15, 25, 0.9);
+            background: var(--sidebar-bg);
             border-right: 1px solid var(--card-border);
             padding: 2.5rem 1.5rem;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
             z-index: 10;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .logo-area {
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .logo-icon {
-            background: var(--accent-grad);
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+            background: var(--brand-grad);
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+            font-size: 1.3rem;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
         }
 
         .logo-text {
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             font-weight: 800;
             letter-spacing: -0.5px;
-            background: linear-gradient(to right, #fff, #9ca3af);
+            background: linear-gradient(to right, #fff, #94a3b8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .nav-menu {
             list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
         }
 
         .nav-item {
-            margin-bottom: 0.5rem;
+            width: 100%;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            padding: 0.8rem 1rem;
+            padding: 0.85rem 1.1rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             font-weight: 500;
-            border-radius: 8px;
-            transition: all 0.25s ease;
+            border-radius: 10px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
         }
 
         .nav-link:hover {
-            color: var(--text-primary);
+            color: #fff;
             background: rgba(255, 255, 255, 0.03);
-            transform: translateX(3px);
+            border-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
         }
 
         .nav-link.active {
             color: #fff;
-            background: rgba(0, 210, 255, 0.1);
-            border-left: 3px solid var(--accent-primary);
-            padding-left: calc(1rem - 3px);
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.2);
+            font-weight: 600;
+            box-shadow: inset 4px 0px 0px var(--accent-purple);
         }
 
         .nav-link i {
             width: 20px;
             text-align: center;
-            font-size: 1rem;
+            font-size: 1.05rem;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
+
+        .sidebar-footer {
+            padding-top: 2rem;
+            border-top: 1px solid var(--card-border);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
         }
 
         /* Main Content */
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
-            padding: 3rem 4rem;
-            max-width: 960px;
+            padding: 3.5rem 5rem;
+            max-width: 1050px;
         }
 
         /* Header */
         header {
-            margin-bottom: 3.5rem;
+            margin-bottom: 4rem;
             position: relative;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 2rem;
         }
 
         .badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            background: rgba(0, 210, 255, 0.1);
-            border: 1px solid rgba(0, 210, 255, 0.2);
-            color: var(--accent-primary);
-            padding: 0.35rem 0.8rem;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            color: #a5b4fc;
+            padding: 0.4rem 1rem;
             border-radius: 50px;
             font-size: 0.75rem;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 1rem;
+            letter-spacing: 0.8px;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
         }
 
         h1 {
-            font-size: 2.3rem;
+            font-size: 2.75rem;
             font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+            letter-spacing: -1.2px;
+            line-height: 1.2;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 50%, #818cf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .subtitle {
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: var(--text-secondary);
-            max-width: 750px;
+            max-width: 800px;
+            line-height: 1.6;
         }
 
-        /* Documentation Sections */
+        /* Section Styling */
         section {
-            padding-top: 1.5rem;
-            margin-bottom: 4rem;
-            scroll-margin-top: 2rem;
+            padding-top: 2rem;
+            margin-bottom: 5rem;
+            scroll-margin-top: 3rem;
         }
 
         h2 {
-            font-size: 1.45rem;
+            font-size: 1.7rem;
             font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 1.25rem;
+            letter-spacing: -0.7px;
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            padding-bottom: 0.5rem;
+            gap: 0.8rem;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--brand-grad);
+            border-radius: 2px;
         }
 
         h2 i {
-            background: var(--accent-grad);
+            background: var(--brand-grad);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-size: 1.4rem;
         }
 
-        p {
+        /* Colored Section Markers */
+        .color-linux h2 i { background: linear-gradient(to right, #f97316, #ea580c); -webkit-background-clip: text; }
+        .color-linux h2::after { background: #ea580c; }
+        
+        .color-ssh h2 i { background: linear-gradient(to right, #3b82f6, #1d4ed8); -webkit-background-clip: text; }
+        .color-ssh h2::after { background: #3b82f6; }
+
+        .color-docker h2 i { background: linear-gradient(to right, #06b6d4, #0891b2); -webkit-background-clip: text; }
+        .color-docker h2::after { background: #06b6d4; }
+
+        .color-deploy h2 i { background: linear-gradient(to right, #10b981, #059669); -webkit-background-clip: text; }
+        .color-deploy h2::after { background: #10b981; }
+
+        .section-desc {
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
             color: var(--text-secondary);
-            margin-bottom: 1.25rem;
-            font-size: 0.95rem;
-            line-height: 1.65;
         }
 
-        /* Requirements Grid */
+        /* Subheadings */
+        h3.section-subtitle {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 2.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        h3.section-subtitle i {
+            color: var(--accent-cyan);
+            font-size: 1rem;
+        }
+
+        /* Requirements Grid Card */
         .grid-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
         }
 
         .req-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            transition: all 0.3s ease;
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+
+        .req-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .req-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(0, 210, 255, 0.2);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.25);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 1px rgba(99, 102, 241, 0.4);
+        }
+
+        .req-card:hover::before {
+            opacity: 1;
         }
 
         .req-card i {
-            font-size: 1.4rem;
-            color: var(--accent-primary);
-            margin-bottom: 0.75rem;
+            font-size: 1.75rem;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+            display: inline-block;
         }
 
+        .req-card.linux-card i { color: var(--accent-orange); }
+        .req-card.ssh-card i { color: var(--accent-blue); }
+        .req-card.docker-card i { color: var(--accent-cyan); }
+        .req-card.dashboard-card i { color: var(--accent-green); }
+
         .req-card h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 0.4rem;
-            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #f1f5f9;
         }
 
         .req-card p {
-            font-size: 0.825rem;
+            font-size: 0.85rem;
             color: var(--text-secondary);
             margin: 0;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
-        /* Subheadings */
-        h3.section-subtitle {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
-            margin-top: 2rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Link design */
+        /* Buttons and Links */
         .btn-link {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            color: var(--accent-primary);
+            gap: 0.6rem;
+            color: #fff;
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.9rem;
-            padding: 0.25rem 0.5rem;
-            background: rgba(0, 210, 255, 0.05);
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            margin: 0.25rem 0;
-            border: 1px solid rgba(0, 210, 255, 0.1);
+            font-size: 0.88rem;
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 0.8rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .btn-link:hover {
-            background: rgba(0, 210, 255, 0.15);
-            color: #fff;
-            transform: translateY(-1px);
+            background: var(--brand-grad);
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-link.orange-btn:hover {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            box-shadow: 0 8px 20px rgba(234, 88, 12, 0.3);
+        }
+
+        .btn-link.blue-btn:hover {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-link i {
+            font-size: 1.1rem;
         }
 
         /* Steps Timeline */
         .timeline {
             position: relative;
-            margin: 1.5rem 0;
-            padding-left: 2rem;
+            margin: 2.5rem 0;
+            padding-left: 2.5rem;
         }
 
         .timeline::before {
             content: '';
             position: absolute;
-            left: 9px;
-            top: 5px;
-            bottom: 5px;
+            left: 14px;
+            top: 10px;
+            bottom: 10px;
             width: 2px;
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
         }
 
         .timeline-step {
             position: relative;
-            margin-bottom: 2.5rem;
+            margin-bottom: 3.5rem;
         }
 
         .timeline-step:last-child {
@@ -324,136 +443,201 @@
 
         .step-number {
             position: absolute;
-            left: -29px;
+            left: -33px;
             top: -2px;
-            width: 20px;
-            height: 20px;
-            background: var(--bg-color);
-            border: 2px solid var(--accent-primary);
+            width: 28px;
+            height: 28px;
+            background: #0f172a;
+            border: 2px solid var(--accent-cyan);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            box-shadow: 0 0 8px rgba(0, 210, 255, 0.2);
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
             z-index: 2;
+            transition: all 0.3s ease;
         }
+
+        .timeline-step:hover .step-number {
+            transform: scale(1.1);
+            background: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .color-linux .step-number { border-color: var(--accent-orange); box-shadow: 0 0 15px rgba(249, 115, 22, 0.25); }
+        .color-linux .timeline-step:hover .step-number { background: var(--accent-orange); box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
+
+        .color-ssh .step-number { border-color: var(--accent-blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.25); }
+        .color-ssh .timeline-step:hover .step-number { background: var(--accent-blue); box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+
+        .color-docker .step-number { border-color: var(--accent-cyan); box-shadow: 0 0 15px rgba(6, 182, 212, 0.25); }
+        .color-docker .timeline-step:hover .step-number { background: var(--accent-cyan); box-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+
+        .color-deploy .step-number { border-color: var(--accent-green); box-shadow: 0 0 15px rgba(16, 185, 129, 0.25); }
+        .color-deploy .timeline-step:hover .step-number { background: var(--accent-green); box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
 
         .step-content h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
             color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* Order Lists */
+        .step-content p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        /* Order Lists inside Steps */
         ol, ul.step-list {
             padding-left: 1.5rem;
             margin-bottom: 1.25rem;
-            font-size: 0.95rem;
+            font-size: 0.925rem;
             color: var(--text-secondary);
         }
 
         ol li, ul.step-list li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
+            line-height: 1.6;
         }
 
         ol li strong, ul.step-list li strong {
-            color: #fff;
+            color: #f1f5f9;
         }
 
-        /* Code Block container */
+        /* Code Block Container */
         .code-container {
-            background: #090d16;
+            background: #04060b;
             border: 1px solid var(--card-border);
-            border-radius: 10px;
-            margin: 1rem 0;
+            border-radius: 12px;
+            margin: 1.25rem 0;
             overflow: hidden;
             position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .code-container:hover {
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         .code-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 1rem;
+            padding: 0.65rem 1.25rem;
             background: rgba(255, 255, 255, 0.02);
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .code-lang {
             font-size: 0.75rem;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            font-family: var(--font-code);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
 
+        .code-lang::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            display: inline-block;
+        }
+
+        .color-linux .code-lang::before { background: var(--accent-orange); }
+        .color-ssh .code-lang::before { background: var(--accent-blue); }
+        .color-docker .code-lang::before { background: var(--accent-cyan); }
+        .color-deploy .code-lang::before { background: var(--accent-green); }
+
         .btn-copy {
-            background: transparent;
-            border: none;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             color: var(--text-secondary);
             font-size: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.4rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
             transition: all 0.2s ease;
         }
 
         .btn-copy:hover {
             color: #fff;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         pre {
-            padding: 1rem;
+            padding: 1.25rem 1.5rem;
             overflow-x: auto;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.85rem;
-            color: #e5e7eb;
+            font-family: var(--font-code);
+            font-size: 0.88rem;
+            color: #e2e8f0;
+            line-height: 1.6;
         }
 
         code {
             font-family: inherit;
         }
 
-        .keyword { color: #f472b6; }
-        .comment { color: #6b7280; font-style: italic; }
+        .keyword { color: #f472b6; font-weight: 600; }
+        .comment { color: #576d8a; font-style: italic; }
         .string { color: #34d399; }
         .url { color: #60a5fa; text-decoration: underline; }
+        .highlight { color: #f3f4f6; font-weight: 600; }
 
-        /* Alerts & Notes */
+        /* Callouts / Warnings / Info Box */
         .callout {
-            background: rgba(0, 210, 255, 0.03);
-            border-left: 4px solid var(--accent-primary);
-            border-radius: 0 10px 10px 0;
-            padding: 1rem 1.25rem;
-            margin: 1.25rem 0;
+            background: rgba(99, 102, 241, 0.03);
+            border-left: 4px solid #6366f1;
+            border-radius: 0 16px 16px 0;
+            padding: 1.25rem 1.75rem;
+            margin: 1.75rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .callout-title {
-            font-weight: 700;
+            font-weight: 800;
             font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--accent-primary);
-            margin-bottom: 0.4rem;
+            letter-spacing: 0.8px;
+            color: #818cf8;
+            margin-bottom: 0.5rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
         .callout.warning {
+            background: rgba(244, 63, 94, 0.03);
+            border-left-color: var(--danger-color);
+        }
+        .callout.warning .callout-title {
+            color: #fb7185;
+        }
+
+        .callout.warning-orange {
             background: rgba(245, 158, 11, 0.03);
             border-left-color: var(--warning-color);
         }
-        .callout.warning .callout-title {
-            color: var(--warning-color);
+        .callout.warning-orange .callout-title {
+            color: #fbbf24;
         }
 
         .callout.success {
@@ -461,27 +645,30 @@
             border-left-color: var(--success-color);
         }
         .callout.success .callout-title {
-            color: var(--success-color);
+            color: #34d399;
         }
 
         .callout p {
             margin: 0;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             color: var(--text-secondary);
+            line-height: 1.6;
         }
 
-        /* Accordion / FAQ */
+        /* FAQ Accordion Styling */
         .accordion {
-            margin-top: 1.5rem;
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
         }
 
         .accordion-item {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 10px;
-            margin-bottom: 0.8rem;
+            border-radius: 12px;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .accordion-header {
@@ -490,70 +677,76 @@
             border: none;
             padding: 1.25rem 1.5rem;
             text-align: left;
-            color: #fff;
-            font-size: 0.95rem;
+            color: #f1f5f9;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
+            font-family: var(--font-main);
         }
 
         .accordion-header:hover {
-            background: rgba(255, 255, 255, 0.01);
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
         }
 
         .accordion-icon {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            transition: transform 0.3s ease;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .accordion-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            background: rgba(0, 0, 0, 0.1);
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0, 0, 0, 0.15);
         }
 
         .accordion-body {
-            padding: 1.25rem 1.5rem;
+            padding: 1.25rem 1.75rem;
             border-top: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            font-size: 0.925rem;
+            line-height: 1.65;
         }
 
         .accordion-body p {
             margin-bottom: 0;
         }
 
+        .accordion-item.active {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
         .accordion-item.active .accordion-icon {
             transform: rotate(180deg);
-            color: var(--accent-primary);
+            color: var(--accent-cyan);
         }
 
-        .accordion-item.active {
-            border-color: rgba(0, 210, 255, 0.2);
-        }
-
-        /* Floating toast notifications */
+        /* Toast Alert */
         .toast {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            background: #111827;
-            border: 1px solid var(--success-color);
+            background: #0f172a;
+            border: 1px solid var(--accent-green);
             color: #fff;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
+            padding: 0.85rem 1.6rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            gap: 0.75rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
             transform: translateY(100px);
             opacity: 0;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 100;
         }
 
@@ -562,16 +755,16 @@
             opacity: 1;
         }
 
-        /* Floating action button (To top) */
+        /* Scroll Top Button */
         .scroll-top {
             position: fixed;
-            bottom: 2rem;
-            left: calc(var(--sidebar-width) + 2rem);
-            background: rgba(17, 24, 39, 0.8);
+            bottom: 2.2rem;
+            left: calc(var(--sidebar-width) + 2.5rem);
+            background: rgba(15, 23, 42, 0.8);
             border: 1px solid var(--card-border);
             color: var(--text-secondary);
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -581,7 +774,7 @@
             opacity: 0;
             visibility: hidden;
             z-index: 99;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
 
         .scroll-top.show {
@@ -591,25 +784,26 @@
 
         .scroll-top:hover {
             color: #fff;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            transform: translateY(-2px);
         }
 
-        /* Responsive Design */
+        /* Responsive adjustments */
         @media (max-width: 1024px) {
             :root {
                 --sidebar-width: 0px;
             }
             .sidebar {
                 transform: translateX(-100%);
-                transition: transform 0.3s ease;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .sidebar.open {
                 transform: translateX(0);
                 width: 280px;
             }
             .main-content {
-                padding: 2rem;
+                padding: 2.5rem 1.75rem;
             }
             .scroll-top {
                 left: 2rem;
@@ -619,29 +813,33 @@
             }
         }
 
-        /* Mobile Hamburger menu toggle */
         .menu-toggle {
             display: none;
             position: fixed;
             top: 1.5rem;
             right: 1.5rem;
-            width: 45px;
-            height: 45px;
-            background: #111827;
+            width: 46px;
+            height: 46px;
+            background: #0f172a;
             border: 1px solid var(--card-border);
-            border-radius: 10px;
+            border-radius: 12px;
             color: #fff;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 100;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            border-color: var(--accent-purple);
         }
     </style>
 </head>
 <body>
 
-    <!-- Mobile menu toggle -->
+    <!-- Mobile Hamburger Menu -->
     <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
         <i class="fa-solid fa-bars"></i>
     </button>
@@ -649,245 +847,230 @@
     <div class="container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar" id="sidebar">
-            <div class="logo-area">
-                <div class="logo-icon">
-                    <i class="fa-solid fa-terminal"></i>
+            <div>
+                <div class="logo-area">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <span class="logo-text">MasanDigital</span>
                 </div>
-                <span class="logo-text">MasanDigital</span>
+
+                <nav>
+                    <ul class="nav-menu">
+                        <li class="nav-item">
+                            <a href="#pengenalan" class="nav-link active" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-cube"></i> Pengenalan
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#install-linux" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-brands fa-linux" style="color:var(--accent-orange)"></i> 1. Pemasangan OS Linux
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#akses-ssh" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-terminal" style="color:var(--accent-blue)"></i> 2. Hubungkan ke Server
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#install-docker" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-brands fa-docker" style="color:var(--accent-cyan)"></i> 3. Instalasi Docker
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#deploy-dashboard" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-rocket" style="color:var(--accent-green)"></i> 4. Deploy Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#setup-wizard" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-purple)"></i> 5. Wizard Setup
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#pengelolaan" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-sliders"></i> 6. Operasional Harian
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#troubleshooting" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-circle-question"></i> Solusi Masalah
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
 
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a href="#pengenalan" class="nav-link active" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-circle-info"></i> Pengenalan
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#install-linux" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-brands fa-linux"></i> 1. Instalasi OS Linux
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#akses-ssh" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-key"></i> 2. Akses SSH Server
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#install-docker" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-brands fa-docker"></i> 3. Instalasi Docker
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#deploy-dashboard" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> 4. Deploy Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#setup-wizard" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> 5. Setup Wizard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#pengelolaan" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-sliders"></i> Pengelolaan Server
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#troubleshooting" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-screwdriver-wrench"></i> Troubleshooting
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="sidebar-footer">
+                &copy; 2026 MasanDigital<br>Documentation Portal
+            </div>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
             <header>
                 <div class="badge">
-                    <i class="fa-solid fa-book"></i> Dokumentasi Lengkap (Mulai dari Nol)
+                    <i class="fa-solid fa-compass"></i> Panduan Dari Nol (Step by Step)
                 </div>
-                <h1>Panduan Pemasangan Server & Dashboard</h1>
-                <p class="subtitle">Panduan komprehensif langkah-demi-langkah bagi pemilik Laptop / Mini PC untuk menginstal OS Linux, Docker, Docker Compose, hingga aplikasi MasanDigital Dashboard siap digunakan.</p>
+                <h1>Panduan Instalasi Server & Dashboard</h1>
+                <p class="subtitle">Ubah Laptop bekas atau Mini PC Anda menjadi pusat server lokal yang handal. Langkah pengerjaan lengkap, terperinci, tanpa satu pun bagian yang terlewat.</p>
             </header>
 
             <!-- Pengenalan -->
             <section id="pengenalan">
-                <h2><i class="fa-solid fa-circle-info"></i> Pengenalan</h2>
-                <p>Dokumentasi ini ditulis khusus untuk membantu Anda menyiapkan infrastruktur server mandiri menggunakan perangkat fisik Laptop atau Mini PC yang menganggur. Melalui panduan ini, perangkat Anda akan disulap menjadi sistem server lokal/publik yang handal dengan panel pengelolaan web yang modern.</p>
+                <h2><i class="fa-solid fa-compass"></i> Pengenalan</h2>
+                <p class="section-desc">MasanDigital Dashboard dirancang untuk berjalan di atas sistem berbasis Docker pada platform Linux. Dibandingkan menggunakan virtual machine (VM) yang boros memori, server lokal berbasis Linux Server harian mengonsumsi sumber daya perangkat keras yang sangat minimal, sangat cocok dipasang di perangkat Mini PC hemat daya atau Laptop dengan layar retak.</p>
                 
-                <div class="callout">
-                    <div class="callout-title">
-                        <i class="fa-solid fa-network-wired"></i> Konsep Infrastruktur
+                <div class="grid-cards">
+                    <div class="req-card linux-card">
+                        <i class="fa-brands fa-linux"></i>
+                        <h3>Linux OS</h3>
+                        <p>Menggunakan sistem operasi Ubuntu Server Headless untuk efisiensi RAM.</p>
                     </div>
-                    <p>Mini PC/Laptop Anda akan berjalan menggunakan sistem operasi Linux Server (Headless/tanpa GUI) untuk memaksimalkan efisiensi RAM dan CPU. Seluruh komponen (Database, Web Server, Monitoring) dibungkus menggunakan Docker agar sistem terisolasi dan mudah dikelola dari perangkat lain di jaringan rumah Anda.</p>
+                    <div class="req-card ssh-card">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <h3>SSH Secure Access</h3>
+                        <p>Mengontrol jarak jauh dari Laptop/PC utama tanpa perlu keyboard & layar tambahan.</p>
+                    </div>
+                    <div class="req-card docker-card">
+                        <i class="fa-brands fa-docker"></i>
+                        <h3>Docker Containerized</h3>
+                        <p>Menjalankan database dan server aplikasi secara terisolasi dan mandiri.</p>
+                    </div>
+                    <div class="req-card dashboard-card">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <h3>Interactive Web GUI</h3>
+                        <p>Panel visual elegan untuk memantau performa, LXD, dan port jaringan secara dinamis.</p>
+                    </div>
                 </div>
             </section>
 
             <!-- Langkah 1: Instalasi OS Linux -->
-            <section id="install-linux">
+            <section id="install-linux" class="color-linux">
                 <h2><i class="fa-brands fa-linux"></i> 1. Instalasi OS Linux (Ubuntu Server)</h2>
-                <p>Langkah awal adalah menginstall sistem operasi Linux pada perangkat Laptop atau Mini PC Anda. Kami merekomendasikan **Ubuntu Server 24.04 LTS / 22.04 LTS** karena stabilitasnya.</p>
+                <p class="section-desc">Tahap pertama adalah mengganti OS Laptop/Mini PC target menjadi Ubuntu Server. Proses ini akan menghapus seluruh data di disk internal perangkat tersebut agar performa optimal.</p>
                 
-                <h3 class="section-subtitle"><i class="fa-solid fa-download"></i> Download Bahan & Tool Resmi</h3>
-                <p>Unduh seluruh berkas resmi di bawah ini langsung dari PC/Laptop utama Anda:</p>
-                <div style="margin-bottom: 1.5rem;">
-                    <a href="https://ubuntu.com/download/server" target="_blank" class="btn-link">
-                        <i class="fa-solid fa-file-export"></i> Download Ubuntu Server ISO
+                <h3 class="section-subtitle"><i class="fa-solid fa-circle-down"></i> Unduh Berkas & Alat Bantu</h3>
+                <p>Klik tombol berikut untuk mendownload software resmi di PC utama Anda:</p>
+                <div style="margin-top:0.5rem; margin-bottom: 1.5rem;">
+                    <a href="https://ubuntu.com/download/server" target="_blank" class="btn-link orange-btn">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Download Ubuntu Server ISO
                     </a>
-                    <a href="https://rufus.ie/" target="_blank" class="btn-link">
-                        <i class="fa-solid fa-compact-disc"></i> Download Rufus (Tool Flash USB)
+                    <a href="https://rufus.ie/" target="_blank" class="btn-link orange-btn">
+                        <i class="fa-solid fa-compact-disc"></i> Download Rufus Utility
                     </a>
                 </div>
 
-                <h3 class="section-subtitle"><i class="fa-solid fa-microchip"></i> Tahap 1.1: Flash ISO ke Flashdisk</h3>
-                <ol>
-                    <li>Tancapkan Flashdisk kosong (minimal kapasitas <strong>8 GB</strong>) ke PC/Laptop utama Anda.</li>
-                    <li>Jalankan program <strong>Rufus</strong> yang telah diunduh.</li>
-                    <li>Pada kolom <strong>Device</strong>, pilih Flashdisk Anda.</li>
-                    <li>Pada kolom <strong>Boot selection</strong>, klik <strong>SELECT</strong> dan pilih file ISO Ubuntu Server yang sudah diunduh.</li>
-                    <li>Di bagian <strong>Partition scheme</strong>, pilih <strong>GPT</strong> (bila Mini PC Anda mendukung UEFI modern) atau pilih <strong>MBR</strong> (bila laptop lama).</li>
-                    <li>Klik tombol <strong>START</strong>. Jika muncul peringatan, pilih <em>"Write in ISO Image mode"</em> dan klik OK. Tunggu hingga status bertuliskan <strong>READY</strong>.</li>
-                </ol>
-
-                <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Tahap 1.2: Booting ke Installer di Laptop/Mini PC</h3>
-                <ol>
-                    <li>Colok Flashdisk installer yang sudah jadi ke port USB Laptop/Mini PC target.</li>
-                    <li>Nyalakan Laptop/Mini PC, lalu tekan tombol menu boot berulang-ulang hingga muncul layar pilihan boot. Tombol boot bervariasi sesuai merk perangkat:
-                        <ul>
-                            <li><strong>ASUS / Intel NUC</strong>: F8 atau F12</li>
-                            <li><strong>Lenovo / HP</strong>: F12 atau F9</li>
-                            <li><strong>Acer / Dell</strong>: F12</li>
-                            <li><strong>Motherboard Lain / Beelink</strong>: F11 atau Esc</li>
-                        </ul>
-                    </li>
-                    <li>Pilih opsi boot yang merujuk pada nama USB Flashdisk Anda (misal: <em>UEFI: SanDisk, Partition 1</em>).</li>
-                </ol>
-
-                <h3 class="section-subtitle"><i class="fa-solid fa-gears"></i> Tahap 1.3: Proses Pemasangan Ubuntu OS</h3>
-                <p>Ikuti konfigurasi instalasi pada monitor Laptop/Mini PC Anda sebagai berikut:</p>
                 <div class="timeline">
+                    <!-- Step 1.1 -->
                     <div class="timeline-step">
-                        <div class="step-number">1</div>
+                        <div class="step-number">1.1</div>
                         <div class="step-content">
-                            <h4>Bahasa & Layout Keyboard</h4>
-                            <p>Pilih bahasa <strong>English</strong> dan layout keyboard default <strong>US</strong>.</p>
+                            <h4>Membuat Media Bootable Flashdisk</h4>
+                            <p>Tancapkan flashdisk kosong (kapasitas minimal 8 GB) pada PC utama Anda, lalu lakukan prosedur ini:</p>
+                            <ol>
+                                <li>Buka aplikasi <strong>Rufus</strong> yang telah diunduh.</li>
+                                <li>Pada menu drop-down <strong>Device</strong>, pilih Flashdisk Anda.</li>
+                                <li>Pada <strong>Boot Selection</strong>, klik tombol <strong>SELECT</strong> lalu arahkan ke file ISO Ubuntu Server.</li>
+                                <li>Pada bagian <strong>Partition Scheme</strong>, pilih <strong>GPT</strong> (bila Mini PC modern UEFI) atau <strong>MBR</strong> (bila Laptop jadul).</li>
+                                <li>Tekan tombol <strong>START</strong> di bagian bawah.</li>
+                                <li>Jika ada kotak dialog konfirmasi, klik <strong>OK</strong>. Tunggu 5-10 menit sampai status menjadi <strong>READY</strong>. Cabut flashdisk.</li>
+                            </ol>
                         </div>
                     </div>
-                    <div class="timeline-step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h4>Type of Installation</h4>
-                            <p>Pilih <strong>Ubuntu Server</strong> (pilihan standar, bukan minimal).</p>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h4>Network Connections (Koneksi Jaringan)</h4>
-                            <p>Direkomendasikan menggunakan kabel LAN agar koneksi stabil. Installer akan menampilkan IP DHCP yang didapatkan server (misal: <code>192.168.1.15</code>). <strong>Catat IP ini!</strong></p>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h4>Storage Configuration (Partisi Disk)</h4>
-                            <p>Pilih opsi <strong>Use an entire disk</strong>. Centang bagian <em>"Set up this disk as an LVM group"</em>. Pilih harddisk internal Laptop/Mini PC Anda. Pilih <em>Done</em> dan pilih <em>Continue</em> saat ditanyakan konfirmasi format.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-number">5</div>
-                        <div class="step-content">
-                            <h4>Profile Setup (Akun Pengguna)</h4>
-                            <p>Isi informasi akun server Anda:
-                                <ul>
-                                    <li><strong>Your name</strong>: masandigital</li>
-                                    <li><strong>Your server's name</strong>: server-masandigital</li>
-                                    <li><strong>Pick a username</strong>: masandigital</li>
-                                    <li><strong>Password</strong>: buat sandi yang kuat dan mudah diingat</li>
-                                </ul>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-number">6</div>
-                        <div class="step-content">
-                            <h4>SSH Setup (Akses Remote)</h4>
-                            <p>Pada layar pilihan SSH, tekan Spasi untuk <strong>mencentang "[X] Install OpenSSH server"</strong>. Ini wajib agar kita dapat mengontrol server ini secara remote tanpa perlu mencolok monitor/keyboard terus-menerus.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-number">7</div>
-                        <div class="step-content">
-                            <h4>Proses Finish & Reboot</h4>
-                            <p>Tunggu hingga proses instalasi mendownload update dan selesai. Setelah muncul tombol <strong>"Reboot Now"</strong>, tekan Enter. Cabut flashdisk dari port USB ketika layar komputer Anda mulai mati atau muncul instruksi pencabutan media boot.</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="callout warning">
-                    <div class="callout-title">
-                        <i class="fa-solid fa-laptop-code"></i> Tip Laptop sebagai Server
+                    <!-- Step 1.2 -->
+                    <div class="timeline-step">
+                        <div class="step-number">1.2</div>
+                        <div class="step-content">
+                            <h4>Booting Melalui Flashdisk di Perangkat Server</h4>
+                            <p>Tancapkan flashdisk ke port USB Mini PC atau Laptop target, hubungkan keyboard dan monitor, nyalakan mesin, dan tekan tombol masuk Boot Menu secara terus-menerus:</p>
+                            <ul class="step-list">
+                                <li><strong>Intel NUC, ASUS</strong>: Tekan tombol <strong>F8</strong> atau <strong>F12</strong></li>
+                                <li><strong>Lenovo, HP</strong>: Tekan tombol <strong>F12</strong> atau <strong>F9</strong></li>
+                                <li><strong>Acer, Dell</strong>: Tekan tombol <strong>F12</strong></li>
+                                <li><strong>Beelink, Mini PC Cina</strong>: Tekan tombol <strong>F11</strong> atau <strong>Esc</strong></li>
+                            </ul>
+                            <p>Setelah menu boot tampil di layar monitor, pilih item yang sesuai dengan merk Flashdisk USB Anda.</p>
+                        </div>
                     </div>
-                    <p>Apabila Anda menginstal di laptop fisik, Linux akan otomatis sleep saat layar ditutup. Anda dapat menonaktifkan fitur sleep penutup layar ini setelah masuk ke sistem server nanti.</p>
+
+                    <!-- Step 1.3 -->
+                    <div class="timeline-step">
+                        <div class="step-number">1.3</div>
+                        <div class="step-content">
+                            <h4>Panduan Langkah Demi Langkah Pengaturan OS Ubuntu</h4>
+                            <p>Setelah masuk ke halaman installer hitam Ubuntu, lakukan pengaturan berikut menggunakan tombol arah keyboard dan Enter:</p>
+                            <ol>
+                                <li><strong>Language</strong>: Pilih <strong>English</strong>.</li>
+                                <li><strong>Keyboard Configuration</strong>: Pilih <strong>English (US)</strong>, tekan Enter pada <em>Done</em>.</li>
+                                <li><strong>Type of Install</strong>: Pilih <strong>Ubuntu Server</strong>.</li>
+                                <li><strong>Network Connections</strong>: Pasang kabel LAN (Ethernet). Sistem akan secara otomatis mendeteksi konfigurasi DHCP router Anda dan menampilkan IP Address server (contoh: <code>192.168.1.15</code>). <strong>Catat alamat IP ini!</strong></li>
+                                <li><strong>Proxy & Archive Mirror</strong>: Kosongkan dan langsung pilih <strong>Done</strong>.</li>
+                                <li><strong>Storage Configuration</strong>: Pilih opsi <strong>Use an entire disk</strong>. Centang kotak <em>"Set up this disk as an LVM group"</em>. Pilih disk target penyimpanan internal Anda, lalu tekan <em>Done</em>. Konfirmasi penghapusan data dengan memilih <strong>Continue</strong>.</li>
+                                <li><strong>Profile Setup</strong>: Masukkan detail profil administrator server:
+                                    <ul>
+                                        <li><em>Your Name</em>: masandigital</li>
+                                        <li><em>Your Server's Name</em>: server-masandigital</li>
+                                        <li><em>Pick a Username</em>: masandigital</li>
+                                        <li><em>Password</em>: isi dengan sandi login server Anda</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SSH Setup</strong>: Gunakan tombol spasi untuk mencentang <strong>"[X] Install OpenSSH server"</strong>. Hal ini krusial agar Anda bisa meremote server nantinya.</li>
+                                <li><strong>Featured Server Snaps</strong>: Langsung arahkan ke <strong>Done</strong> (tanpa perlu mencentang apapun).</li>
+                                <li><strong>Tunggu & Reboot</strong>: Tunggu hingga proses instalasi menampilkan teks <em>"Install complete!"</em>. Arahkan kursor ke tombol <strong>Reboot Now</strong> lalu tekan Enter. Cabut flashdisk ketika diminta.</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Langkah 2: Akses SSH -->
-            <section id="akses-ssh">
-                <h2><i class="fa-solid fa-key"></i> 2. Hubungkan ke Server via SSH</h2>
-                <p>Setelah proses reboot selesai, Mini PC / Laptop Anda kini sudah berfungsi sebagai server (Headless). Letakkan perangkat di dekat router internet, dan kini Anda dapat mencabut monitor serta keyboard fisik di perangkat tersebut.</p>
-
-                <h3 class="section-subtitle"><i class="fa-solid fa-network-wired"></i> Cara Mengetahui IP Address Server</h3>
-                <p>Apabila belum sempat mencatat IP server saat instalasi, nyalakan layar Mini PC, login, kemudian ketik perintah berikut pada shell hitam lokal:</p>
-                <div class="code-container">
-                    <div class="code-header">
-                        <span class="code-lang">Shell Lokal Server</span>
-                        <button class="btn-copy" onclick="copyCode(this)">
-                            <i class="fa-regular fa-copy"></i> Salin
-                        </button>
-                    </div>
-                    <pre><code>hostname -I</code></pre>
+            <section id="akses-ssh" class="color-ssh">
+                <h2><i class="fa-solid fa-terminal"></i> 2. Hubungkan ke Server via SSH</h2>
+                <p class="section-desc">Kini server Anda sudah aktif dan monitor fisiknya bisa dicabut. Semua aktivitas penginstalan aplikasi selanjutnya dilakukan secara remote dari komputer utama Anda.</p>
+                
+                <h3 class="section-subtitle"><i class="fa-solid fa-circle-arrow-down"></i> Unduh Alat Remote (Bila Diperlukan)</h3>
+                <p>Jika menggunakan sistem operasi Windows, Anda bisa mendownload terminal client visual:</p>
+                <div style="margin-top:0.5rem; margin-bottom: 1.5rem;">
+                    <a href="https://www.putty.org/" target="_blank" class="btn-link blue-btn">
+                        <i class="fa-solid fa-download"></i> Download PuTTY Client
+                    </a>
                 </div>
 
-                <h3 class="section-subtitle"><i class="fa-solid fa-desktop"></i> Hubungkan dari PC/Laptop Utama</h3>
-                <p>Kembali ke PC/Laptop utama Anda yang terhubung di jaringan Wi-Fi/LAN yang sama:</p>
-                
                 <div class="timeline">
-                    <div class="timeline-step" style="margin-bottom:1.5rem">
-                        <div class="step-number">A</div>
+                    <!-- Step 2.1 -->
+                    <div class="timeline-step">
+                        <div class="step-number">2.1</div>
                         <div class="step-content">
-                            <h4>Menggunakan PowerShell / Command Prompt (Windows/Mac)</h4>
-                            <p>Buka terminal di komputer Anda, lalu jalankan perintah berikut:</p>
+                            <h4>Koneksi Menggunakan Terminal / PowerShell</h4>
+                            <p>Buka program PowerShell di Windows atau Terminal di macOS/Linux PC utama Anda, lalu ketik perintah berikut:</p>
+                            
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">Command Prompt / PowerShell</span>
+                                    <span class="code-lang">PowerShell / Terminal Host</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
                                 </div>
-                                <pre><code>ssh masandigital@<span class="string">IP_SERVER_LINUX</span>
+                                <pre><code>ssh masandigital@<span class="highlight">IP_SERVER_LINUX_ANDA</span>
 <span class="comment"># Contoh: ssh masandigital@192.168.1.15</span></code></pre>
                             </div>
-                            <p>Masukkan password user <code>masandigital</code> yang telah Anda buat pada langkah sebelumnya.</p>
+                            <p>Ketik <code class="highlight">yes</code> saat pertama kali muncul validasi fingerprint sidik jari server, lalu ketik password server Anda (password tidak akan memunculkan tanda bintang/ketikan saat diinput, langsung ketik saja lalu tekan Enter).</p>
                         </div>
                     </div>
+
+                    <!-- Step 2.2 -->
                     <div class="timeline-step">
-                        <div class="step-number">B</div>
+                        <div class="step-number">2.2</div>
                         <div class="step-content">
-                            <h4>Menggunakan Aplikasi GUI (PuTTY)</h4>
-                            <p>Jika Anda lebih menyukai aplikasi berbasis UI, unduh dan instal PuTTY:</p>
-                            <a href="https://www.putty.org/" target="_blank" class="btn-link" style="margin-bottom:1rem">
-                                <i class="fa-solid fa-download"></i> Unduh PuTTY Client Resmi
-                            </a>
+                            <h4>Koneksi Menggunakan Aplikasi PuTTY</h4>
                             <ol>
-                                <li>Buka program PuTTY.</li>
-                                <li>Isi kolom <strong>Host Name (or IP address)</strong> dengan IP Server Anda.</li>
-                                <li>Isi <strong>Port</strong> dengan nilai <strong>22</strong>.</li>
-                                <li>Klik tombol <strong>Open</strong> di bagian bawah.</li>
-                                <li>Ketika muncul pop-up peringatan keamanan pertama kali, klik <strong>Yes</strong>.</li>
-                                <li>Login menggunakan username <code>masandigital</code> dan masukkan password Anda.</li>
+                                <li>Buka aplikasi <strong>PuTTY</strong>.</li>
+                                <li>Ketikkan IP address server pada kolom <strong>Host Name (or IP address)</strong>.</li>
+                                <li>Pastikan port bernilai <strong>22</strong> dan Connection Type adalah <strong>SSH</strong>.</li>
+                                <li>Klik tombol <strong>Open</strong>.</li>
+                                <li>Gunakan username <code>masandigital</code> dan masukkan kata sandi server Anda.</li>
                             </ol>
                         </div>
                     </div>
@@ -895,21 +1078,19 @@
             </section>
 
             <!-- Langkah 3: Instalasi Docker -->
-            <section id="install-docker">
+            <section id="install-docker" class="color-docker">
                 <h2><i class="fa-brands fa-docker"></i> 3. Instalasi Docker & Docker Compose</h2>
-                <p>Setelah berhasil login via SSH, kita perlu memasang Docker Engine dan Docker Compose Plugin. Ini adalah fondasi utama untuk menjalankan kontainer aplikasi dashboard.</p>
-                
-                <p>Jalankan perintah-perintah berikut secara berurutan di dalam sesi SSH server Anda:</p>
+                <p class="section-desc">Ikuti petunjuk perintah (command prompt) di bawah ini secara persis. Jalankan baris demi baris perintah di dalam jendela koneksi SSH terminal server Anda:</p>
 
                 <div class="timeline">
-                    <!-- Step 1 -->
+                    <!-- Step 3.1 -->
                     <div class="timeline-step">
-                        <div class="step-number">1</div>
+                        <div class="step-number">3.1</div>
                         <div class="step-content">
-                            <h4>Update Indeks Paket Server</h4>
+                            <h4>Memperbarui Paket Repositori Sistem</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -919,14 +1100,14 @@
                         </div>
                     </div>
 
-                    <!-- Step 2 -->
+                    <!-- Step 3.2 -->
                     <div class="timeline-step">
-                        <div class="step-number">2</div>
+                        <div class="step-number">3.2</div>
                         <div class="step-content">
-                            <h4>Pasang Paket Dependensi Awal</h4>
+                            <h4>Memasang Dependensi Prasyarat</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -936,14 +1117,14 @@
                         </div>
                     </div>
 
-                    <!-- Step 3 -->
+                    <!-- Step 3.3 -->
                     <div class="timeline-step">
-                        <div class="step-number">3</div>
+                        <div class="step-number">3.3</div>
                         <div class="step-content">
-                            <h4>Tambahkan Docker Official GPG Key</h4>
+                            <h4>Mendaftarkan GPG Key Resmi Docker</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -954,14 +1135,14 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
                         </div>
                     </div>
 
-                    <!-- Step 4 -->
+                    <!-- Step 3.4 -->
                     <div class="timeline-step">
-                        <div class="step-number">4</div>
+                        <div class="step-number">3.4</div>
                         <div class="step-content">
-                            <h4>Konfigurasikan Repositori Docker</h4>
+                            <h4>Mengunduh & Mendaftarkan Repositori Paket Docker</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -973,14 +1154,14 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
                         </div>
                     </div>
 
-                    <!-- Step 5 -->
+                    <!-- Step 3.5 -->
                     <div class="timeline-step">
-                        <div class="step-number">5</div>
+                        <div class="step-number">3.5</div>
                         <div class="step-content">
-                            <h4>Pasang Docker Engine & Docker Compose Plugin</h4>
+                            <h4>Memasang Engine Docker & Ekstensi Compose Terbaru</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -991,15 +1172,15 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
                         </div>
                     </div>
 
-                    <!-- Step 6 -->
+                    <!-- Step 3.6 -->
                     <div class="timeline-step">
-                        <div class="step-number">6</div>
+                        <div class="step-number">3.6</div>
                         <div class="step-content">
-                            <h4>Izinkan User Anda Menjalankan Docker Tanpa Sudo</h4>
-                            <p>Agar Anda tidak perlu menulis kata <code>sudo</code> setiap kali memanggil command docker:</p>
+                            <h4>Konfigurasi Hak Akses User Non-Sudo (Opsional)</h4>
+                            <p>Agar user Anda tidak perlu memanggil awalan <code>sudo</code> setiap memanggil engine Docker:</p>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -1010,15 +1191,14 @@ newgrp docker</code></pre>
                         </div>
                     </div>
 
-                    <!-- Step 7 -->
+                    <!-- Step 3.7 -->
                     <div class="timeline-step">
-                        <div class="step-number">7</div>
+                        <div class="step-number">3.7</div>
                         <div class="step-content">
-                            <h4>Verifikasi Hasil Instalasi</h4>
-                            <p>Jalankan perintah ini untuk memastikan Docker dan Docker Compose berjalan dengan benar:</p>
+                            <h4>Memvalidasi Operasional Docker</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">SSH Terminal</span>
+                                    <span class="code-lang">Terminal SSH</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
@@ -1032,100 +1212,118 @@ docker compose version</code></pre>
             </section>
 
             <!-- Langkah 4: Deploy Dashboard -->
-            <section id="deploy-dashboard">
-                <h2><i class="fa-solid fa-cloud-arrow-up"></i> 4. Kloning & Jalankan Dashboard</h2>
-                <p>Setelah Docker siap, saatnya memasang MasanDigital Dashboard menggunakan berkas installer yang sudah dikonfigurasi.</p>
+            <section id="deploy-dashboard" class="color-deploy">
+                <h2><i class="fa-solid fa-rocket"></i> 4. Kloning & Deploy MasanDigital Dashboard</h2>
+                <p class="section-desc">Instalasi software dasar sudah selesai. Sekarang kita tinggal mendownload source-code dashboard dan mengeksekusi script instalasi otomatis.</p>
                 
-                <div class="code-container">
-                    <div class="code-header">
-                        <span class="code-lang">SSH Terminal</span>
-                        <button class="btn-copy" onclick="copyCode(this)">
-                            <i class="fa-regular fa-copy"></i> Salin
-                        </button>
+                <div class="timeline">
+                    <!-- Step 4.1 -->
+                    <div class="timeline-step">
+                        <div class="step-number">4.1</div>
+                        <div class="step-content">
+                            <h4>Download Source Code Dari GitHub</h4>
+                            <p>Masuk ke folder utama server Anda, lalu lakukan kloning repositori:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Terminal SSH</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>cd ~
+git clone <span class="url">https://github.com/mychiara/web-server.git</span> masandigital_dashboard</code></pre>
+                            </div>
+                        </div>
                     </div>
-                    <pre><code><span class="comment"># 1. Kembali ke folder home user</span>
-cd ~
 
-<span class="comment"># 2. Kloning repositori GitHub Anda</span>
-git clone <span class="url">https://github.com/mychiara/web-server.git</span> masandigital_dashboard
-
-<span class="comment"># 3. Masuk ke folder proyek</span>
-cd masandigital_dashboard
-
-<span class="comment"># 4. Berikan izin eksekusi berkas installer otomatis</span>
+                    <!-- Step 4.2 -->
+                    <div class="timeline-step">
+                        <div class="step-number">4.2</div>
+                        <div class="step-content">
+                            <h4>Jalankan Script Instalasi Otomatis</h4>
+                            <p>Masuk ke dalam direktori hasil kloning, berikan hak eksekusi pada script, lalu jalankan script pemasang otomatis:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Terminal SSH</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>cd masandigital_dashboard
 chmod +x install.sh
-
-<span class="comment"># 5. Jalankan installer sebagai root</span>
 sudo bash install.sh</code></pre>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="callout success">
                     <div class="callout-title">
-                        <i class="fa-solid fa-circle-check"></i> Proses Selesai!
+                        <i class="fa-solid fa-circle-check"></i> Catatan Proses Sukses
                     </div>
-                    <p>Tunggu proses download base image Python dan download library selesai sampai terminal Anda memunculkan pesan instalasi sukses berwarna hijau.</p>
+                    <p>Setelah server mendownload image dan menyusun container Docker, terminal akan menampilkan konfirmasi sukses: <strong>"INSTALASI SUKSES! Silakan akses Dashboard Admin di: http://&lt;IP_SERVER&gt;"</strong>.</p>
                 </div>
             </section>
 
             <!-- Langkah 5: Setup Wizard -->
             <section id="setup-wizard">
                 <h2><i class="fa-solid fa-wand-magic-sparkles"></i> 5. Konfigurasi Awal (Setup Wizard)</h2>
-                <p>Setelah kontainer sukses berjalan di server Anda:</p>
+                <p class="section-desc">Setelah instalasi sukses dideploy, ikuti langkah-langkah visual berikut di perangkat PC utama atau Smartphone Anda:</p>
                 <ol>
-                    <li>Buka web browser di PC/Laptop/HP utama Anda yang tersambung di jaringan Wi-Fi router yang sama.</li>
-                    <li>Ketik alamat IP Server Anda pada address bar, contoh: <code>http://192.168.1.15</code>.</li>
-                    <li>Anda akan diarahkan ke halaman **Setup Wizard** (karena file keamanan kosong).</li>
-                    <li>Ketik dan buat **Password Admin** baru Anda, lalu konfirmasikan sandi tersebut.</li>
-                    <li>Gunakan sandi tersebut untuk masuk ke dashboard utama. Konfigurasi selesai!</li>
+                    <li>Buka aplikasi web browser (Chrome/Edge/Safari/Firefox).</li>
+                    <li>Ketikkan IP address server Anda pada address bar (Contoh: <code>http://192.168.1.15</code>) lalu tekan Enter.</li>
+                    <li>Layar browser Anda akan memuat halaman <strong>Setup Wizard - MasanDigital Dashboard</strong>.</li>
+                    <li>Ketikkan password administratif yang ingin Anda buat, lalu konfirmasi ulang password tersebut pada kolom di bawahnya.</li>
+                    <li>Simpan password Anda. Halaman web otomatis dialihkan ke form login utama.</li>
+                    <li>Masukkan password admin yang baru saja Anda buat untuk mulai masuk ke sistem dashboard server.</li>
                 </ol>
             </section>
 
             <!-- Pengelolaan -->
             <section id="pengelolaan">
-                <h2><i class="fa-solid fa-sliders"></i> 6. Pengelolaan Server & Perintah Penting</h2>
-                <p>Berikut adalah list perintah dasar di terminal SSH yang berguna saat mengoperasikan server harian Anda:</p>
+                <h2><i class="fa-solid fa-sliders"></i> 6. Operasional & Perintah Dasar Harian</h2>
+                <p class="section-desc">Simpan atau catat instruksi di bawah ini untuk kebutuhan pengelolaan/pemeliharaan server di masa depan:</p>
                 
-                <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Mengontrol Kontainer Dashboard</h3>
+                <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Mematikan & Menyalakan Dashboard</h3>
                 <div class="code-container">
                     <div class="code-header">
-                        <span class="code-lang">SSH Terminal</span>
+                        <span class="code-lang">Terminal SSH</span>
                         <button class="btn-copy" onclick="copyCode(this)">
                             <i class="fa-regular fa-copy"></i> Salin
                         </button>
                     </div>
-                    <pre><code><span class="comment"># Masuk ke direktori dashboard</span>
+                    <pre><code><span class="comment"># Navigasi ke folder proyek</span>
 cd ~/masandigital_dashboard
 
-<span class="comment"># Menghentikan layanan dashboard</span>
+<span class="comment"># Menghentikan layanan container dashboard</span>
 docker compose down
 
-<span class="comment"># Menyalakan kembali dashboard</span>
+<span class="comment"># Menyalakan kembali kontainer di latar belakang</span>
 docker compose up -d
 
-<span class="comment"># Melihat logs backend server dashboard secara real-time</span>
+<span class="comment"># Melihat output logs program backend dashboard</span>
 docker compose logs -f</code></pre>
                 </div>
 
-                <h3 class="section-subtitle"><i class="fa-solid fa-laptop"></i> Konfigurasi Tambahan Laptop (Lid Close Settings)</h3>
-                <p>Jika server Anda menggunakan **Laptop fisik**, secara default layar ditutup akan membuat laptop mati (sleep). Matikan fitur ini dengan perintah:</p>
+                <h3 class="section-subtitle"><i class="fa-solid fa-laptop"></i> Konfigurasi Penutup Layar Laptop (Bila Menggunakan Laptop)</h3>
+                <p>Bila server Anda berupa laptop, OS Ubuntu Server akan sleep saat layar ditutup. Agar laptop tetap menyala normal saat ditutup, lakukan perintah ini:</p>
                 <div class="code-container">
                     <div class="code-header">
-                        <span class="code-lang">SSH Terminal</span>
+                        <span class="code-lang">Terminal SSH</span>
                         <button class="btn-copy" onclick="copyCode(this)">
                             <i class="fa-regular fa-copy"></i> Salin
                         </button>
                     </div>
-                    <pre><code><span class="comment"># Buka konfigurasi systemd login</span>
-sudo nano /etc/systemd/logind.conf</code></pre>
+                    <pre><code>sudo nano /etc/systemd/logind.conf</code></pre>
                 </div>
-                <p>Cari baris berikut, hilangkan tanda pagar <code>#</code> di depannya dan ubah nilainya menjadi <code>ignore</code>:</p>
-                <pre style="background:#090d16; padding:0.8rem; border-radius:6px; font-family:monospace; margin-bottom:1rem; font-size:0.85rem;">HandleLidSwitch=ignore
+                <p>Gunakan tombol navigasi keyboard untuk mencari baris konfigurasi berikut. Hilangkan tanda pagar <code>#</code> di awal baris dan ubah valuenya menjadi <code class="highlight">ignore</code>:</p>
+                <pre style="background:#04060b; padding:1rem; border-radius:10px; font-family:var(--font-code); font-size:0.85rem; margin-bottom:1.25rem;">HandleLidSwitch=ignore
 HandleLidSwitchExternalPower=ignore
 HandleLidSwitchDocked=ignore</pre>
-                <p>Simpan (Ctrl+X, ketik Y, Enter) dan terapkan perubahan dengan merestart service:</p>
+                <p>Simpan perubahan berkas dengan menekan tombol kombinasi <strong>Ctrl + O</strong>, tekan Enter, lalu tekan <strong>Ctrl + X</strong> untuk keluar. Terapkan konfigurasi dengan merestart daemon:</p>
                 <div class="code-container">
                     <div class="code-header">
-                        <span class="code-lang">SSH Terminal</span>
+                        <span class="code-lang">Terminal SSH</span>
                         <button class="btn-copy" onclick="copyCode(this)">
                             <i class="fa-regular fa-copy"></i> Salin
                         </button>
@@ -1136,53 +1334,67 @@ HandleLidSwitchDocked=ignore</pre>
 
             <!-- Troubleshooting -->
             <section id="troubleshooting">
-                <h2><i class="fa-solid fa-screwdriver-wrench"></i> FAQ & Solusi Kendala</h2>
-                <p>Berikut adalah beberapa daftar kendala yang sering ditemui oleh pemula:</p>
+                <h2><i class="fa-solid fa-circle-question"></i> FAQ & Solusi Kendala</h2>
+                <p class="section-desc">Berikut adalah daftar pemecahan masalah (FAQ) seputar instalasi server:</p>
 
                 <div class="accordion">
-                    <!-- FAQ 1 -->
                     <div class="accordion-item">
                         <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>1. Saya tidak bisa mengakses dashboard melalui browser, apa yang salah?</span>
+                            <span>1. Layanan dashboard tidak dapat dimuat atau memunculkan pesan timeout.</span>
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>Pastikan IP server yang Anda masukkan sudah benar dan perangkat Anda terhubung ke router yang sama. Bila Anda menggunakan OS Ubuntu, bisa jadi port 80 diblokir oleh firewall bawaan. Aktifkan port tersebut:</p>
-                                <pre style="background:#111827; padding:0.75rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem;"><code>sudo ufw allow 80/tcp
+                                <p>Pastikan IP address target yang diinput di browser sudah benar. Selain itu, pastikan port 80 diperbolehkan oleh firewall sistem operasi Linux Server Anda:</p>
+                                <pre style="background:#0c0f1d; padding:0.75rem; border-radius:8px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>sudo ufw allow 80/tcp
 sudo ufw reload</code></pre>
                             </div>
                         </div>
                     </div>
 
-                    <!-- FAQ 2 -->
                     <div class="accordion-item">
                         <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>2. Bagaimana cara mengupdate dashboard ke versi terbaru di masa mendatang?</span>
+                            <span>2. Bagaimana cara mereset password admin yang lupa?</span>
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>Karena Anda menginstall menggunakan Git Clone, Anda cukup menarik update terbaru dari GitHub dan melakukan rebuild kontainer:</p>
-                                <pre style="background:#111827; padding:0.75rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem;"><code>cd ~/masandigital_dashboard
+                                <p>Anda cukup menghapus file proteksi keamanan di folder data dashboard dan merestart kontainer untuk memulai ulang Setup Wizard:</p>
+                                <pre style="background:#0c0f1d; padding:0.75rem; border-radius:8px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>cd ~/masandigital_dashboard
+sudo rm data/security_config.json
+docker compose restart</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>3. Bagaimana cara memperbarui (update) dashboard jika ada rilis terbaru?</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Karena Anda mengunduh dashboard menggunakan Git, Anda dapat memperbarui kode lokal langsung dengan menarik update repository GitHub dan membuild ulang image Docker Anda:</p>
+                                <pre style="background:#0c0f1d; padding:0.75rem; border-radius:8px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>cd ~/masandigital_dashboard
 git pull origin main
 docker compose up -d --build</code></pre>
                             </div>
                         </div>
                     </div>
 
-                    <!-- FAQ 3 -->
                     <div class="accordion-item">
                         <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>3. Bagaimana cara mengganti port dashboard agar tidak menggunakan port 80?</span>
+                            <span>4. Muncul pesan error "port is already allocated" saat install.</span>
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>1. Masuk ke folder <code>cd ~/masandigital_dashboard</code><br>
-                                2. Jalankan perintah <code>nano docker-compose.yml</code>.<br>
-                                3. Cari bagian <code>ports:</code> dan ubah baris <code>- "80:5000"</code> menjadi <code>- "8080:5000"</code> (sesuaikan 8080 dengan port pilihan Anda).<br>
-                                4. Simpan file (Ctrl+X, Y, Enter) dan terapkan: <code>docker compose up -d</code>.</p>
+                                <p>Error ini berarti port 80 pada server Anda sedang dipakai oleh program server web lokal lain (seperti Apache2 atau Nginx bawaan Linux host). Anda perlu menonaktifkannya sebelum menjalankan Docker:</p>
+                                <pre style="background:#0c0f1d; padding:0.75rem; border-radius:8px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>sudo systemctl stop apache2
+sudo systemctl disable apache2
+# atau untuk nginx bawaan host:
+sudo systemctl stop nginx
+sudo systemctl disable nginx</code></pre>
                             </div>
                         </div>
                     </div>
@@ -1191,17 +1403,16 @@ docker compose up -d --build</code></pre>
         </main>
     </div>
 
-    <!-- Floating UI elements -->
+    <!-- Floating Toast & Back to Top -->
     <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
         <i class="fa-solid fa-arrow-up"></i>
     </div>
 
     <div class="toast" id="toast">
-        <i class="fa-solid fa-circle-check" style="color: var(--success-color);"></i>
-        <span>Teks disalin ke clipboard!</span>
+        <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i>
+        <span>Kode berhasil disalin!</span>
     </div>
 
-    <!-- Scripts -->
     <script>
         // Copy to clipboard function
         function copyCode(btn) {
@@ -1211,15 +1422,14 @@ docker compose up -d --build</code></pre>
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
             
-            // Clean up selections and write to clipboard
-            const cleanText = pre.innerText.replace(/Salin/g, '').trim();
+            const cleanText = pre.innerText.trim();
             navigator.clipboard.writeText(cleanText).then(() => {
                 showToast();
             });
             window.getSelection().removeAllRanges();
         }
 
-        // Show toast confirmation
+        // Show toast notification
         function showToast() {
             const toast = document.getElementById('toast');
             toast.classList.add('show');
@@ -1232,11 +1442,8 @@ docker compose up -d --build</code></pre>
         function toggleAccordion(btn) {
             const item = btn.parentElement;
             const content = item.querySelector('.accordion-content');
-            
-            // Check if active
             const isActive = item.classList.contains('active');
             
-            // Collapse all other items
             document.querySelectorAll('.accordion-item').forEach(i => {
                 i.classList.remove('active');
                 i.querySelector('.accordion-content').style.maxHeight = null;
@@ -1248,7 +1455,7 @@ docker compose up -d --build</code></pre>
             }
         }
 
-        // Scroll to top functionality
+        // Scroll to top and scroll spy
         const scrollTopBtn = document.getElementById('scrollTop');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 400) {
@@ -1257,14 +1464,13 @@ docker compose up -d --build</code></pre>
                 scrollTopBtn.classList.remove('show');
             }
 
-            // Update active menu link based on scroll position
             const sections = document.querySelectorAll('section');
             const navLinks = document.querySelectorAll('.nav-link');
             
             let currentSec = '';
             sections.forEach(sec => {
                 const top = sec.offsetTop;
-                if (window.scrollY >= top - 150) {
+                if (window.scrollY >= top - 180) {
                     currentSec = sec.getAttribute('id');
                 }
             });
