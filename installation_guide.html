@@ -888,8 +888,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="#cloudflare-tunnel" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-cloud" style="color:var(--accent-purple)"></i> 6. Akses Publik (Tunnel)
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="#pengelolaan" class="nav-link" onclick="closeSidebarMobile()">
-                                <i class="fa-solid fa-sliders"></i> 6. Operasional Harian
+                                <i class="fa-solid fa-sliders"></i> 7. Operasional Harian
                             </a>
                         </li>
                         <li class="nav-item">
@@ -1359,9 +1364,82 @@ sudo bash install.sh</code></pre>
                 </ol>
             </section>
 
+            <!-- Cloudflare Tunnel -->
+            <section id="cloudflare-tunnel" class="color-ssh" style="scroll-margin-top: 3rem;">
+                <h2><i class="fa-solid fa-cloud"></i> 6. Akses Publik (Cloudflare Tunnel)</h2>
+                <p class="section-desc">Cloudflare Tunnel memungkinkan Anda menghubungkan server lokal ke internet secara aman menggunakan nama domain Anda sendiri (misal: <code>panel.masandigital.com</code>) secara gratis, tanpa perlu melakukan port forwarding dan melewati CGNAT modem IndiHome.</p>
+                
+                <div class="timeline">
+                    <!-- Step 6.1 -->
+                    <div class="timeline-step">
+                        <div class="step-number">6.1</div>
+                        <div class="step-content">
+                            <h4>Prasyarat Awal</h4>
+                            <ul class="step-list">
+                                <li>Miliki akun **Cloudflare** gratis di <a href="https://dash.cloudflare.com/" target="_blank" style="color:var(--accent-cyan); text-decoration:underline;">dash.cloudflare.com</a>.</li>
+                                <li>Miliki domain aktif yang sudah dihubungkan ke Cloudflare (Nameservers domain diarahkan ke Cloudflare).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 6.2 -->
+                    <div class="timeline-step">
+                        <div class="step-number">6.2</div>
+                        <div class="step-content">
+                            <h4>Membuat Tunnel Baru di Cloudflare Zero Trust</h4>
+                            <ol>
+                                <li>Masuk ke dasbor **Cloudflare Zero Trust** di <a href="https://one.dash.cloudflare.com/" target="_blank" style="color:var(--accent-cyan); text-decoration:underline;">one.dash.cloudflare.com</a>.</li>
+                                <li>Buka menu **Networks** -> **Tunnels** di sidebar kiri, lalu klik tombol **Create a Tunnel**.</li>
+                                <li>Pilih tipe **Cloudflared** (default) dan klik **Next**.</li>
+                                <li>Beri nama tunnel Anda (contoh: <code>server-rumah</code>) lalu klik **Save Tunnel**.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Step 6.3 -->
+                    <div class="timeline-step">
+                        <div class="step-number">6.3</div>
+                        <div class="step-content">
+                            <h4>Memasang Daemon Cloudflared di Laptop Server</h4>
+                            <p>Di halaman Cloudflare, pilih tab sistem operasi **Debian** dan arsitektur **amd64** (karena Ubuntu Server kita berjalan di arsitektur 64-bit). Cloudflare akan menampilkan satu perintah instalasi panjang yang berisi token unik Anda.</p>
+                            <p>Salin perintah tersebut dan jalankan di terminal SSH server Anda. Perintah tersebut akan terlihat mirip seperti ini:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Terminal SSH</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb && \
+sudo dpkg -i cloudflared.deb && \
+sudo cloudflared service install &lt;TOKEN_UNIK_AKUN_ANDA&gt;</code></pre>
+                            </div>
+                            <p>Setelah dijalankan, status koneksi tunnel di dasbor Cloudflare web akan berubah menjadi hijau (**HEALTHY / ACTIVE**). Klik tombol **Next** di dasbor web Cloudflare.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 6.4 -->
+                    <div class="timeline-step">
+                        <div class="step-number">6.4</div>
+                        <div class="step-content">
+                            <h4>Mengarahkan Domain ke Dashboard Lokal</h4>
+                            <p>Di halaman **Route Traffic (Public Hostname)** di dasbor Cloudflare:</p>
+                            <ol>
+                                <li><strong>Subdomain</strong>: Masukkan subdomain yang diinginkan (misal: <code>panel</code> atau <code>dashboard</code>).</li>
+                                <li><strong>Domain</strong>: Pilih nama domain Anda yang terdaftar di Cloudflare (misal: <code>masandigital.com</code>).</li>
+                                <li><strong>Service Type</strong>: Pilih **HTTP**.</li>
+                                <li><strong>URL</strong>: Masukkan <code>localhost:80</code> (karena dashboard utama berjalan di port 80).</li>
+                                <li>Klik **Save Tunnel** di bagian bawah.</li>
+                            </ol>
+                            <p>Selamat! Sekarang Anda dapat mengakses MasanDigital Dashboard Anda dari manapun di seluruh dunia menggunakan koneksi aman HTTPS di URL domain Anda: <strong><code>https://panel.domainanda.com</code></strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Pengelolaan -->
             <section id="pengelolaan">
-                <h2><i class="fa-solid fa-sliders"></i> 6. Operasional & Perintah Dasar Harian</h2>
+                <h2><i class="fa-solid fa-sliders"></i> 7. Operasional & Perintah Dasar Harian</h2>
                 <p class="section-desc">Simpan atau catat instruksi di bawah ini untuk kebutuhan pengelolaan/pemeliharaan server di masa depan:</p>
                 
                 <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Mematikan & Menyalakan Dashboard</h3>
