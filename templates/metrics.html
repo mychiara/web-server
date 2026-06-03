@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyper Metrics - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
+    <style>
+        :root {
+            --bg-body: #0a0b10;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #e1e7ef;
+            --text-dim: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-purple: #bc8cf2;
+            --accent-orange: #f0883e;
+            --accent-red: #ff7b72;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(88, 166, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(188, 140, 242, 0.05) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(-5px);
+            border-color: var(--accent-blue);
+        }
+
+        /* Stats Grid (Top row) */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .stat-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .stat-info .label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .stat-info .value { font-size: 1.6rem; font-weight: 700; color: #fff; }
+        .stat-info .sub { font-size: 0.8rem; color: var(--text-dim); }
+
+        /* Color variants for stats */
+        .blue { background: rgba(88, 166, 255, 0.1); color: var(--accent-blue); }
+        .green { background: rgba(63, 185, 80, 0.1); color: var(--accent-green); }
+        .purple { background: rgba(188, 140, 242, 0.1); color: var(--accent-purple); }
+        .orange { background: rgba(240, 136, 62, 0.1); color: var(--accent-orange); }
+
+        /* Main Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 1.8rem;
+            height: 100%;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-title i { color: var(--accent-blue); opacity: 0.8; }
+
+        /* Chart container */
+        .chart-wrap { position: relative; height: 300px; width: 100%; }
+
+        /* Tabs Style */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.2);
+            padding: 6px;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 8px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Process Table */
+        .table-container { overflow-x: auto; margin-top: 0.5rem; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        th { text-align: left; padding: 12px 15px; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 14px 15px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        td:first-child { border-left: 1px solid var(--border); border-radius: 12px 0 0 12px; }
+        td:last-child { border-right: 1px solid var(--border); border-radius: 0 12px 12px 0; }
+
+        tr:hover td { background: rgba(255,255,255,0.05); }
+
+        .progress-mini {
+            width: 100px;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        .progress-fill { height: 100%; border-radius: 10px; }
+
+        .btn-kill {
+            background: rgba(255, 123, 114, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 123, 114, 0.2);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-kill:hover { background: var(--accent-red); color: #fff; }
+
+        /* Tooltip style */
+        .tooltip-box {
+            background: rgba(13, 15, 23, 0.9);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+        }
+
+        /* Mount Cards */
+        .mount-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .mount-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.2rem;
+        }
+        .mount-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .mount-name { font-weight: 600; font-size: 1rem; }
+        .mount-usage { font-size: 0.85rem; color: var(--text-dim); }
+
+        @media (max-width: 1100px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fa-solid fa-chart-line" style="color:var(--accent-blue)"></i> System Performance</h1>
+            <div style="display:flex; align-items:center; gap:1.5rem">
+                <div style="text-align:right">
+                    <div style="font-size:0.75rem; color:var(--text-dim)">Uptime</div>
+                    <div id="uptime-val" style="font-weight:600; font-size:0.95rem">--:--:--</div>
+                </div>
+                <a href="/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Top Overview Stats -->
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-solid fa-microchip"></i></div>
+                <div class="stat-info">
+                    <div class="label">CPU Usage</div>
+                    <div class="value" id="stat-cpu-val">--%</div>
+                    <div class="sub" id="stat-load-val">Load: --, --, --</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-memory"></i></div>
+                <div class="stat-info">
+                    <div class="label">Memory</div>
+                    <div class="value" id="stat-ram-val">--%</div>
+                    <div class="sub" id="stat-ram-sub">-- / -- GB</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fa-solid fa-hard-drive"></i></div>
+                <div class="stat-info">
+                    <div class="label">Primary Disk</div>
+                    <div class="value" id="stat-disk-val">--%</div>
+                    <div class="sub" id="stat-disk-sub">-- GB Free</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-network-wired"></i></div>
+                <div class="stat-info">
+                    <div class="label">Network Speed</div>
+                    <div class="value" id="stat-net-val">-- KB/s</div>
+                    <div class="sub" id="stat-net-sub">↓ -- | ↑ --</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Charts Section -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fa-solid fa-wave-square"></i> Activity History (24h)</div>
+                    <div id="last-update" style="font-size:0.8rem; color:var(--text-dim)">Live Update</div>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="main-chart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fa-solid fa-microchip"></i> CPU Cores Load</div>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="cores-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section (Tabs) -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('processes')"><i class="fa-solid fa-list-ul"></i> Top Processes</button>
+                <button class="tab-btn" onclick="switchTab('storage')"><i class="fa-solid fa-hard-drive"></i> Storage Details</button>
+                <button class="tab-btn" onclick="switchTab('network')"><i class="fa-solid fa-network-wired"></i> Network I/O</button>
+            </div>
+
+            <!-- Processes Content -->
+            <div id="tab-processes" class="metric-section">
+                <div class="table-container">
+                    <table id="proc-table">
+                        <thead>
+                            <tr>
+                                <th>PID</th>
+                                <th>Process Name</th>
+                                <th>User</th>
+                                <th>CPU Usage</th>
+                                <th>Memory</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" style="text-align:center">Fetching process list...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Storage Content -->
+            <div id="tab-storage" class="metric-section" style="display:none">
+                <div class="mount-grid" id="mount-container">
+                    <!-- Mount cards will be injected here -->
+                </div>
+                
+                <div style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.2); border-radius:16px; border:1px dashed var(--border)">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <div>
+                            <h3 style="font-size:1.1rem; margin-bottom:5px">Storage Analyzer</h3>
+                            <p style="font-size:0.85rem; color:var(--text-dim)">Scan root filesystem for files larger than 100MB</p>
+                        </div>
+                        <button class="back-btn" onclick="scanStorage()" id="scan-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i> Start Scan
+                        </button>
+                    </div>
+                    <div id="scan-results" style="margin-top:1.5rem; display:none">
+                        <table id="scan-table">
+                            <thead><tr><th>Size</th><th>File Path</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Content -->
+            <div id="tab-network" class="metric-section" style="display:none">
+                <div class="chart-wrap" style="height:350px">
+                    <canvas id="network-history-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+        let mainChart, coresChart, netChart;
+        let lastNetData = null;
+        let historyData = { labels: [], cpu: [], mem: [], netIn: [], netOut: [] };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            fetchHistory();
+            startLiveLoop();
+        });
+
+        function initCharts() {
+            const ctxMain = document.getElementById('main-chart').getContext('2d');
+            const gradientBlue = ctxMain.createLinearGradient(0, 0, 0, 300);
+            gradientBlue.addColorStop(0, 'rgba(88, 166, 255, 0.3)');
+            gradientBlue.addColorStop(1, 'rgba(88, 166, 255, 0)');
+
+        mainChart = new Chart(ctxMain, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'CPU Usage %',
+                            data: [],
+                            borderColor: '#58a6ff',
+                            backgroundColor: 'rgba(88, 166, 255, 0.15)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Memory Usage %',
+                            data: [],
+                            borderColor: '#3fb950',
+                            backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
+                        x: { grid: { display: false }, ticks: { color: '#8b949e', maxRotation: 0 } }
+                    },
+                    plugins: { 
+                        legend: { 
+                            display: true, 
+                            position: 'top', 
+                            align: 'end',
+                            labels: { color: '#8b949e', usePointStyle: true, boxWidth: 6, boxHeight: 6, font: { size: 11 } } 
+                        } 
+                    },
+                    animation: { duration: 0 }
+                }
+            });
+
+            coresChart = new Chart(document.getElementById('cores-chart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: '#bc8cf2', borderRadius: 8 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } },
+                        x: { grid: { display: false }, ticks: { color: '#8b949e' } }
+                    },
+                    plugins: { legend: { display: false } },
+                    indexAxis: 'y'
+                }
+            });
+
+            netChart = new Chart(document.getElementById('network-history-chart'), {
+                type: 'line',
+                data: {
+                    labels: Array(30).fill(''),
+                    datasets: [
+                        { label: 'Download', data: Array(30).fill(0), borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.1)', fill: true, tension: 0.4, pointRadius: 0 },
+                        { label: 'Upload', data: Array(30).fill(0), borderColor: '#f0883e', backgroundColor: 'rgba(240,136,62,0.1)', fill: true, tension: 0.4, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
+                        x: { display: false }
+                    },
+                    plugins: { legend: { labels: { color: '#e1e7ef', usePointStyle: true } } },
+                    animation: { duration: 0 }
+                }
+            });
+        }
+
+        function fetchHistory() {
+            fetch('/api/metrics/history?hours=24')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.labels) {
+                        const labels = data.labels.map(ts => new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        mainChart.data.labels = labels;
+                        mainChart.data.datasets[0].data = data.cpu;
+                        mainChart.data.datasets[1].data = data.ram;
+                        mainChart.update();
+                    }
+                });
+        }
+
+        function startLiveLoop() {
+            updateMetrics();
+            setInterval(updateMetrics, 3000);
+        }
+
+        function updateMetrics() {
+            fetch('/api/metrics/detailed')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) return;
+
+                    // 1. Top Stats
+                    document.getElementById('stat-cpu-val').innerText = data.cpu.total.toFixed(1) + '%';
+                    document.getElementById('stat-load-val').innerText = `Load: ${data.cpu.load_avg.map(v => v.toFixed(2)).join(', ')}`;
+                    
+                    const m = data.memory.details;
+                    document.getElementById('stat-ram-val').innerText = m.percent.toFixed(1) + '%';
+                    document.getElementById('stat-ram-sub').innerText = `${formatBytes(m.used)} / ${formatBytes(m.total)}`;
+
+                    const root = data.storage.partitions.find(p => p.mountpoint === '/') || data.storage.partitions[0];
+                    document.getElementById('stat-disk-val').innerText = root.percent + '%';
+                    document.getElementById('stat-disk-sub').innerText = `${formatBytes(root.free)} Free`;
+
+                    // Uptime
+                    const upt = data.system.uptime;
+                    const h = Math.floor(upt / 3600);
+                    const min = Math.floor((upt % 3600) / 60);
+                    document.getElementById('uptime-val').innerText = `${h}h ${min}m`;
+
+                    // Network Calculation
+                    if (lastNetData) {
+                        const diffIn = (data.network.bytes_recv - lastNetData.bytes_recv) / 3; // 3s interval
+                        const diffOut = (data.network.bytes_sent - lastNetData.bytes_sent) / 3;
+                        document.getElementById('stat-net-val').innerText = formatBytes(diffIn + diffOut) + '/s';
+                        document.getElementById('stat-net-sub').innerText = `↓ ${formatBytes(diffIn)}/s | ↑ ${formatBytes(diffOut)}/s`;
+                        
+                        // Update net chart
+                        netChart.data.datasets[0].data.push(diffIn / 1024); // KB
+                        netChart.data.datasets[0].data.shift();
+                        netChart.data.datasets[1].data.push(diffOut / 1024);
+                        netChart.data.datasets[1].data.shift();
+                        netChart.update('none');
+                    }
+                    lastNetData = data.network;
+
+                    // 2. Charts
+                    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    mainChart.data.labels.push(now);
+                    mainChart.data.datasets[0].data.push(data.cpu.total);
+                    mainChart.data.datasets[1].data.push(data.memory.details.percent);
+                    
+                    if (mainChart.data.labels.length > 100) {
+                        mainChart.data.labels.shift();
+                        mainChart.data.datasets[0].data.shift();
+                        mainChart.data.datasets[1].data.shift();
+                    }
+                    mainChart.update('none');
+
+                    coresChart.data.labels = data.cpu.per_core.map((_, i) => 'Core ' + i);
+                    coresChart.data.datasets[0].data = data.cpu.per_core;
+                    coresChart.update('none');
+
+                    // 3. Tables & Mounts
+                    renderProcesses(data.cpu.top_processes);
+                    renderMounts(data.storage.partitions);
+                });
+        }
+
+        function renderProcesses(procs) {
+            const tbody = document.querySelector('#proc-table tbody');
+            tbody.innerHTML = procs.map(p => {
+                const cpuColor = p.cpu_percent > 10 ? 'var(--accent-red)' : 'var(--accent-blue)';
+                return `
+                <tr>
+                    <td><span style="color:var(--text-dim)">#</span>${p.pid}</td>
+                    <td><div style="display:flex; align-items:center; gap:10px">
+                        <div style="width:30px; height:30px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.8rem">
+                            <i class="fa-solid fa-gear"></i>
+                        </div>
+                        <b>${p.name}</b>
+                    </div></td>
+                    <td>${p.username || 'root'}</td>
+                    <td>
+                        <div class="progress-mini"><div class="progress-fill" style="width:${Math.min(100, p.cpu_percent * 5)}%; background:${cpuColor}"></div></div>
+                        ${p.cpu_percent.toFixed(1)}%
+                    </td>
+                    <td>${p.memory_mb.toFixed(1)} MB</td>
+                    <td>${['owner', 'admin'].includes(window.userRole) ? `<button class="btn-kill" onclick="killProc(${p.pid})">Kill</button>` : '-'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderMounts(parts) {
+            const container = document.getElementById('mount-container');
+            container.innerHTML = parts.map(p => {
+                const color = p.percent > 90 ? 'var(--accent-red)' : p.percent > 70 ? 'var(--accent-orange)' : 'var(--accent-green)';
+                return `
+                <div class="mount-card">
+                    <div class="mount-info">
+                        <div class="mount-name">${p.mountpoint}</div>
+                        <div class="mount-usage">${p.percent}%</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05); height:10px; border-radius:10px; overflow:hidden; margin-bottom:12px">
+                        <div style="width:${p.percent}%; background:${color}; height:100%; box-shadow:0 0 10px ${color}44"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-dim)">
+                        <span>${formatBytes(p.used)} Used</span>
+                        <span>${formatBytes(p.total)} Total</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.metric-section').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
+
+        function killProc(pid) {
+            if (!confirm(`Kill process ${pid}?`)) return;
+            fetch('/api/process/kill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pid })
+            }).then(r => r.json()).then(res => {
+                if (res.success) updateMetrics();
+                else alert(res.error);
+            });
+        }
+
+        function scanStorage() {
+            const btn = document.getElementById('scan-btn');
+            const resDiv = document.getElementById('scan-results');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Scanning...';
+            btn.disabled = true;
+
+            fetch('/api/storage/analyze').then(r => r.json()).then(data => {
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Rescan';
+                btn.disabled = false;
+                resDiv.style.display = 'block';
+                const tbody = document.querySelector('#scan-table tbody');
+                tbody.innerHTML = data.files.map(f => `<tr><td style="color:var(--accent-orange)">${f.size}</td><td style="font-family:monospace; font-size:0.8rem">${f.path}</td></tr>`).join('');
+            });
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+
+</html>

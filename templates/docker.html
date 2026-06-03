@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <style>
+        .docker-container {
+            padding: 1rem;
+            max-width: none;
+        }
+
+        .docker-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.active {
+            background: rgba(100, 150, 255, 0.2);
+            border-color: rgba(100, 150, 255, 0.3);
+        }
+
+        .btn.success {
+            color: #55efc4;
+        }
+
+        .btn.danger {
+            color: #ff7675;
+        }
+
+        .btn.warning {
+            color: #ffeaa7;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 250px;
+        }
+
+        /* Container Cards */
+        .containers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+        }
+
+        .container-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+
+        .container-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .container-card.running {
+            border-left: 4px solid #55efc4;
+        }
+
+        .container-card.exited {
+            border-left: 4px solid #ff7675;
+        }
+
+        .container-card.paused {
+            border-left: 4px solid #ffeaa7;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+        }
+
+        .container-name {
+            font-weight: 600;
+            font-size: 1rem;
+            word-break: break-all;
+        }
+
+        .container-status {
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .container-status.running {
+            background: rgba(85, 239, 196, 0.2);
+            color: #55efc4;
+        }
+
+        .container-status.exited {
+            background: rgba(255, 118, 117, 0.2);
+            color: #ff7675;
+        }
+
+        .container-status.paused {
+            background: rgba(255, 234, 167, 0.2);
+            color: #ffeaa7;
+        }
+
+        .container-status.restarting {
+            background: rgba(116, 185, 255, 0.2);
+            color: #74b9ff;
+        }
+
+        .container-image {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        .container-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .stat-value {
+            font-weight: 500;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .card-actions .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        /* Logs Modal */
+        .logs-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .logs-modal.hidden {
+            display: none;
+        }
+
+        .logs-content {
+            background: #1e1e28;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 900px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logs-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logs-body {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            background: #15151e;
+            color: #ccc;
+        }
+
+        /* Settings */
+        .settings-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .settings-bar label {
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .settings-bar select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Logout/Connect Modal Theme */
+        .logout-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .logout-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .logout-card {
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            width: 320px;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .logout-overlay.active .logout-card {
+            transform: scale(1);
+        }
+
+        .logout-icon {
+            font-size: 3rem;
+            color: #55efc4;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(85, 239, 196, 0.4);
+        }
+
+        .logout-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .logout-msg {
+            font-size: 0.95rem;
+            color: #aaa;
+            margin-bottom: 1.5rem;
+        }
+
+        .url-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-family: monospace;
+            color: #55efc4;
+            margin-bottom: 1.5rem;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+
+        .logout-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: none;
+            font-size: 1rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-confirm {
+            background: #55efc4;
+            color: #1e1e28;
+            border: none;
+            font-size: 1rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(85, 239, 196, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(85, 239, 196, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container docker-container">
+        <!-- Header -->
+        <div class="docker-header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.2rem"><i class="fa-brands fa-docker"
+                    style="color:#2496ed"></i> Docker</h2>
+
+            <input type="text" class="search-box" id="search" placeholder="Search containers..."
+                oninput="filterContainers()">
+
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn" onclick="loadContainers()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="settings-bar">
+            <label>Auto-refresh:
+                <select id="refresh-interval" onchange="setRefreshInterval(this.value)">
+                    <option value="0">Off</option>
+                    <option value="3000">3s</option>
+                    <option value="5000" selected>5s</option>
+                    <option value="10000">10s</option>
+                </select>
+            </label>
+            <span id="last-update" style="color:#888">Last update: --</span>
+            <span id="container-count" style="margin-left:auto">0 containers</span>
+        </div>
+
+        <!-- Container List -->
+        <div class="containers-grid" id="containers-grid">
+            <div class="empty-state">
+                <i class="fa-brands fa-docker"></i>
+                <p>Loading containers...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Modal -->
+    <div class="logs-modal hidden" id="logs-modal">
+        <div class="logs-content">
+            <div class="logs-header">
+                <h3 id="logs-title">Logs</h3>
+                <button class="btn" onclick="closeLogs()"><i class="fa-solid fa-xmark"></i> Close</button>
+            </div>
+            <div class="logs-body" id="logs-body">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+        let containers = [];
+        let refreshTimer = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadContainers();
+            setRefreshInterval(5000);
+        });
+
+        function setRefreshInterval(ms) {
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (ms > 0) {
+                refreshTimer = setInterval(loadContainers, parseInt(ms));
+            }
+        }
+
+        function loadContainers() {
+            fetch('/api/docker/containers')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('containers-grid').innerHTML = `
+                            <div class="empty-state">
+                                <i class="fa-solid fa-exclamation-triangle"></i>
+                                <p>Error: ${data.error}</p>
+                            </div>`;
+                        return;
+                    }
+
+                    containers = data;
+                    renderContainers(data);
+
+                    document.getElementById('container-count').textContent = `${data.length} containers`;
+                    document.getElementById('last-update').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+                })
+                .catch(err => console.error(err));
+        }
+
+        function renderContainers(list) {
+            const grid = document.getElementById('containers-grid');
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-brands fa-docker"></i>
+                        <p>No containers found</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(c => `
+                <div class="container-card ${c.status}" id="card-${c.id}">
+                    <div class="card-header">
+                        <span class="container-name">${c.name}</span>
+                        <span class="container-status ${c.status}">${c.status}</span>
+                    </div>
+                    <div class="container-image"><i class="fa-solid fa-cube"></i> ${c.image}</div>
+                    <div class="container-stats" id="stats-${c.id}">
+                        <div class="stat-item">
+                            <span class="stat-label">CPU</span>
+                            <span class="stat-value" style="color:#888">${c.status === 'running' ? '...' : '-'}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">RAM</span>
+                            <span class="stat-value" style="color:#888">${c.status === 'running' ? '...' : '-'}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Created</span>
+                            <span class="stat-value" style="font-size:0.8rem">${c.created}</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        ${['owner', 'admin'].includes(window.userRole) ? (c.status === 'running' ? `
+                            <button class="btn warning" onclick="doAction('${c.id}', 'restart')"><i class="fa-solid fa-rotate"></i> Restart</button>
+                            <button class="btn danger" onclick="doAction('${c.id}', 'stop')"><i class="fa-solid fa-stop"></i> Stop</button>
+                        ` : `
+                            <button class="btn success" onclick="doAction('${c.id}', 'start')"><i class="fa-solid fa-play"></i> Start</button>
+                        `) : ''}
+                        
+                        ${c.port && c.status === 'running' ? `
+                        <button class="btn" onclick="openApp('${c.port}')"><i class="fa-solid fa-external-link"></i> Open</button>
+                        ` : ''}
+                        
+                        <button class="btn" onclick="openSettings('${c.id}')"><i class="fa-solid fa-gear"></i> Manage</button>
+                        
+                        <button class="btn" onclick="viewLogs('${c.id}', '${c.name}')"><i class="fa-solid fa-file-lines"></i> Logs</button>
+                        
+                        ${['owner', 'admin'].includes(window.userRole) ? `
+                        <button class="btn" onclick="openShell('${c.name}')"><i class="fa-solid fa-terminal"></i> Shell</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            // Load stats async for running containers
+            list.filter(c => c.status === 'running').forEach(c => loadContainerStats(c.id));
+        }
+
+        function loadContainerStats(id) {
+            fetch(`/api/docker/${id}/stats`)
+                .then(r => r.json())
+                .then(data => {
+                    const statsEl = document.getElementById('stats-' + id);
+                    if (statsEl && !data.error) {
+                        statsEl.innerHTML = `
+                            <div class="stat-item">
+                                <span class="stat-label">CPU</span>
+                                <span class="stat-value">${data.cpu}%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">RAM</span>
+                                <span class="stat-value">${data.mem}% (${data.mem_used})</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Created</span>
+                                <span class="stat-value" style="font-size:0.8rem">-</span>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(() => { });
+        }
+
+        function filterContainers() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const filtered = containers.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.image.toLowerCase().includes(query) ||
+                c.status.toLowerCase().includes(query)
+            );
+            renderContainers(filtered);
+        }
+
+        function doAction(id, action) {
+            const btn = event.target.closest('.btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            fetch(`/api/docker/${id}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) alert('Error: ' + data.error);
+                    setTimeout(loadContainers, 500);
+                })
+                .catch(err => alert('Error: ' + err));
+        }
+
+        function viewLogs(id, name) {
+            document.getElementById('logs-modal').classList.remove('hidden');
+            document.getElementById('logs-title').textContent = `Logs: ${name}`;
+            document.getElementById('logs-body').textContent = 'Loading...';
+
+            fetch(`/api/docker/${id}/logs?lines=500`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('logs-body').textContent = 'Error: ' + data.error;
+                    } else {
+                        document.getElementById('logs-body').textContent = data.logs || 'No logs available';
+                        // Scroll to bottom
+                        const logsBody = document.getElementById('logs-body');
+                        logsBody.scrollTop = logsBody.scrollHeight;
+                    }
+                });
+        }
+
+        function closeLogs() {
+            document.getElementById('logs-modal').classList.add('hidden');
+        }
+
+        function openShell(containerName) {
+            // Open terminal with docker exec command
+            window.location.href = `/terminal?cmd=docker exec -it ${containerName} /bin/sh`;
+        }
+
+        function openApp(port) {
+            // Construct URL
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const url = `${protocol}//${hostname}:${port}`;
+
+            document.getElementById('connectUrl').textContent = url;
+            document.getElementById('connectBtn').onclick = function () {
+                window.open(url, '_blank');
+                closeConnectModal();
+            };
+            // Use new class logic
+            document.getElementById('connectModal').classList.add('active');
+        }
+
+        function closeConnectModal() {
+            document.getElementById('connectModal').classList.remove('active');
+        }
+
+        // ================= APP MANAGEMENT LOGIC =================
+        function openSettings(appId) {
+            // Re-use logic from manage_apps.html adapted for vanilla JS
+            document.getElementById('editAppId').value = appId;
+            document.getElementById('modalAppName').textContent = appId;
+
+            fetch(`/api/apps/details/${appId}`)
+                .then(r => r.json())
+                .then(details => {
+                    document.getElementById('editNetworkMode').value = details.network_mode;
+                    handleNetworkChange();
+
+                    const container = document.getElementById('portsContainer');
+                    container.innerHTML = '';
+                    details.ports.forEach(p => addPortRow(p.container, p.host, p.protocol));
+
+                    document.getElementById('settingsModal').classList.remove('hidden');
+                });
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function handleNetworkChange() {
+            const mode = document.getElementById('editNetworkMode').value;
+            const portSection = document.getElementById('portsSection');
+            if (mode === 'host') {
+                portSection.style.display = 'none';
+            } else {
+                portSection.style.display = 'block';
+            }
+        }
+
+        function addPortRow(container = '', host = '', protocol = 'tcp') {
+            const div = document.createElement('div');
+            div.className = 'port-row';
+            div.innerHTML = `
+                <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items:center;">
+                    <span style="font-size:0.8rem; color:#888;">Cont</span>
+                    <input type="number" class="p-container form-input" style="width:70px" value="${container}" placeholder="80">
+                    <span style="font-size:0.8rem; color:#888;">Host</span>
+                    <input type="number" class="p-host form-input" style="width:70px" value="${host}" placeholder="8080">
+                    <select class="p-proto form-input">
+                        <option value="tcp" ${protocol === 'tcp' ? 'selected' : ''}>TCP</option>
+                        <option value="udp" ${protocol === 'udp' ? 'selected' : ''}>UDP</option>
+                    </select>
+                    <button class="btn danger" onclick="this.parentElement.parentElement.remove()"><i class="fa-solid fa-minus"></i></button>
+                </div>
+            `;
+            document.getElementById('portsContainer').appendChild(div);
+        }
+
+        function saveConfig() {
+            const appId = document.getElementById('editAppId').value;
+            const networkMode = document.getElementById('editNetworkMode').value;
+            const ports = [];
+
+            if (networkMode !== 'host') {
+                document.querySelectorAll('.port-row').forEach(row => {
+                    const container = row.querySelector('.p-container').value;
+                    const host = row.querySelector('.p-host').value;
+                    const proto = row.querySelector('.p-proto').value;
+                    if (container && host) {
+                        ports.push({ container, host, protocol: proto });
+                    }
+                });
+            }
+
+            const btn = document.getElementById('saveConfigBtn');
+            btn.innerHTML = 'Updating...';
+            btn.disabled = true;
+
+            fetch('/api/apps/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: appId,
+                    network_mode: networkMode,
+                    ports: ports
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        closeSettings();
+                        alert('Configuration updated. Container is restarting...');
+                        loadContainers();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(e => alert('Error: ' + e))
+                .finally(() => {
+                    btn.innerHTML = 'Save & Restart';
+                    btn.disabled = false;
+                });
+        }
+    </script>
+
+    <!-- App Settings Modal -->
+    <div id="settingsModal" class="logs-modal hidden">
+        <div class="logs-content" style="max-width: 600px; height: auto;">
+            <div class="logs-header">
+                <h3>App Configuration: <span id="modalAppName"></span></h3>
+                <button class="btn" onclick="closeSettings()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="logs-body" style="background:var(--card-bg); color:var(--text-color);">
+                <div
+                    style="background:rgba(255,200,0,0.1); color:#ffdd59; padding:0.8rem; border-radius:8px; margin-bottom:1rem; font-size:0.9rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Changing settings will recreate the container.
+                </div>
+
+                <input type="hidden" id="editAppId">
+
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; margin-bottom:0.5rem;">Network Mode</label>
+                    <select id="editNetworkMode" onchange="handleNetworkChange()" class="form-input"
+                        style="width:100%; padding:0.5rem; background:rgba(255,255,255,0.1); border:1px solid #444; color:white; border-radius:4px;">
+                        <option value="bridge">Bridge (Default)</option>
+                        <option value="host">Host</option>
+                    </select>
+                </div>
+
+                <div id="portsSection">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; align-items:center;">
+                        <label>Port Mappings</label>
+                        <button class="btn success" style="padding:0.2rem 0.5rem; font-size:0.8rem;"
+                            onclick="addPortRow()"><i class="fa-solid fa-plus"></i> Add</button>
+                    </div>
+                    <div id="portsContainer"></div>
+                </div>
+            </div>
+            <div class="logs-header" style="justify-content:flex-end; gap:0.5rem; border-top:1px solid #333;">
+                <button class="btn" onclick="closeSettings()">Cancel</button>
+                <button class="btn success" id="saveConfigBtn" onclick="saveConfig()">Save & Restart</button>
+            </div>
+        </div>
+    </div>
+    <!-- Connect Modal -->
+    <div id="connectModal" class="logout-overlay">
+        <div class="logout-card">
+            <div class="logout-icon"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+            <div class="logout-title">Open Application?</div>
+            <div class="logout-msg">You are about to open an external application at:</div>
+
+            <div class="url-box">
+                <i class="fa-solid fa-link me-2"></i> <span id="connectUrl"></span>
+            </div>
+
+            <div class="logout-actions">
+                <button class="btn-cancel" onclick="closeConnectModal()">Cancel</button>
+                <button class="btn-confirm" id="connectBtn">Open App</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

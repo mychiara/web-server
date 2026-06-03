@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN Manager - MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <style>
+        .vpn-container {
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .vpn-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .status-icon.active {
+            background: rgba(63, 185, 80, 0.2);
+            color: #3fb950;
+        }
+
+        .status-icon.inactive {
+            background: rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+        }
+
+        .status-icon.not-installed {
+            background: rgba(248, 81, 73, 0.2);
+            color: #f85149;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1rem;
+        }
+
+        @media (max-width: 400px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+            color: #58a6ff;
+        }
+
+        .card-header h3 {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .card-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .client-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .client-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .client-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(88, 166, 255, 0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #58a6ff;
+        }
+
+        .client-info {
+            flex: 1;
+        }
+
+        .client-name {
+            font-weight: 500;
+        }
+
+        .client-meta {
+            font-size: 0.75rem;
+            color: #8b949e;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+        }
+
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .msg.success {
+            display: block;
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            color: #3fb950;
+        }
+
+        .msg.error {
+            display: block;
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: #f85149;
+        }
+
+        .msg.info {
+            display: block;
+            background: rgba(88, 166, 255, 0.15);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            color: #58a6ff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #8b949e;
+        }
+
+        .qr-container {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .config-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container vpn-container">
+        <!-- Header -->
+        <div class="vpn-header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.2rem">
+                <i class="fa-solid fa-shield-halved" style="color:#58a6ff"></i> VPN Manager
+            </h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn" onclick="loadAll()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            </div>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+            <button class="btn" id="tab-wg" onclick="switchTab('wireguard')" style="flex:1; justify-content:center;">
+                <i class="fa-solid fa-shield-halved"></i> WireGuard
+            </button>
+            <button class="btn" id="tab-zt" onclick="switchTab('zerotier')" style="flex:1; justify-content:center;">
+                <i class="fa-solid fa-globe"></i> ZeroTier
+            </button>
+            <button class="btn" id="tab-scan" onclick="switchTab('smartscan')" style="flex:1; justify-content:center;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Smart Scan
+            </button>
+        </div>
+
+        <div id="msg-box" class="msg"></div>
+
+        <!-- WireGuard Section -->
+        <div id="section-wireguard">
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-icon not-installed" id="wg-status-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div style="flex:1">
+                    <div style="font-size:1.3rem; font-weight:600" id="wg-status-title">Memeriksa...</div>
+                    <div style="color:#8b949e" id="wg-status-desc">Mohon tunggu</div>
+                </div>
+                <div id="wg-status-actions"></div>
+            </div>
+
+            <div class="cards-grid">
+                <!-- Add New Client -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-user-plus" style="color:#3fb950"></i>
+                        <h3>Tambah Client Baru</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Nama Client</label>
+                            <input type="text" id="client-name" placeholder="Contoh: Laptop-Kantor">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn primary" onclick="addClient()" id="btn-add" {% if session.get('role') not in
+                            ['owner', 'admin' ] %}disabled{% endif %}>
+                            <i class="fa-solid fa-plus"></i> Buat Client
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Client List -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-users"></i>
+                        <h3>Daftar Client VPN</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="client-list" id="client-list">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+                                <div>Memuat...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZeroTier Section -->
+        <div id="section-zerotier" style="display:none;">
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-icon not-installed" id="zt-status-icon">
+                    <i class="fa-solid fa-globe"></i>
+                </div>
+                <div style="flex:1">
+                    <div style="font-size:1.3rem; font-weight:600" id="zt-status-title">Memeriksa...</div>
+                    <div style="color:#8b949e" id="zt-status-desc">Mohon tunggu</div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <!-- Join Network -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-plus-circle" style="color:#3fb950"></i>
+                        <h3>Gabung Network</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Network ID (16 karakter)</label>
+                            <input type="text" id="zt-network-id" placeholder="Contoh: 8056c2e21c000001" maxlength="16">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn primary" onclick="joinZerotier()" id="btn-join" {% if session.get('role') not
+                            in ['owner', 'admin' ] %}disabled{% endif %}>
+                            <i class="fa-solid fa-link"></i> Gabung Network
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Network List -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-network-wired"></i>
+                        <h3>Network Terhubung</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="client-list" id="zt-network-list">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+                                <div>Memuat...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Scan Section -->
+        <div id="section-smartscan" style="display:none;">
+            <div class="status-card">
+                <div class="status-icon active" style="background: rgba(88, 166, 255, 0.2); color: #58a6ff;">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
+                <div style="flex:1">
+                    <div style="font-size:1.3rem; font-weight:600">Smart VPN Scanner</div>
+                    <div style="color:#8b949e">Mendeteksi otomatis layanan jaringan di server host</div>
+                </div>
+                <button class="btn primary" onclick="runSmartScan()">
+                    <i class="fa-solid fa-bolt"></i> Scan Sekarang
+                </button>
+            </div>
+
+            <div class="cards-grid" id="smart-scan-results">
+                <!-- Hasil scan akan muncul di sini -->
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <i class="fa-solid fa-satellite-dish" style="font-size:3rem; opacity:0.3; margin-bottom:1rem"></i>
+                    <div>Klik "Scan Sekarang" untuk mencari layanan VPN</div>
+                </div>
+            </div>
+        </div>
+        <div id="config-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+            background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
+            <div class="card" style="max-width:500px; margin:1rem;">
+                <div class="card-header">
+                    <i class="fa-solid fa-file-code"></i>
+                    <h3>Konfigurasi Client: <span id="modal-client-name"></span></h3>
+                </div>
+                <div class="card-body">
+                    <p style="color:#8b949e; margin-bottom:1rem">Scan QR code atau copy konfigurasi di bawah:</p>
+                    <div id="qr-code" style="text-align:center"></div>
+                    <div class="config-box" id="config-text"></div>
+                </div>
+                <div class="card-footer" style="display:flex; gap:0.5rem">
+                    <button class="btn" onclick="copyConfig()"><i class="fa-solid fa-copy"></i> Copy</button>
+                    <button class="btn" onclick="downloadConfig()"><i class="fa-solid fa-download"></i>
+                        Download</button>
+                    <button class="btn" onclick="closeModal()" style="margin-left:auto">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script>
+        let currentConfig = '';
+        let currentClientName = '';
+        let currentTab = 'wireguard';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAll();
+            switchTab('wireguard');
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('section-wireguard').style.display = tab === 'wireguard' ? 'block' : 'none';
+            document.getElementById('section-zerotier').style.display = tab === 'zerotier' ? 'block' : 'none';
+            document.getElementById('section-smartscan').style.display = tab === 'smartscan' ? 'block' : 'none';
+
+            document.getElementById('tab-wg').style.background = tab === 'wireguard' ? '#238636' : '';
+            document.getElementById('tab-zt').style.background = tab === 'zerotier' ? '#58a6ff' : '';
+            document.getElementById('tab-scan').style.background = tab === 'smartscan' ? '#bc8cf2' : '';
+            
+            if (tab === 'smartscan') runSmartScan();
+        }
+
+        function loadAll() {
+            loadWireGuardStatus();
+            loadZerotierStatus();
+            runSmartScan();
+        }
+
+        function showMsg(msg, type) {
+            const el = document.getElementById('msg-box');
+            el.textContent = msg;
+            el.className = 'msg ' + type;
+            setTimeout(() => { el.className = 'msg'; }, 5000);
+        }
+
+        // ===== WireGuard Functions =====
+        function loadWireGuardStatus() {
+            fetch('/api/vpn/status')
+                .then(r => r.json())
+                .then(data => {
+                    updateWireGuardStatus(data);
+                    loadClients();
+                })
+                .catch(err => {
+                    updateWireGuardStatus({ installed: false });
+                });
+        }
+
+        function updateWireGuardStatus(data) {
+            const icon = document.getElementById('wg-status-icon');
+            const title = document.getElementById('wg-status-title');
+            const desc = document.getElementById('wg-status-desc');
+            const actions = document.getElementById('wg-status-actions');
+            const canManage = ['owner', 'admin'].includes(window.userRole);
+
+            if (!data.installed) {
+                icon.className = 'status-icon not-installed';
+                title.textContent = 'WireGuard Belum Terinstall';
+                desc.innerHTML = `
+                    <div>Install WireGuard secara manual di server host dengan perintah:</div>
+                    <code style="display:block; background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:4px; margin-top:0.5rem; font-size:0.85rem">
+                        sudo apt-get update && sudo apt-get install -y wireguard
+                    </code>
+                    <div style="margin-top:0.5rem; font-size:0.8rem">Setelah diinstall, refresh halaman ini.</div>
+                `;
+                actions.innerHTML = '';
+            } else if (data.running) {
+                icon.className = 'status-icon active';
+                title.textContent = 'WireGuard Aktif';
+                desc.innerHTML = `Server: <strong>${data.server_ip || 'N/A'}</strong> | Port: <strong>${data.port || '51820'}</strong> | Clients: <strong>${data.client_count || 0}</strong>`;
+                actions.innerHTML = canManage ? '<button class="btn danger" onclick="controlVPN(\'stop\')"><i class="fa-solid fa-stop"></i> Stop</button>' : '';
+            } else {
+                icon.className = 'status-icon inactive';
+                title.textContent = 'WireGuard Tidak Aktif';
+                desc.textContent = 'WireGuard terinstall tapi tidak berjalan';
+                actions.innerHTML = canManage ? '<button class="btn primary" onclick="controlVPN(\'start\')"><i class="fa-solid fa-play"></i> Start</button>' : '';
+            }
+        }
+
+        function loadClients() {
+            fetch('/api/vpn/clients')
+                .then(r => r.json())
+                .then(data => {
+                    renderClients(data.clients || []);
+                })
+                .catch(err => {
+                    document.getElementById('client-list').innerHTML = '<div class="empty-state">Gagal memuat daftar client</div>';
+                });
+        }
+
+        function renderClients(clients) {
+            const container = document.getElementById('client-list');
+            const canManage = ['owner', 'admin'].includes(window.userRole);
+
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-user-slash" style="font-size:2rem; opacity:0.5"></i>
+                        <div style="margin-top:0.5rem">Belum ada client VPN</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = clients.map(c => `
+                <div class="client-item">
+                    <div class="client-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="client-info">
+                        <div class="client-name">${c.name}</div>
+                        <div class="client-meta">IP: ${c.ip || 'N/A'}</div>
+                    </div>
+                    <button class="btn" onclick="showConfig('${c.name}')" style="padding:0.3rem 0.6rem">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </button>
+                    ${canManage ? `
+                        <button class="btn danger" onclick="removeClient('${c.name}')" style="padding:0.3rem 0.6rem">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function addClient() {
+            const name = document.getElementById('client-name').value.trim();
+            if (!name) {
+                showMsg('Nama client harus diisi', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-add');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membuat...';
+
+            fetch('/api/vpn/client/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-plus"></i> Buat Client';
+
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Client berhasil dibuat!', 'success');
+                        document.getElementById('client-name').value = '';
+                        loadClients();
+                        if (data.config) {
+                            showConfigModal(name, data.config);
+                        }
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-plus"></i> Buat Client';
+                    showMsg('Gagal membuat client', 'error');
+                });
+        }
+
+        function showConfig(name) {
+            fetch(`/api/vpn/client/${name}/config`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showConfigModal(name, data.config);
+                    }
+                })
+                .catch(err => showMsg('Gagal mengambil konfigurasi', 'error'));
+        }
+
+        function showConfigModal(name, config) {
+            currentConfig = config;
+            currentClientName = name;
+            document.getElementById('modal-client-name').textContent = name;
+            document.getElementById('config-text').textContent = config;
+
+            // Generate QR Code
+            const qr = qrcode(0, 'M');
+            qr.addData(config);
+            qr.make();
+            document.getElementById('qr-code').innerHTML = '<div class="qr-container">' + qr.createImgTag(4) + '</div>';
+
+            document.getElementById('config-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('config-modal').style.display = 'none';
+        }
+
+        function copyConfig() {
+            navigator.clipboard.writeText(currentConfig);
+            showMsg('Konfigurasi disalin!', 'success');
+        }
+
+        function downloadConfig() {
+            const blob = new Blob([currentConfig], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentClientName}.conf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function removeClient(name) {
+            if (!confirm(`Yakin ingin menghapus client "${name}"?`)) return;
+
+            fetch('/api/vpn/client/remove', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Client berhasil dihapus', 'success');
+                        loadClients();
+                    }
+                })
+                .catch(err => showMsg('Gagal menghapus client', 'error'));
+        }
+
+        function controlVPN(action) {
+            fetch('/api/vpn/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg(`VPN berhasil di-${action}`, 'success');
+                        loadWireGuardStatus();
+                    }
+                })
+                .catch(err => showMsg('Gagal mengontrol VPN', 'error'));
+        }
+
+        // ===== ZeroTier Functions =====
+        function loadZerotierStatus() {
+            fetch('/api/zerotier/status')
+                .then(r => r.json())
+                .then(data => {
+                    updateZerotierStatus(data);
+                })
+                .catch(err => {
+                    updateZerotierStatus({ installed: false });
+                });
+        }
+
+        function updateZerotierStatus(data) {
+            const icon = document.getElementById('zt-status-icon');
+            const title = document.getElementById('zt-status-title');
+            const desc = document.getElementById('zt-status-desc');
+
+            if (!data.installed) {
+                icon.className = 'status-icon not-installed';
+                title.textContent = 'ZeroTier Belum Terinstall';
+                desc.innerHTML = `
+                    <div>Install ZeroTier secara manual dengan perintah:</div>
+                    <code style="display:block; background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:4px; margin-top:0.5rem; font-size:0.85rem">
+                        curl -s https://install.zerotier.com | sudo bash
+                    </code>
+                    <div style="margin-top:0.5rem; font-size:0.8rem">Setelah diinstall, refresh halaman ini.</div>
+                `;
+            } else if (data.running) {
+                icon.className = 'status-icon active';
+                title.textContent = 'ZeroTier Online';
+                desc.innerHTML = `Node ID: <strong>${data.node_id || 'N/A'}</strong> | Networks: <strong>${(data.networks || []).length}</strong>`;
+                renderZerotierNetworks(data.networks || []);
+            } else {
+                icon.className = 'status-icon inactive';
+                title.textContent = 'ZeroTier Offline';
+                desc.textContent = 'Service ZeroTier tidak berjalan. Coba: sudo systemctl start zerotier-one';
+            }
+        }
+
+        function renderZerotierNetworks(networks) {
+            const container = document.getElementById('zt-network-list');
+            const canManage = ['owner', 'admin'].includes(window.userRole);
+
+            if (networks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-globe" style="font-size:2rem; opacity:0.5"></i>
+                        <div style="margin-top:0.5rem">Belum terhubung ke network</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = networks.map(n => `
+                <div class="client-item">
+                    <div class="client-icon">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <div class="client-info">
+                        <div class="client-name">${n.network_id}</div>
+                        <div class="client-meta">IP: ${n.ip || 'Pending'} | Status: ${n.status || 'N/A'}</div>
+                    </div>
+                    ${canManage ? `
+                        <button class="btn danger" onclick="leaveZerotier('${n.network_id}')" style="padding:0.3rem 0.6rem">
+                            <i class="fa-solid fa-unlink"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function joinZerotier() {
+            const networkId = document.getElementById('zt-network-id').value.trim();
+            if (!networkId) {
+                showMsg('Network ID harus diisi', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-join');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...';
+
+            fetch('/api/zerotier/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ network_id: networkId })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-link"></i> Gabung Network';
+
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Berhasil terhubung ke network!', 'success');
+                        document.getElementById('zt-network-id').value = '';
+                        loadZerotierStatus();
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-link"></i> Gabung Network';
+                    showMsg('Gagal menghubungkan ke network', 'error');
+                });
+        }
+
+        function leaveZerotier(networkId) {
+            if (!confirm(`Yakin ingin keluar dari network "${networkId}"?`)) return;
+
+            fetch('/api/zerotier/leave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ network_id: networkId })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Berhasil keluar dari network', 'success');
+                        loadZerotierStatus();
+                    }
+                })
+                .catch(err => showMsg('Gagal keluar dari network', 'error'));
+        }
+
+        function runSmartScan() {
+            const container = document.getElementById('smart-scan-results');
+            container.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem"></i>
+                    <div style="margin-top:1rem">Sedang memindai sistem host...</div>
+                </div>
+            `;
+
+            fetch('/api/vpn/scan')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        container.innerHTML = `<div class="msg error">${data.error}</div>`;
+                        return;
+                    }
+                    renderScanResults(data.services || []);
+                })
+                .catch(err => {
+                    container.innerHTML = `<div class="msg error">Gagal memindai sistem</div>`;
+                });
+        }
+
+        function renderScanResults(services) {
+            const container = document.getElementById('smart-scan-results');
+            if (services.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fa-solid fa-face-frown" style="font-size:3rem; opacity:0.3"></i>
+                        <div style="margin-top:1rem">Tidak ada layanan VPN lain yang terdeteksi aktif di host</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = services.map(s => `
+                <div class="card">
+                    <div class="card-body" style="display:flex; align-items:center; gap:1rem; padding:1.5rem">
+                        <div style="width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:${s.color}">
+                            <i class="${s.icon}"></i>
+                        </div>
+                        <div style="flex:1">
+                            <div style="font-weight:600; font-size:1.1rem">${s.name}</div>
+                            <div style="color:#8b949e; font-size:0.85rem">Status: <span style="color:${s.status === 'Online' || s.status === 'Running' || s.status === 'Active' ? '#3fb950' : '#f85149'}">${s.status}</span></div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-family:monospace; font-size:0.9rem; color:#58a6ff">${s.ip}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+
+</html>

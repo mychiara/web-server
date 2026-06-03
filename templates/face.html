@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Face - V3</title>
+    <style>
+        :root {
+            --bg-color: #000;
+            --eye-color: #00d2ff;
+            --eye-color-hot: #ff9f43;
+            --eye-color-critical: #ff6b6b;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        /* Container "Breathing" Animation */
+        .face-container {
+            display: flex;
+            gap: 120px;
+            position: relative;
+            animation: breathe 3s ease-in-out infinite;
+            transform-origin: center bottom;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-10px) scale(1.02);
+            }
+        }
+
+        .eye {
+            width: 140px;
+            height: 180px;
+            background: var(--eye-color);
+            border-radius: 70px;
+            /* Pillow shape */
+            box-shadow: 0 0 40px var(--eye-color);
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Snappier */
+            position: relative;
+        }
+
+        /* Reflections */
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+        }
+
+        /* --- EXPRESSIONS & ANIMATIONS --- */
+
+        /* 1. BLINKING */
+        .blink .eye {
+            transform: scaleY(0.1);
+        }
+
+        /* 2. LOOKING AROUND (Exaggerated) */
+        .look-left .eye {
+            transform: translateX(-60px);
+        }
+
+        .look-right .eye {
+            transform: translateX(60px);
+        }
+
+        .look-up .eye {
+            transform: translateY(-50px) scaleY(1.1);
+        }
+
+        .look-down .eye {
+            transform: translateY(40px) scaleY(0.9);
+        }
+
+        /* 3. HAPPY / EXCITED (Squint Up) */
+        .happy .eye {
+            height: 120px;
+            border-radius: 50% 50% 20px 20px;
+            transform: translateY(-10px);
+        }
+
+        /* 4. SKEPTICAL (One eye small) */
+        .skeptical .eye.left {
+            transform: scaleY(0.4);
+        }
+
+        /* 5. HOT / WORKING HARD */
+        .hot .eye {
+            height: 120px;
+            background: var(--eye-color-hot);
+            box-shadow: 0 0 50px var(--eye-color-hot);
+            border-radius: 10px 10px 60px 60px;
+            /* Droopy */
+            transform: rotate(5deg);
+        }
+
+        .hot .eye.right {
+            transform: rotate(-5deg);
+        }
+
+        .sweat-drop {
+            position: absolute;
+            top: -60px;
+            right: -80px;
+            width: 45px;
+            height: 70px;
+            background: #00d2ff;
+            border-radius: 0 50% 50% 50%;
+            transform: rotate(45deg);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .hot .sweat-drop {
+            opacity: 1;
+            animation: drop-drip 1.5s infinite;
+        }
+
+        @keyframes drop-drip {
+            0% {
+                top: -50px;
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 60px;
+                opacity: 0;
+            }
+        }
+
+        /* 6. CRITICAL / DIZZY */
+        .critical .eye {
+            background: var(--eye-color-critical);
+            box-shadow: 0 0 60px var(--eye-color-critical);
+            height: 20px;
+            width: 140px;
+            border-radius: 10px;
+            animation: dizzy 0.8s infinite linear;
+        }
+
+        .critical .eye::after {
+            display: none;
+        }
+
+        @keyframes dizzy {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Status Text */
+        .status-text {
+            margin-top: 100px;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="face-container" id="face">
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="sweat-drop"></div>
+    </div>
+
+    <div class="status-text" id="status">System Online</div>
+
+    <script>
+        const face = document.getElementById('face');
+        const statusText = document.getElementById('status');
+
+        let currentMood = 'normal';
+        let isIdle = true;
+        let idleTimer = null;
+
+        // --- CORE STATS LOOP ---
+        function updateStats() {
+            fetch('/api/face-stats')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+
+                    const cpu = data.cpu;
+                    const ram = data.ram;
+
+                    // Determine Mood
+                    let newMood = 'normal';
+                    if (cpu > 90 || ram > 95) newMood = 'critical';
+                    else if (cpu > 60 || ram > 80) newMood = 'hot';
+
+                    // Update UI
+                    if (newMood !== currentMood) {
+                        currentMood = newMood;
+                        updateMoodUI(cpu);
+                    }
+
+                    // Dynamic Text updates
+                    if (currentMood === 'hot') statusText.innerText = `COOLING REQ: ${cpu.toFixed(0)}%`;
+                    if (currentMood === 'critical') statusText.innerText = `OVERLOAD: ${cpu.toFixed(0)}%`;
+
+                })
+                .catch(e => {
+                    if (currentMood !== 'critical') {
+                        currentMood = 'critical';
+                        updateMoodUI(0);
+                        statusText.innerText = "LINK LOSS";
+                        statusText.style.color = 'red';
+                    }
+                });
+        }
+
+        function updateMoodUI(val) {
+            // Clear animations classes but KEEP mood classes if needed
+            // Actually, we reset to base and apply mood class
+            face.className = 'face-container';
+
+            if (currentMood === 'critical') {
+                face.classList.add('critical');
+                isIdle = false;
+            }
+            else if (currentMood === 'hot') {
+                face.classList.add('hot');
+                isIdle = false;
+            }
+            else {
+                // Normal
+                statusText.innerText = "SYSTEM OPTIMAL";
+                statusText.style.color = '#00d2ff';
+                isIdle = true;
+                queueNextIdleAnim(); // Restart idle loop
+            }
+        }
+
+        // --- IDLE BEHAVIOR ENGINE ---
+
+        function queueNextIdleAnim() {
+            if (!isIdle) return;
+            // Shorter random interval: 0.5s to 3s
+            const delay = Math.random() * 2500 + 500;
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(playRandomAnim, delay);
+        }
+
+        function playRandomAnim() {
+            if (!isIdle) return;
+
+            // Define possible animations
+            // Weighted randomness: blink is common, looking is frequent, happy/skeptical is rare
+            const rand = Math.random();
+            let anim = '';
+
+            if (rand < 0.3) anim = 'blink';
+            else if (rand < 0.5) anim = 'look-left';
+            else if (rand < 0.7) anim = 'look-right';
+            else if (rand < 0.8) anim = 'look-up';
+            else if (rand < 0.9) anim = 'look-down';
+            else if (rand < 0.95) anim = 'happy';
+            else anim = 'skeptical';
+
+            // Apply Class
+            face.classList.add(anim);
+
+            // Hold Duration (shorter for blink, longer for expressions)
+            let holdTime = 0;
+            if (anim === 'blink') holdTime = 150;
+            else if (anim === 'happy' || anim === 'skeptical') holdTime = 1200;
+            else holdTime = 800; // Looking
+
+            setTimeout(() => {
+                face.classList.remove(anim);
+                queueNextIdleAnim();
+            }, holdTime);
+        }
+
+        // Init
+        updateStats();
+        setInterval(updateStats, 2000);
+        queueNextIdleAnim();
+
+    </script>
+</body>
+
+</html>

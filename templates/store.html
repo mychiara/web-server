@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Store - MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <style>
+        /* Override global body scroll for store page */
+        body {
+            overflow-y: auto !important;
+            height: auto !important;
+        }
+
+        .store-container {
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            /* Ensure bottom padding for scroll */
+            padding-bottom: 4rem;
+        }
+
+        .store-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .categories {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            flex: 1;
+            margin-left: 1rem;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-pill {
+            padding: 0.4rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            color: #8b949e;
+        }
+
+        .category-pill:hover,
+        .category-pill.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        .category-pill.active {
+            background: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .app-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .app-header {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            object-fit: contain;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px;
+        }
+
+        .app-info {
+            flex: 1;
+        }
+
+        .app-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .app-cat {
+            font-size: 0.75rem;
+            color: #58a6ff;
+            background: rgba(88, 166, 255, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .app-desc {
+            font-size: 0.85rem;
+            color: #8b949e;
+            line-height: 1.4;
+            display: -webkit-box;
+            line-clamp: 3;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .app-footer {
+            margin-top: auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-install {
+            background: #238636;
+            color: #fff;
+        }
+
+        .btn-install:hover {
+            background: #2ea043;
+        }
+
+        .btn-installed {
+            background: rgba(56, 139, 253, 0.15);
+            color: #58a6ff;
+            cursor: default;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #30363d;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .config-section {
+            margin-top: 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .config-item {
+            margin-bottom: 0.8rem;
+        }
+
+        .config-label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 0.3rem;
+        }
+
+        .config-value {
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.4rem;
+            border-radius: 4px;
+            display: block;
+            word-break: break-all;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-radius: 16px;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #58a6ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* NEW CSS */
+        .search-box {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0 0.8rem;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            color: white;
+            padding: 0.6rem 0.5rem;
+            outline: none;
+            width: 200px;
+        }
+
+        .search-box i {
+            color: #8b949e;
+        }
+
+        .filter-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .filter-select option {
+            background: #1e1e28;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+            align-items: start;
+        }
+
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+
+        .form-control {
+            width: 100%;
+        }
+
+        .form-control label {
+            display: block;
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-control input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        .form-control .desc {
+            font-size: 0.75rem;
+            color: #58a6ff;
+            margin-top: 0.2rem;
+        }
+
+        .toast {
+            background: #1e1e28;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s ease;
+            min-width: 300px;
+        }
+
+        .toast-success {
+            border-left: 4px solid #238636;
+        }
+
+        .toast-error {
+            border-left: 4px solid #da3633;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Badge Status */
+        .status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+        }
+
+        .status-badge.running {
+            color: #3fb950;
+            display: block;
+            border: 1px solid #3fb950;
+        }
+
+        .status-badge.stopped {
+            color: #8b949e;
+            display: block;
+            border: 1px solid #8b949e;
+        }
+
+        /* Custom App Modal Styles */
+        .config-section-custom {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .section-header-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-header-custom .title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #f0f6fc;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-hint {
+            font-size: 0.75rem;
+            color: #8b949e;
+            margin-bottom: 1rem;
+        }
+
+        .items-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #8b949e;
+            font-style: italic;
+            padding: 1.5rem;
+            font-size: 0.85rem;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-sm-add {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            color: #58a6ff;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-sm-add:hover {
+            background: rgba(88, 166, 255, 0.2);
+            border-color: #58a6ff;
+        }
+
+        .btn-remove {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: #f85149;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+            /* Visual alignment with inputs */
+        }
+
+        .btn-remove:hover {
+            background: rgba(248, 81, 73, 0.2);
+            border-color: #f85149;
+        }
+
+        .custom-row-item {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .custom-row-item:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="store-container">
+        <div class="store-header">
+            <button class="btn" style="background:rgba(255,255,255,0.1); width:auto; color:white"
+                onclick="window.location.href='/dashboard'">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
+            </button>
+            <h2 style="margin:0 0 0 1rem; font-weight:500">
+                <i class="fa-solid fa-store" style="color:#f5576c"></i> App Store
+            </h2>
+
+            <div class="categories" id="categories">
+                <div class="category-pill active" onclick="filterApps('All')">All Apps</div>
+                <!-- Categories injected here -->
+            </div>
+
+            <div style="margin-left:auto; display:flex; gap:1rem; align-items:center; flex-wrap:wrap">
+                <!-- Search & Filters -->
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="app-search" placeholder="Cari aplikasi..." onkeyup="applyFilters()">
+                </div>
+
+                <select id="status-filter" class="filter-select" onchange="applyFilters()">
+                    <option value="all">Semua Status</option>
+                    <option value="installed">Terinstall</option>
+                    <option value="not_installed">Belum Terinstall</option>
+                </select>
+
+                <button class="btn" style="background:#238636; width:auto; color:white"
+                    onclick="openCustomInstallModal()">
+                    <i class="fa-solid fa-plus"></i> Custom App
+                </button>
+
+                <button class="btn" style="background:rgba(255,255,255,0.1); width:auto; color:white"
+                    onclick="loadApps()">
+                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="apps-grid" id="apps-grid">
+            <!-- Apps injected here -->
+            <div style="grid-column:1/-1; text-align:center; padding:3rem; color:#8b949e">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem"></i>
+                <div style="margin-top:1rem">Memuat katalog aplikasi...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Install Modal -->
+    <div id="install-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:1rem">
+                    <img id="modal-icon" src="" style="width:40px; height:40px; border-radius:8px">
+                    <div>
+                        <h3 style="margin:0">Install <span id="modal-app-name"></span></h3>
+                        <div id="modal-app-image" style="font-size:0.8rem; color:#8b949e; font-family:monospace"></div>
+                    </div>
+                </div>
+                <button onclick="closeModal()"
+                    style="background:none; border:none; color:#8b949e; cursor:pointer; font-size:1.2rem">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Config Form -->
+                <div class="config-group">
+                    <h4><i class="fa-solid fa-network-wired"></i> Network Ports</h4>
+                    <div id="config-ports"></div>
+                </div>
+
+                <div class="config-group">
+                    <h4><i class="fa-solid fa-folder-open"></i> Volumes (Storage)</h4>
+                    <div id="config-volumes"></div>
+                </div>
+
+                <div class="config-group">
+                    <h4><i class="fa-solid fa-list"></i> Environment Variables</h4>
+                    <div id="config-env"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background:rgba(255,255,255,0.1); color:#fff; width:auto"
+                    onclick="closeModal()">Batal</button>
+                <button class="btn btn-install" style="width:auto" onclick="confirmInstall()" id="btn-confirm-install">
+                    Install Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"
+        style="position:fixed; bottom:20px; right:20px; z-index:2000; display:flex; flex-direction:column; gap:10px">
+    </div>
+
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}"; // Injected by Flask (Session)
+
+        let allApps = [];
+        let currentApp = null;
+        let installedApps = {}; // Map: id -> { running: bool, ports: [] }
+        let currentCategory = 'All';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInstalledApps().then(loadApps);
+
+            // RBAC for Header Button
+            if (window.userRole !== 'owner' && window.userRole !== 'admin') {
+                const customBtn = document.querySelector('button[onclick="openCustomInstallModal()"]');
+                if (customBtn) customBtn.style.display = 'none';
+            }
+        });
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}" style="color:${type === 'success' ? '#3fb950' : '#da3633'}"></i>
+                <div style="flex:1">${msg}</div>
+                <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#8b949e; cursor:pointer">&times;</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function loadInstalledApps() {
+            return fetch('/api/store/installed')
+                .then(r => r.json())
+                .then(data => {
+                    installedApps = {};
+                    if (data.installed) {
+                        if (Array.isArray(data.installed)) {
+                            data.installed.forEach(item => {
+                                if (typeof item === 'string') {
+                                    installedApps[item] = { running: true };
+                                } else {
+                                    installedApps[item.id] = item;
+                                }
+                            });
+                        }
+                    }
+                })
+                .catch(console.error);
+        }
+
+        function loadApps() {
+            const grid = document.getElementById('apps-grid');
+            grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:3rem; color:#8b949e"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+
+            fetch('/api/store/catalog')
+                .then(r => r.json())
+                .then(data => {
+                    allApps = data.catalog || [];
+                    renderCategories();
+                    applyFilters();
+                })
+                .catch(err => {
+                    grid.innerHTML = 'Error loading catalog';
+                    showToast('Gagal memuat katalog', 'error');
+                });
+        }
+
+        function renderCategories() {
+            const categories = ['All', ...new Set(allApps.map(a => a.category))];
+            const container = document.getElementById('categories');
+            container.innerHTML = categories.map(cat => `
+                <div class="category-pill ${cat === currentCategory ? 'active' : ''}" onclick="filterCategory('${cat}', this)">
+                    ${cat}
+                </div>
+            `).join('');
+        }
+
+        function filterCategory(cat, el) {
+            currentCategory = cat;
+            document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+            if (el) el.classList.add('active');
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('app-search').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+
+            const filtered = allApps.filter(app => {
+                if (currentCategory !== 'All' && app.category !== currentCategory) return false;
+                if (search && !app.name.toLowerCase().includes(search) && !app.description.toLowerCase().includes(search)) return false;
+
+                const isInstalled = !!installedApps[app.id];
+                if (statusFilter === 'installed' && !isInstalled) return false;
+                if (statusFilter === 'not_installed' && isInstalled) return false;
+
+                return true;
+            });
+
+            renderApps(filtered);
+        }
+
+        function renderApps(apps) {
+            const container = document.getElementById('apps-grid');
+            if (apps.length === 0) {
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:2rem; color:#8b949e">Tidak ada aplikasi ditemukan</div>';
+                return;
+            }
+
+            const canManage = (window.userRole === 'owner' || window.userRole === 'admin');
+
+            container.innerHTML = apps.map(app => {
+                const info = installedApps[app.id];
+                const isInstalled = !!info;
+                const isRunning = info && info.running;
+                const isCustom = app.category === 'Custom';
+
+                // Determine buttons
+                let buttons = '';
+                if (isInstalled) {
+                    if (canManage) {
+                        buttons += `<button class="btn" style="background:rgba(255,255,255,0.1)" onclick="manageApp('${app.id}')"><i class="fa-solid fa-gear"></i> Manage</button>`;
+                    }
+                    if (isRunning) {
+                        buttons += `<button class="btn btn-install" onclick="openApp('${app.id}')"><i class="fa-solid fa-external-link-alt"></i> Open</button>`;
+                    }
+                } else {
+                    if (canManage) {
+                        buttons += `<button class="btn btn-install" onclick="openInstallModal('${app.id}')"><i class="fa-solid fa-download"></i> Install</button>`;
+                    }
+                }
+
+                return `
+                <div class="app-card" id="card-${app.id}">
+                    ${isInstalled ? `<div class="status-badge ${isRunning ? 'running' : 'stopped'}"><i class="fa-solid fa-circle" style="font-size:8px"></i> ${isRunning ? 'Running' : 'Stopped'}</div>` : ''}
+                    
+                    <div class="app-header">
+                        <img src="${app.icon}" class="app-icon" onerror="this.src='/static/icon.png'">
+                        <div class="app-info">
+                            <div class="app-name">${app.name}</div>
+                            <div class="app-cat">${app.category}</div>
+                        </div>
+                    </div>
+                    <div class="app-desc">${app.description}</div>
+                    <div class="app-footer">
+                        ${buttons}
+                    </div>
+                    
+                    <div class="loading-overlay" id="loading-${app.id}">
+                        <div class="spinner"></div><div style="color:white; font-size:0.9rem">Processing...</div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function openApp(appId) {
+            const app = allApps.find(a => a.id === appId);
+            const installedInfo = installedApps[appId];
+
+            let port = null;
+            let protocol = 'http';
+
+            // Prioritize actual running ports from Docker
+            if (installedInfo && installedInfo.ports && installedInfo.ports.length > 0) {
+                // Try to find a mapped host port
+                // Filter out empty host ports if any
+                const validPort = installedInfo.ports.find(p => p.host && p.host !== '0' && p.host !== 0);
+                if (validPort) {
+                    port = validPort.host;
+                    if (validPort.protocol) protocol = validPort.protocol;
+                }
+            }
+
+            // Fallback to Catalog definition if not found in runtime (e.g. stopped but we want to guess, or custom)
+            if (!port && app && app.ports && app.ports.length > 0) {
+                port = app.ports[0].host;
+                if (app.ports[0].protocol === 'https') protocol = 'https';
+            }
+
+            if (port) {
+                // Normalize protocol
+                if (protocol === 'tcp') protocol = 'http';
+                window.open(`${protocol}://${window.location.hostname}:${port}`, '_blank');
+            } else {
+                showToast('Tidak dapat membuka aplikasi (Port tidak diketahui)', 'error');
+            }
+        }
+
+        function manageApp(appId) {
+            if (confirm(`Uninstall ${appId}? Data volume akan tetap tersimpan.`)) {
+                performAction(appId, 'uninstall');
+            }
+        }
+
+        function performAction(appId, action) {
+            const loading = document.getElementById(`loading-${appId}`);
+            if (loading) loading.style.display = 'flex';
+
+            fetch('/api/store/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ app_id: appId, action: action })
+            }).then(r => r.json()).then(data => {
+                if (data.error) showToast(data.error, 'error');
+                else {
+                    showToast(`Berhasil ${action} ${appId}`);
+                    if (action === 'uninstall') {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        setTimeout(() => {
+                            loadInstalledApps().then(applyFilters);
+                        }, 1000);
+                    }
+                }
+                if (loading) loading.style.display = 'none';
+            });
+        }
+
+
+        function openInstallModal(appId) {
+            currentApp = allApps.find(a => a.id === appId);
+            if (!currentApp) return;
+
+            document.getElementById('modal-app-name').textContent = currentApp.name;
+            document.getElementById('modal-app-image').textContent = currentApp.image;
+            document.getElementById('modal-icon').src = currentApp.icon;
+
+            // Standard Install View
+            document.getElementById('modal-body').innerHTML = `
+                <div class="config-group">
+                    <h4><i class="fa-solid fa-network-wired"></i> Network Ports</h4>
+                    <div id="config-ports"></div>
+                </div>
+                <div class="config-group">
+                    <h4><i class="fa-solid fa-folder-open"></i> Volumes (Storage)</h4>
+                    <div id="config-volumes"></div>
+                </div>
+                <div class="config-group">
+                    <h4><i class="fa-solid fa-list"></i> Environment Variables</h4>
+                    <div id="config-env"></div>
+                </div>
+            `;
+
+            // Build Configs
+            const portsHtml = (currentApp.ports || []).map((p, i) => `
+                <div class="form-row">
+                     <div class="form-control">
+                        <label>Host Port</label>
+                        <input type="number" id="port-host-${i}" value="${p.host}" class="install-config" data-config="port" data-idx="${i}" data-key="host">
+                        <div class="desc">Port di MasanDigital Dashboard</div>
+                    </div>
+                    <div class="form-control">
+                        <label>Container Port (${p.protocol})</label>
+                        <input type="text" value="${p.container}" disabled style="opacity:0.5; cursor:not-allowed">
+                        <input type="hidden" id="port-container-${i}" value="${p.container}">
+                        <input type="hidden" id="port-proto-${i}" value="${p.protocol}">
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('config-ports').innerHTML = portsHtml || '<div style="color:#8b949e; font-style:italic">Tidak ada port yang perlu di-expose</div>';
+
+            const volHtml = (currentApp.volumes || []).map((v, i) => `
+                <div class="form-control" style="margin-bottom:1rem">
+                    <label>Host Path (${v.description})</label>
+                    <input type="text" id="vol-host-${i}" value="${v.bind}" class="install-config" data-config="vol" data-idx="${i}" data-key="bind">
+                    <div class="desc">Container Path: ${v.container}</div>
+                    <input type="hidden" id="vol-container-${i}" value="${v.container}">
+                </div>
+            `).join('');
+            document.getElementById('config-volumes').innerHTML = volHtml || '<div style="color:#8b949e; font-style:italic">Tidak ada volume persistent</div>';
+
+            const envHtml = (currentApp.env || []).map((e, i) => `
+                 <div class="form-control" style="margin-bottom:1rem">
+                    <label>${e.key}</label>
+                    <input type="text" id="env-val-${i}" value="${e.value}" class="install-config" data-config="env" data-idx="${i}" data-key="value">
+                    <input type="hidden" id="env-key-${i}" value="${e.key}">
+                </div>
+            `).join('');
+            document.getElementById('config-env').innerHTML = envHtml || '<div style="color:#8b949e; font-style:italic">Tidak ada environment variables</div>';
+
+            document.getElementById('install-modal').style.display = 'flex';
+        }
+
+        // --- CUSTOM INSTALL LOGIC ---
+        function openCustomInstallModal() {
+            currentApp = { id: 'custom' };
+
+            document.getElementById('modal-app-name').textContent = "Install Custom App";
+            document.getElementById('modal-app-image').textContent = "Manual Configuration";
+            document.getElementById('modal-icon').src = "/static/icon.png";
+
+            // Build Dynamic Form - Modern Layout
+            document.getElementById('modal-body').innerHTML = `
+                 <!-- Basic Info: Grid 2 Column -->
+                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem">
+                    <div class="form-control">
+                        <label>App Name <span style="color:#f85149">*</span></label>
+                        <input type="text" id="custom-app-name" placeholder="e.g. My Service" required>
+                    </div>
+                    <div class="form-control">
+                        <label>Docker Image <span style="color:#f85149">*</span></label>
+                        <input type="text" id="custom-app-image" placeholder="e.g. nginx:latest" required>
+                    </div>
+                 </div>
+
+                 <!-- Network Mode: Full Width -->
+                 <div class="form-control" style="margin-bottom:2rem">
+                    <label>Network Mode</label>
+                    <div class="select-wrapper" style="position:relative">
+                        <select id="custom-net-mode" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; padding:0.7rem; border-radius:8px; appearance:none; font-family:inherit">
+                            <option value="bridge">Bridge (Default - Recommended)</option>
+                            <option value="host">Host (Direct hardware access)</option>
+                            <option value="none">None</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:#8b949e; pointer-events:none"></i>
+                    </div>
+                 </div>
+
+                 <!-- Section: Ports -->
+                 <div class="config-section-custom">
+                    <div class="section-header-custom">
+                        <div class="title"><i class="fa-solid fa-network-wired"></i> Ports</div>
+                        <button class="btn-sm-add" onclick="addCustomPort()"><i class="fa-solid fa-plus"></i> Add Port</button>
+                    </div>
+                    <div class="section-hint">Petakan port container ke host agar bisa diakses.</div>
+                    <div id="custom-ports-container" class="items-container">
+                        <div class="empty-state">Tidak ada port ditambahkan</div>
+                    </div>
+                </div>
+
+                <!-- Section: Volumes -->
+                <div class="config-section-custom">
+                    <div class="section-header-custom">
+                        <div class="title"><i class="fa-solid fa-folder-open"></i> Volumes</div>
+                        <button class="btn-sm-add" onclick="addCustomVol()"><i class="fa-solid fa-plus"></i> Add Volume</button>
+                    </div>
+                    <div class="section-hint">Persist data container ke penyimpanan host.</div>
+                    <div id="custom-vols-container" class="items-container">
+                        <div class="empty-state">Tidak ada volume ditambahkan</div>
+                    </div>
+                </div>
+
+                <!-- Section: Environment -->
+                <div class="config-section-custom">
+                    <div class="section-header-custom">
+                        <div class="title"><i class="fa-solid fa-list"></i> Environment Variables</div>
+                        <button class="btn-sm-add" onclick="addCustomEnv()"><i class="fa-solid fa-plus"></i> Add Variable</button>
+                    </div>
+                    <div class="section-hint">Konfigurasi variabel lingkungan (e.g. TZ, PUID).</div>
+                    <div id="custom-env-container" class="items-container">
+                         <div class="empty-state">Tidak ada environment var ditambahkan</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('install-modal').style.display = 'flex';
+        }
+
+        function clearEmptyState(containerId) {
+            const container = document.getElementById(containerId);
+            const empty = container.querySelector('.empty-state');
+            if (empty) empty.remove();
+        }
+
+        function addCustomPort() {
+            clearEmptyState('custom-ports-container');
+            const div = document.createElement('div');
+            div.className = 'form-row custom-row-item';
+            div.innerHTML = `
+                <div style="flex:1">
+                    <label style="font-size:0.7rem; margin-bottom:0.2rem; display:block; color:#8b949e">Host Port</label>
+                    <input type="number" placeholder="8080" class="custom-port-host" style="width:100%">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:0.7rem; margin-bottom:0.2rem; display:block; color:#8b949e">Container Port</label>
+                    <input type="number" placeholder="80" class="custom-port-container" style="width:100%">
+                </div>
+                <button onclick="this.closest('.custom-row-item').remove()" class="btn-remove" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+            `;
+            document.getElementById('custom-ports-container').appendChild(div);
+        }
+
+        function addCustomVol() {
+            clearEmptyState('custom-vols-container');
+            const div = document.createElement('div');
+            div.className = 'form-row custom-row-item';
+            div.innerHTML = `
+                <div style="flex:1">
+                    <label style="font-size:0.7rem; margin-bottom:0.2rem; display:block; color:#8b949e">Host Path</label>
+                    <input type="text" placeholder="/data/myapp" class="custom-vol-host" style="width:100%">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:0.7rem; margin-bottom:0.2rem; display:block; color:#8b949e">Container Path</label>
+                    <input type="text" placeholder="/config" class="custom-vol-container" style="width:100%">
+                </div>
+                <button onclick="this.closest('.custom-row-item').remove()" class="btn-remove" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+            `;
+            document.getElementById('custom-vols-container').appendChild(div);
+        }
+
+        function addCustomEnv() {
+            clearEmptyState('custom-env-container');
+            const div = document.createElement('div');
+            div.className = 'form-row custom-row-item';
+            div.innerHTML = `
+                <div style="flex:1">
+                    <label style="font-size:0.7rem; margin-bottom:0.2rem; display:block; color:#8b949e">Key</label>
+                    <input type="text" placeholder="PUID" class="custom-env-key" style="width:100%">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:0.7rem; margin-bottom:0.2rem; display:block; color:#8b949e">Value</label>
+                    <input type="text" placeholder="1000" class="custom-env-val" style="width:100%">
+                </div>
+                <button onclick="this.closest('.custom-row-item').remove()" class="btn-remove" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+            `;
+            document.getElementById('custom-env-container').appendChild(div);
+        }
+
+
+        function closeModal() {
+            document.getElementById('install-modal').style.display = 'none';
+            currentApp = null;
+        }
+
+        function confirmInstall() {
+            if (!currentApp) return;
+            const appId = currentApp.id;
+
+            // Payload
+            let payload = { app_id: appId };
+
+            if (appId === 'custom') {
+                // Harvest Custom Data
+                const name = document.getElementById('custom-app-name').value;
+                const image = document.getElementById('custom-app-image').value;
+                const net = document.getElementById('custom-net-mode').value;
+
+                if (!name || !image) {
+                    alert("Name and Image are required");
+                    return;
+                }
+
+                // Harvest Ports
+                const ports = Array.from(document.querySelectorAll('.custom-row-item')).map(row => {
+                    const h = row.querySelector('.custom-port-host');
+                    const c = row.querySelector('.custom-port-container');
+                    if (h && c && h.value && c.value) return { host: h.value, container: c.value, protocol: 'tcp' };
+                    return null;
+                }).filter(Boolean);
+
+                // Harvest Vols
+                const vols = Array.from(document.querySelectorAll('.custom-row-item')).map(row => {
+                    const h = row.querySelector('.custom-vol-host');
+                    const c = row.querySelector('.custom-vol-container');
+                    if (h && c && h.value && c.value) return { bind: h.value, container: c.value };
+                    return null;
+                }).filter(Boolean);
+
+                // Harvest Envs
+                const envs = Array.from(document.querySelectorAll('.custom-row-item')).map(row => {
+                    const k = row.querySelector('.custom-env-key');
+                    const v = row.querySelector('.custom-env-val');
+                    if (k && v && k.value && v.value) return { key: k.value, value: v.value };
+                    return null;
+                }).filter(Boolean);
+
+                payload.config = { name, image, network_mode: net, ports, volumes: vols, env: envs };
+            } else {
+                // Harvest Standard
+                const customPorts = (currentApp.ports || []).map((p, i) => ({
+                    host: document.getElementById(`port-host-${i}`).value,
+                    container: document.getElementById(`port-container-${i}`).value,
+                    protocol: document.getElementById(`port-proto-${i}`).value
+                }));
+
+                const customVols = (currentApp.volumes || []).map((v, i) => ({
+                    bind: document.getElementById(`vol-host-${i}`).value,
+                    container: document.getElementById(`vol-container-${i}`).value
+                }));
+
+                const customEnv = (currentApp.env || []).map((e, i) => ({
+                    key: document.getElementById(`env-key-${i}`).value,
+                    value: document.getElementById(`env-val-${i}`).value
+                }));
+
+                payload.config = { ports: customPorts, volumes: customVols, env: customEnv };
+            }
+
+            // Close Config Modal
+            closeModal();
+
+            // Open Log Modal
+            resetLogModal();
+            document.getElementById('log-modal').style.display = 'flex';
+
+            fetch('/api/store/install', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        appendLog("Request Error: " + data.error, 'error');
+                    } else {
+                        appendLog("Request Accepted. Starting process...", 'success');
+                    }
+                })
+                .catch(err => {
+                    appendLog("Network Error: " + err.message, 'error');
+                });
+        }
+    </script>
+
+    <style>
+        /* Install Log UI Extras */
+        .progress-track {
+            background: rgba(255, 255, 255, 0.05);
+            height: 4px;
+            width: 100%;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #238636;
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(35, 134, 54, 0.5);
+        }
+
+        #minimized-install-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-left: 4px solid #58a6ff;
+            border-radius: 8px;
+            padding: 1rem;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            width: 300px;
+            cursor: pointer;
+            z-index: 2200;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            transition: transform 0.2s;
+        }
+
+        #minimized-install-widget:hover {
+            transform: translateY(-5px);
+        }
+
+        .mini-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #58a6ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+
+    <!-- Minimized Widget -->
+    <div id="minimized-install-widget" onclick="restoreLogModal()">
+        <div class="mini-spinner" id="mini-spinner"></div>
+        <div style="flex:1; overflow:hidden">
+            <div style="font-weight:600; font-size:0.9rem; margin-bottom:2px" id="mini-title">Installing...</div>
+            <div id="mini-status"
+                style="font-size:0.75rem; color:#8b949e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+                Starting...</div>
+        </div>
+        <i class="fa-solid fa-expand" style="color:#8b949e"></i>
+    </div>
+
+    <!-- Log Modal UI -->
+    <div id="log-modal" class="modal-overlay" style="z-index:2100">
+        <div class="modal-content"
+            style="max-width:800px; height:80vh; display:flex; flex-direction:column; border-radius:12px; overflow:hidden">
+            <!-- Header -->
+            <div class="modal-header" style="background:#0d1117; border-bottom:1px solid #30363d; padding:1rem 1.5rem">
+                <h3 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.5rem">
+                    <i class="fa-solid fa-terminal" style="color:#8b949e"></i>
+                    Installation Logs
+                </h3>
+                <div style="display:flex; gap:0.5rem">
+                    <button class="btn" style="padding:0.4rem 0.8rem; background:rgba(255,255,255,0.05); width:auto"
+                        onclick="minimizeLogModal()" title="Minimize">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-track">
+                <div class="progress-bar" id="install-progress-bar"></div>
+            </div>
+            <div
+                style="background:#0d1117; padding:0.5rem 1rem; border-bottom:1px solid #21262d; font-size:0.75rem; color:#8b949e; font-family:monospace; display:flex; justify-content:space-between">
+                <span id="progress-text">Initializing...</span>
+                <span id="progress-percent">0%</span>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body"
+                style="background:#0d1117; color:#c9d1d9; font-family:monospace; padding:1rem; overflow-y:auto; flex:1"
+                id="log-container">
+                <!-- Logs here -->
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer" id="log-footer" style="display:none; background:#0d1117">
+                <button class="btn" style="background:rgba(255,255,255,0.1); width:auto"
+                    onclick="closeLogModal()">Close</button>
+                <button class="btn btn-install" style="width:auto; display:none" id="btn-open-app"
+                    onclick="window.location.reload()">Refresh & Open</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO Client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let isMinimized = false;
+
+        socket.on('connect', () => console.log("Socket connected"));
+
+        socket.on('install_log', (data) => {
+            appendLog(data.message, data.type);
+        });
+
+        socket.on('install_progress', (data) => {
+            const percent = Math.round(data.percent);
+            updateProgress(percent, data.message);
+        });
+
+        socket.on('install_complete', (data) => {
+            const footer = document.getElementById('log-footer');
+            const btnOpen = document.getElementById('btn-open-app');
+            footer.style.display = 'flex';
+
+            // Finalize Progress
+            if (data.status === 'success') {
+                updateProgress(100, "Installation Complete");
+                appendLog("✅ INSTALLATION COMPLETE!", 'success');
+                btnOpen.style.display = 'flex';
+
+                // Update Mini Widget
+                updateMiniWidget("Installed", "Click to refresh", false);
+                document.getElementById('minimized-install-widget').style.borderLeftColor = '#3fb950';
+
+            } else {
+                updateProgress(100, "Installation Failed");
+                document.getElementById('install-progress-bar').style.backgroundColor = '#da3633';
+                appendLog("❌ INSTALLATION FAILED", 'error');
+
+                // Update Mini Widget
+                updateMiniWidget("Failed", "Check logs", false);
+                document.getElementById('minimized-install-widget').style.borderLeftColor = '#da3633';
+            }
+
+            // Auto-restore if minimized? Optional.
+            // if (isMinimized) restoreLogModal(); 
+        });
+
+        function resetLogModal() {
+            document.getElementById('log-container').innerHTML = '';
+            document.getElementById('install-progress-bar').style.width = '0%';
+            document.getElementById('install-progress-bar').style.backgroundColor = '#238636';
+            document.getElementById('progress-text').innerText = 'Starting...';
+            document.getElementById('progress-percent').innerText = '0%';
+            document.getElementById('log-footer').style.display = 'none';
+            document.getElementById('btn-open-app').style.display = 'none';
+        }
+
+        function appendLog(msg, type = 'info') {
+            const container = document.getElementById('log-container');
+            const div = document.createElement('div');
+            div.style.marginBottom = '5px';
+            div.style.lineHeight = '1.4';
+
+            if (type === 'error') div.style.color = '#ff7b72';
+            else if (type === 'success') div.style.color = '#3fb950';
+            else if (type === 'warning') div.style.color = '#d29922';
+            else if (type === 'dim') div.style.color = '#8b949e';
+
+            const time = new Date().toLocaleTimeString();
+            div.innerHTML = `<span style="color:#8b949e; margin-right:8px">[${time}]</span> ${msg}`;
+            container.appendChild(div);
+
+            // Auto scroll only if not minimized
+            if (!isMinimized) container.scrollTop = container.scrollHeight;
+        }
+
+        function updateProgress(percent, msg) {
+            document.getElementById('install-progress-bar').style.width = percent + '%';
+            document.getElementById('progress-percent').innerText = percent + '%';
+            if (msg) document.getElementById('progress-text').innerText = msg;
+
+            // Minimized State Logic
+            updateMiniWidget(`Installing... ${percent}%`, msg, true);
+        }
+
+        function updateMiniWidget(title, status, spinning) {
+            document.getElementById('mini-title').innerText = title;
+            document.getElementById('mini-status').innerText = status;
+            document.getElementById('mini-spinner').style.display = spinning ? 'block' : 'none';
+        }
+
+        function minimizeLogModal() {
+            isMinimized = true;
+            document.getElementById('log-modal').style.display = 'none';
+            // Show Widget
+            const widget = document.getElementById('minimized-install-widget');
+            widget.style.display = 'flex';
+        }
+
+        function restoreLogModal() {
+            isMinimized = false;
+            document.getElementById('minimized-install-widget').style.display = 'none';
+            document.getElementById('log-modal').style.display = 'flex';
+            // Scroll to bottom upon restore
+            const container = document.getElementById('log-container');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function closeLogModal() {
+            document.getElementById('log-modal').style.display = 'none';
+            document.getElementById('minimized-install-widget').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

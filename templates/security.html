@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0d1117;
+            min-height: 100vh;
+            color: #f0f6fc;
+        }
+
+        .container {
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f6fc;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .btn.danger:hover {
+            background: #f85149;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Overview Cards */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .overview-card {
+            background: #161b22;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.2rem;
+            position: relative;
+        }
+
+        .overview-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 10px 0 0 10px;
+        }
+
+        .overview-card.good::before {
+            background: #3fb950;
+        }
+
+        .overview-card.warning::before {
+            background: #d29922;
+        }
+
+        .overview-card.danger::before {
+            background: #f85149;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .card-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .card-sub {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-top: 0.3rem;
+        }
+
+        /* Sections */
+        .section {
+            background: #161b22;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 500;
+        }
+
+        .section-body {
+            padding: 1.2rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.3rem;
+            background: #0d1117;
+            padding: 0.3rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            color: #8b949e;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab:hover {
+            color: #f0f6fc;
+        }
+
+        .tab.active {
+            background: #21262d;
+            color: #f0f6fc;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Forms */
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row label {
+            min-width: 160px;
+            font-size: 0.9rem;
+            color: #8b949e;
+        }
+
+        .form-row input,
+        .form-row select {
+            flex: 1;
+            max-width: 300px;
+            background: #0d1117;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f6fc;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .form-row input:focus,
+        .form-row select:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .form-row input:disabled {
+            opacity: 0.6;
+        }
+
+        /* Toggle */
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: #21262d;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .toggle.on {
+            background: #238636;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle.on::after {
+            transform: translateX(20px);
+        }
+
+        /* Audit Log Table */
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .log-table th,
+        .log-table td {
+            padding: 0.7rem 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-table th {
+            color: #8b949e;
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .log-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .log-action {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .log-action.success {
+            background: rgba(63, 185, 80, 0.15);
+            color: #3fb950;
+        }
+
+        .log-action.warning {
+            background: rgba(210, 153, 34, 0.15);
+            color: #d29922;
+        }
+
+        .log-action.danger {
+            background: rgba(248, 81, 73, 0.15);
+            color: #f85149;
+        }
+
+        /* Users Table */
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .users-table th {
+            color: #8b949e;
+            font-weight: 500;
+        }
+
+        .role-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .role-badge.owner {
+            background: rgba(255, 215, 0, 0.15);
+            color: #ffd700;
+        }
+
+        .role-badge.admin {
+            background: rgba(88, 166, 255, 0.15);
+            color: #58a6ff;
+        }
+
+        .role-badge.operator {
+            background: rgba(163, 113, 247, 0.15);
+            color: #a371f7;
+        }
+
+        .role-badge.readonly {
+            background: rgba(139, 148, 158, 0.15);
+            color: #8b949e;
+        }
+
+        /* Messages */
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .msg.success {
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid #238636;
+            color: #3fb950;
+        }
+
+        .msg.error {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid #da3633;
+            color: #f85149;
+        }
+
+        .msg.info {
+            background: rgba(88, 166, 255, 0.15);
+            border: 1px solid #1f6feb;
+            color: #58a6ff;
+        }
+
+        .msg.hidden {
+            display: none;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            border-radius: 6px;
+            padding: 1rem;
+            font-size: 0.85rem;
+            color: #8b949e;
+        }
+
+        .info-box strong {
+            color: #58a6ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="font-weight:500; font-size:1.1rem"><i class="fa-solid fa-shield-halved"
+                    style="color:#f85149"></i> Security Settings</h2>
+            <span style="color:#8b949e; font-size:0.8rem">Role: <strong id="current-role"
+                    style="color:#58a6ff">--</strong></span>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn danger" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i>
+                    Logout</button>
+            </div>
+        </div>
+
+        <!-- Security Overview -->
+        <div class="overview-grid">
+            <div class="overview-card good" id="card-auth">
+                <div class="card-icon"><i class="fa-solid fa-lock"></i></div>
+                <div class="card-label">Authentication</div>
+                <div class="card-value">Enabled</div>
+                <div class="card-sub">Password protected</div>
+            </div>
+            <div class="overview-card warning" id="card-https">
+                <div class="card-icon"><i class="fa-solid fa-shield"></i></div>
+                <div class="card-label">HTTPS</div>
+                <div class="card-value">Disabled</div>
+                <div class="card-sub">Use reverse proxy</div>
+            </div>
+            <div class="overview-card good" id="card-session">
+                <div class="card-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="card-label">Session</div>
+                <div class="card-value" id="session-time">--</div>
+                <div class="card-sub" id="session-user">Active</div>
+            </div>
+            <div class="overview-card good" id="card-ip">
+                <div class="card-icon"><i class="fa-solid fa-network-wired"></i></div>
+                <div class="card-label">Your IP</div>
+                <div class="card-value" id="client-ip">--</div>
+                <div class="card-sub">Current connection</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('account')"><i class="fa-solid fa-user"></i> Account</button>
+            {% if session.get('role') != 'readonly' %}
+            <button class="tab" onclick="showTab('access')"><i class="fa-solid fa-users"></i> Access & Roles</button>
+            <button class="tab" onclick="showTab('policy')"><i class="fa-solid fa-cog"></i> Security Policy</button>
+            <button class="tab" onclick="showTab('logs')"><i class="fa-solid fa-list"></i> Audit Logs</button>
+            {% endif %}
+        </div>
+
+        <!-- Account Tab -->
+        <div class="tab-content active" id="tab-account">
+            <div class="msg hidden" id="account-msg"></div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-user"></i> Current Account</div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <label>Username</label>
+                        <input type="text" id="current-username" disabled>
+                    </div>
+                    <div class="form-row">
+                        <label>Role</label>
+                        <input type="text" id="account-role" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-key"></i> Change Password</div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <label>Current Password</label>
+                        <input type="password" id="current-password" placeholder="Enter current password">
+                    </div>
+                    <div class="form-row">
+                        <label>New Password</label>
+                        <input type="password" id="new-password" placeholder="Enter new password">
+                    </div>
+                    <div class="form-row">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirm-password" placeholder="Confirm new password">
+                    </div>
+                    <button class="btn primary" onclick="changePassword()">
+                        <i class="fa-solid fa-save"></i> Change Password
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if session.get('role') != 'readonly' %}
+        <!-- Access & Roles Tab -->
+        <div class="tab-content" id="tab-access">
+            <div class="msg hidden" id="access-msg"></div>
+
+            <div class="section" id="add-user-section">
+                <div class="section-header"><i class="fa-solid fa-user-plus"></i> Add New User</div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <label>Username</label>
+                        <input type="text" id="new-user-name" placeholder="Enter username">
+                    </div>
+                    <div class="form-row">
+                        <label>Password</label>
+                        <input type="password" id="new-user-pass" placeholder="Enter password">
+                    </div>
+                    <div class="form-row">
+                        <label>Role</label>
+                        <select id="new-user-role">
+                            <option value="readonly">Read Only (Viewer)</option>
+                            <option value="operator">Operator (Power User)</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <button class="btn primary" onclick="addUser()">
+                        <i class="fa-solid fa-plus"></i> Add User
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-users"></i> Users & Roles</div>
+                <div class="section-body">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Access</th>
+                                <th style="text-align:right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <i class="fa-solid fa-signal"></i> Active Sessions
+                    <button class="btn" style="margin-left:auto; padding:0.3rem 0.6rem; font-size:0.75rem"
+                        onclick="loadActiveSessions()">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh
+                    </button>
+                </div>
+                <div class="section-body" style="padding:0">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>IP</th>
+                                <th>Login Time</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-sessions-body">
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:1.5rem; color:#8b949e">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-shield-halved"></i> Role Permissions</div>
+                <div class="section-body" style="padding:0">
+                    <table class="users-table" style="font-size:0.85rem">
+                        <thead>
+                            <tr>
+                                <th style="width:100px">Role</th>
+                                <th>Permissions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="role-badge owner">owner</span></td>
+                                <td style="color:#8b949e">
+                                    <strong style="color:#f0f6fc">Full Access</strong> – All features, manage
+                                    users/roles, security policy, audit logs, force logout sessions
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge admin">admin</span></td>
+                                <td style="color:#8b949e">
+                                    <strong style="color:#f0f6fc">Dashboard, Files, Terminal, Docker, Services</strong>
+                                    – Cannot modify owner/security policy
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge operator">operator</span></td>
+                                <td style="color:#8b949e">
+                                    <strong style="color:#f0f6fc">Dashboard, Metrics, Docker (view/restart)</strong> –
+                                    No terminal, files edit, security
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="role-badge readonly">readonly</span></td>
+                                <td style="color:#8b949e">
+                                    <strong style="color:#f0f6fc">View Only</strong> – Dashboard, Metrics, Monitoring
+                                    (no actions)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if session.get('role') != 'readonly' %}
+        <!-- Security Policy Tab -->
+        <div class="tab-content" id="tab-policy">
+            <div class="msg hidden" id="policy-msg"></div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-clock"></i> Session Settings</div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <label>Session Timeout</label>
+                        <select id="session-timeout" onchange="updatePolicy()">
+                            <option value="1800">30 minutes</option>
+                            <option value="3600">1 hour</option>
+                            <option value="7200">2 hours</option>
+                            <option value="14400">4 hours</option>
+                            <option value="86400">24 hours</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-ban"></i> Login Protection</div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <label>Max Login Attempts</label>
+                        <select id="max-attempts" onchange="updatePolicy()">
+                            <option value="3">3 attempts</option>
+                            <option value="5">5 attempts</option>
+                            <option value="10">10 attempts</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Lockout Duration</label>
+                        <select id="lockout-duration" onchange="updatePolicy()">
+                            <option value="60">1 minute</option>
+                            <option value="300">5 minutes</option>
+                            <option value="600">10 minutes</option>
+                            <option value="1800">30 minutes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-lock"></i> Authentication</div>
+                <div class="section-body">
+                    <div class="form-row">
+                        <label>Require Authentication</label>
+                        <div class="toggle on" id="toggle-auth" onclick="toggleAuth()"></div>
+                    </div>
+                    <p style="font-size:0.8rem; color:#f85149; margin-top:-0.5rem">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Disabling will allow anyone to access!
+                    </p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header"><i class="fa-solid fa-globe"></i> HTTPS & Proxy (Recommended)</div>
+                <div class="section-body">
+                    <div class="info-box">
+                        <p><strong>Recommendation:</strong> Place this dashboard behind a reverse proxy (Nginx, Caddy,
+                            Cloudflare Tunnel) for:</p>
+                        <ul style="margin-top:0.5rem; margin-left:1.5rem">
+                            <li>HTTPS encryption</li>
+                            <li>IP allowlisting</li>
+                            <li>DDoS protection</li>
+                            <li>Custom domain</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Logs Tab -->
+        <div class="tab-content" id="tab-logs">
+            <div class="section">
+                <div class="section-header">
+                    <i class="fa-solid fa-list"></i> Audit Log
+                    <button class="btn" style="margin-left:auto" onclick="loadAuditLogs()"><i
+                            class="fa-solid fa-rotate-right"></i> Refresh</button>
+                </div>
+                <div class="section-body" style="padding:0">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>IP</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-body">
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding:2rem; color:#8b949e">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        let config = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            loadSessionInfo();
+            loadUsers();
+            loadActiveSessions();
+            loadAuditLogs();
+        });
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.closest('.tab').classList.add('active');
+        }
+
+        function loadConfig() {
+            // First get current user role from session
+            fetch('/api/security/session-info')
+                .then(r => r.json())
+                .then(sessionData => {
+                    // Store current user's role
+                    config.currentRole = sessionData.role || 'readonly';
+                    config.currentUsername = sessionData.username;
+
+                    // Hide admin-only sections for operator/readonly
+                    if (config.currentRole !== 'owner' && config.currentRole !== 'admin') {
+                        const addUserSection = document.getElementById('add-user-section');
+                        if (addUserSection) addUserSection.style.display = 'none';
+                    }
+
+                    // Now load security config
+                    return fetch('/api/security/config');
+                })
+                .then(r => r.json())
+                .then(data => {
+                    config = { ...config, ...data };  // Merge with existing role info
+
+                    // Display CURRENT USER info (from session), not Owner info (from config)
+                    document.getElementById('current-username').value = config.currentUsername;
+                    document.getElementById('account-role').value = config.currentRole;
+                    document.getElementById('current-role').textContent = (config.currentRole || 'readonly').toUpperCase();
+
+                    document.getElementById('session-timeout').value = data.session_timeout;
+                    document.getElementById('max-attempts').value = data.max_login_attempts || 5;
+                    document.getElementById('lockout-duration').value = data.lockout_duration || 300;
+
+                    const authToggle = document.getElementById('toggle-auth');
+                    authToggle.classList.toggle('on', data.require_auth);
+                })
+                .catch(err => console.error('Config load error:', err));
+        }
+
+        let sessionStartTime = null;
+        let sessionTimerInterval = null;
+
+        function loadSessionInfo() {
+            fetch('/api/security/session-info')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('session-user').textContent = `User: ${data.username}`;
+                    document.getElementById('client-ip').textContent = data.ip;
+                    try {
+                        document.getElementById('my-ip-display').textContent = data.ip;
+                    } catch (e) { }
+
+                    // Start live timer
+                    sessionStartTime = data.login_time;
+                    if (!sessionTimerInterval) {
+                        updateSessionTimer();
+                        sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('session-time').textContent = '--';
+                });
+        }
+
+        function updateSessionTimer() {
+            if (!sessionStartTime) return;
+            const elapsed = Math.floor(Date.now() / 1000 - sessionStartTime);
+            const hours = Math.floor(elapsed / 3600);
+            const mins = Math.floor((elapsed % 3600) / 60);
+            const secs = elapsed % 60;
+
+            let display = '';
+            if (hours > 0) display = `${hours}h ${mins}m`;
+            else if (mins > 0) display = `${mins}m ${secs}s`;
+            else display = `${secs}s`;
+
+            document.getElementById('session-time').textContent = display;
+        }
+
+        // Heartbeat - keep session alive
+        setInterval(() => {
+            fetch('/api/security/heartbeat', { method: 'POST' }).catch(() => { });
+        }, 30000);
+
+        // Auto logout when tab closes
+        window.addEventListener('beforeunload', function (e) {
+            navigator.sendBeacon('/api/security/logout-beacon', '');
+        });
+
+        // Also logout on visibility change (optional - for mobile)
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') {
+                // Don't logout immediately on hide, just for extended periods
+                // navigator.sendBeacon('/api/security/logout-beacon', '');
+            }
+        });
+
+
+        function loadUsers() {
+            fetch('/api/security/config')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('users-table-body');
+                    const isOwner = config.currentRole === 'owner';
+                    const canManageUsers = isOwner || config.currentRole === 'admin';
+
+                    // Main user (Owner)
+                    let html = `
+                        <tr>
+                            <td><strong>${data.username}</strong> <span style="color:#ffd700; font-size:0.7rem">★ Owner</span></td>
+                            <td><span class="role-badge owner">${data.role || 'owner'}</span></td>
+                            <td>Full Access</td>
+                            <td style="text-align:right; color:#6e7681">--</td>
+                        </tr>
+                    `;
+
+                    // Additional users
+                    (data.users || []).forEach(u => {
+                        const accessDesc = {
+                            'admin': 'High Access',
+                            'operator': 'Limited Access',
+                            'readonly': 'View Only'
+                        };
+
+                        // Role dropdown - only owner can change roles, admin can only change operator/readonly
+                        let roleCell;
+                        if (isOwner) {
+                            roleCell = `<select onchange="changeRole('${u.username}', this.value)" style="background:#0d1117; color:#f0f6fc; border:1px solid #333; padding:0.3rem; border-radius:4px; font-size:0.8rem">
+                                <option value="readonly" ${u.role === 'readonly' ? 'selected' : ''}>Read Only</option>
+                                <option value="operator" ${u.role === 'operator' ? 'selected' : ''}>Operator</option>
+                                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            </select>`;
+                        } else if (config.currentRole === 'admin' && (u.role === 'operator' || u.role === 'readonly')) {
+                            roleCell = `<select onchange="changeRole('${u.username}', this.value)" style="background:#0d1117; color:#f0f6fc; border:1px solid #333; padding:0.3rem; border-radius:4px; font-size:0.8rem">
+                                <option value="readonly" ${u.role === 'readonly' ? 'selected' : ''}>Read Only</option>
+                                <option value="operator" ${u.role === 'operator' ? 'selected' : ''}>Operator</option>
+                            </select>`;
+                        } else {
+                            roleCell = `<span class="role-badge ${u.role}">${u.role}</span>`;
+                        }
+
+                        // Delete button - only owner can delete, admin can only delete operator/readonly
+                        let actionCell;
+                        if (isOwner || (config.currentRole === 'admin' && (u.role === 'operator' || u.role === 'readonly'))) {
+                            actionCell = `<button class="btn danger" onclick="deleteUser('${u.username}')" style="padding:0.3rem 0.6rem; font-size:0.75rem">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>`;
+                        } else {
+                            actionCell = `<span style="color:#6e7681">--</span>`;
+                        }
+
+                        html += `
+                            <tr>
+                                <td>${u.username}</td>
+                                <td>${roleCell}</td>
+                                <td>${accessDesc[u.role] || 'View Only'}</td>
+                                <td style="text-align:right">${actionCell}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                });
+        }
+
+        function loadActiveSessions() {
+            fetch('/api/security/active-sessions')
+                .then(r => {
+                    if (r.status === 403) {
+                        throw new Error('forbidden');
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    const tbody = document.getElementById('active-sessions-body');
+                    if (data.sessions && data.sessions.length > 0) {
+                        tbody.innerHTML = data.sessions.map(s => {
+                            const loginDate = new Date(s.login_time * 1000);
+                            const loginStr = loginDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                            const duration = formatDuration(s.duration);
+                            const lastAct = Math.floor((Date.now() / 1000) - s.last_activity);
+                            const status = lastAct < 60 ? 'Active' : (lastAct < 300 ? 'Idle' : 'Stale');
+                            const statusColor = lastAct < 60 ? '#3fb950' : (lastAct < 300 ? '#d29922' : '#8b949e');
+
+                            return `<tr>
+                                <td><strong>${s.username}</strong></td>
+                                <td><span class="role-badge ${s.role}">${s.role}</span></td>
+                                <td style="font-family:monospace; font-size:0.8rem">${s.ip}</td>
+                                <td>${loginStr}</td>
+                                <td>${duration}</td>
+                                <td><span style="display:inline-flex; align-items:center; gap:0.3rem">
+                                    <span style="width:8px; height:8px; border-radius:50%; background:${statusColor}"></span>
+                                    ${status}
+                                </span></td>
+                            </tr>`;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#8b949e">No active sessions</td></tr>';
+                    }
+                })
+                .catch(err => {
+                    const msg = err.message === 'forbidden'
+                        ? '<i class="fa-solid fa-lock"></i> You do not have permission to view this'
+                        : 'Failed to load';
+                    document.getElementById('active-sessions-body').innerHTML =
+                        `<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#8b949e">${msg}</td></tr>`;
+                });
+        }
+
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+
+        function addUser() {
+            const username = document.getElementById('new-user-name').value.trim();
+            const password = document.getElementById('new-user-pass').value;
+            const role = document.getElementById('new-user-role').value;
+
+            if (!username || !password) {
+                showMsg('access-msg', 'Username and password required', 'error');
+                return;
+            }
+
+            fetch('/api/security/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({})); // Safe json parse
+                    if (!r.ok) {
+                        throw new Error(data.error || `Server Error: ${r.status}`);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    if (data.success) {
+                        showMsg('access-msg', 'User added successfully!', 'success');
+                        document.getElementById('new-user-name').value = '';
+                        document.getElementById('new-user-pass').value = '';
+                        loadUsers();
+                    }
+                })
+                .catch(err => {
+                    showMsg('access-msg', err.message || 'Request failed', 'error');
+                });
+        }
+
+        function changeRole(username, newRole) {
+            fetch(`/api/security/users/${username}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: newRole })
+            })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data.error || `Error ${r.status}`);
+                    return data;
+                })
+                .then(data => {
+                    if (data.success) {
+                        showMsg('access-msg', `Role updated to ${newRole}`, 'success');
+                        loadUsers();
+                    } else {
+                        showMsg('access-msg', data.error || 'Failed', 'error');
+                    }
+                });
+        }
+
+        function deleteUser(username) {
+            if (!confirm(`Delete user "${username}"?`)) return;
+
+            fetch(`/api/security/users/${username}`, {
+                method: 'DELETE'
+            })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data.error || `Error ${r.status}`);
+                    return data;
+                })
+                .then(data => {
+                    if (data.success) {
+                        showMsg('access-msg', 'User deleted', 'success');
+                        loadUsers();
+                    }
+                })
+                .catch(err => {
+                    showMsg('access-msg', err.message || 'Action failed', 'error');
+                });
+        }
+
+
+        function loadAuditLogs() {
+            fetch('/api/security/audit-logs?lines=50')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('logs-body');
+                    if (data.logs && data.logs.length > 0) {
+                        tbody.innerHTML = data.logs.reverse().map(line => {
+                            const parts = line.split(' | ');
+                            if (parts.length >= 4) {
+                                const actionClass = getActionClass(parts[3]);
+                                return `<tr>
+                                    <td style="white-space:nowrap">${parts[0]}</td>
+                                    <td>${parts[1]}</td>
+                                    <td>${parts[2]}</td>
+                                    <td><span class="log-action ${actionClass}">${parts[3].trim()}</span></td>
+                                    <td style="color:#8b949e">${parts[4] || ''}</td>
+                                </tr>`;
+                            }
+                            return '';
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#8b949e">No logs found</td></tr>';
+                    }
+                });
+        }
+
+        function getActionClass(action) {
+            if (action.includes('SUCCESS') || action.includes('LOGOUT')) return 'success';
+            if (action.includes('FAILED') || action.includes('EXPIRED') || action.includes('LOCKED')) return 'danger';
+            return 'warning';
+        }
+
+        function changePassword() {
+            const current = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirm = document.getElementById('confirm-password').value;
+
+            if (!current || !newPass) {
+                showMsg('account-msg', 'Please fill all fields', 'error');
+                return;
+            }
+            if (newPass !== confirm) {
+                showMsg('account-msg', 'Passwords do not match', 'error');
+                return;
+            }
+            if (newPass.length < 4) {
+                showMsg('account-msg', 'Password must be at least 4 characters', 'error');
+                return;
+            }
+
+            fetch('/api/security/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: current, new_password: newPass })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showMsg('account-msg', 'Password changed successfully!', 'success');
+                        document.getElementById('current-password').value = '';
+                        document.getElementById('new-password').value = '';
+                        document.getElementById('confirm-password').value = '';
+                    } else {
+                        showMsg('account-msg', data.error || 'Failed to change password', 'error');
+                    }
+                });
+        }
+
+        function toggleAuth() {
+            const toggle = document.getElementById('toggle-auth');
+            const newState = !toggle.classList.contains('on');
+
+            if (!newState) {
+                if (!confirm('⚠️ WARNING: Disabling authentication will allow ANYONE to access your dashboard!\n\nAre you absolutely sure?')) {
+                    return;
+                }
+            }
+
+            fetch('/api/security/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ require_auth: newState })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        toggle.classList.toggle('on');
+                        showMsg('policy-msg', 'Settings saved', 'success');
+                    }
+                });
+        }
+
+        function updatePolicy() {
+            fetch('/api/security/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_timeout: parseInt(document.getElementById('session-timeout').value),
+                    max_login_attempts: parseInt(document.getElementById('max-attempts').value),
+                    lockout_duration: parseInt(document.getElementById('lockout-duration').value)
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showMsg('policy-msg', 'Policy updated', 'success');
+                    }
+                });
+        }
+
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => window.location.href = '/');
+        }
+
+        function showMsg(id, text, type) {
+            const msg = document.getElementById(id);
+            msg.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${text}`;
+            msg.className = 'msg ' + type;
+            setTimeout(() => msg.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+
+</html>

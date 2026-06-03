@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        p {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #74b9ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #74b9ff;
+        }
+
+        .error {
+            color: #ff7675;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h2>Welcome! 👋</h2>
+        <p>Please create your administrator account to secure this dashboard.</p>
+
+        <form id="setupForm">
+            <input type="text" id="username" placeholder="Username (e.g. admin)" required>
+            <input type="password" id="password" placeholder="New Password" required minlength="4">
+            <input type="password" id="confirm_password" placeholder="Confirm Password" required minlength="4">
+            <button type="submit" id="btn-submit">Create Account & Login</button>
+            <div class="error" id="error-msg"></div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('setupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const btn = document.getElementById('btn-submit');
+            const err = document.getElementById('error-msg');
+
+            if (pass !== confirm) {
+                err.innerText = "Passwords do not match!";
+                err.style.display = 'block';
+                return;
+            }
+
+            btn.innerText = "Saving...";
+            err.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/setup-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    window.location.href = '/'; // Go to dashboard
+                } else {
+                    err.innerText = data.error || "Setup failed";
+                    err.style.display = 'block';
+                    btn.innerText = "Create Account & Login";
+                }
+            } catch (e) {
+                err.innerText = "Connection error";
+                err.style.display = 'block';
+                btn.innerText = "Create Account & Login";
+            }
+        });
+    </script>
+</body>
+
+</html>

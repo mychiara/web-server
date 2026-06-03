@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+venv/
+.env
+.idea/
+.vscode/
+data/
+*.zip
+create_package.py
+verify_update_check.py
+
+# =========================
+# Security & Sensitive Data
+# =========================
+admin_id.txt
+orders_db.json
+security_config.json
+*.log
+_seller_tools/
+keygen.py
+admin_keygen_gui.py
+license_manager.py
+utils/license.py

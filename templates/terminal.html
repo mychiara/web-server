@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- xterm.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 10% 20%, rgb(14, 26, 40) 0%, rgb(8, 14, 21) 90%);
+            min-height: 100vh;
+            color: #fff;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* Abstract glowing background blobs */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, rgba(85,239,196,0.1) 0%, transparent 70%);
+            z-index: -1;
+            filter: blur(40px);
+            animation: float 10s ease-in-out infinite alternate;
+        }
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(116,185,255,0.08) 0%, transparent 70%);
+            z-index: -1;
+            filter: blur(50px);
+            animation: float 12s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) scale(1); }
+            100% { transform: translateY(20px) scale(1.05); }
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        /* Header / Glass Panel */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1.2rem;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn.active {
+            background: rgba(116, 185, 255, 0.2);
+            border-color: rgba(116, 185, 255, 0.5);
+            color: #74b9ff;
+            box-shadow: 0 0 15px rgba(116, 185, 255, 0.2);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            overflow-x: auto;
+            padding: 0 0.5rem;
+        }
+        .tabs::-webkit-scrollbar { height: 4px; }
+        .tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        .tab {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid transparent;
+            color: #8b949e;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            white-space: nowrap;
+            min-width: 140px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #c9d1d9;
+        }
+
+        .tab.active {
+            background: rgba(85, 239, 196, 0.1);
+            color: #55efc4;
+            border-color: rgba(85, 239, 196, 0.3);
+            box-shadow: 0 0 10px rgba(85, 239, 196, 0.1);
+        }
+
+        .tab-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            outline: none;
+        }
+
+        .tab-name:focus {
+            border-bottom: 1px dashed #55efc4;
+        }
+
+        .tab .close-tab {
+            opacity: 0;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: opacity 0.2s, color 0.2s;
+            color: #8b949e;
+        }
+
+        .tab:hover .close-tab {
+            opacity: 1;
+        }
+
+        .tab .close-tab:hover {
+            color: #ff7675;
+        }
+
+        /* Quick Commands Panel */
+        .quick-commands {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(20, 20, 30, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .cmd-category {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.3rem;
+            border-radius: 10px;
+        }
+
+        .cmd-category-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            margin-right: 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .cmd-category-label.system { background: rgba(85, 239, 196, 0.1); color: #55efc4; }
+        .cmd-category-label.docker { background: rgba(36, 150, 237, 0.1); color: #2496ed; }
+        .cmd-category-label.network { background: rgba(162, 155, 254, 0.1); color: #a29bfe; }
+        .cmd-category-label.logs { background: rgba(255, 234, 167, 0.1); color: #ffeaa7; }
+
+        .quick-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #aaa;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: 'Consolas', monospace;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        /* Mac-like Terminal Area */
+        .terminal-container {
+            flex: 1;
+            background: #0f111a;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Terminal Window Bar */
+        .terminal-container::before {
+            content: 'TERMINAL — root@masandigital';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            background: rgba(30, 33, 45, 0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            width: 100%;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #8b949e;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        
+        /* Mac Window Dots */
+        .terminal-container::after {
+            content: '';
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5f56;
+            box-shadow: 22px 0 0 #ffbd2e, 44px 0 0 #27c93f;
+            z-index: 2;
+        }
+
+        .terminal-wrap {
+            flex: 1;
+            padding: 1.2rem;
+            display: none;
+            background: #0d0f14;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        .terminal-wrap.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .terminal-wrap .xterm {
+            height: 100%;
+        }
+        
+        .xterm-viewport::-webkit-scrollbar { width: 10px; }
+        .xterm-viewport::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 5px; }
+        .xterm-viewport::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 5px; }
+        .xterm-viewport::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        /* Settings Bar Footer */
+        .settings-bar {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            align-items: center;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .settings-bar label {
+            color: #8b949e;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            cursor: pointer;
+        }
+
+        .settings-bar select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .settings-bar select:focus {
+            border-color: #55efc4;
+        }
+
+        .readonly-badge {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.4);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            animation: pulseError 2s infinite;
+        }
+
+        @keyframes pulseError {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(255, 107, 107, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #1e1e28;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 500px;
+            max-width: 90%;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .modal-content textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #55efc4;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-family: 'Consolas', monospace;
+            min-height: 150px;
+            resize: vertical;
+            outline: none;
+        }
+        
+        .modal-content textarea:focus {
+            border-color: #55efc4;
+            box-shadow: 0 0 10px rgba(85,239,196,0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="font-weight:400; font-size:1rem"><i class="fa-solid fa-terminal" style="color:#55efc4"></i>
+                Terminal</h2>
+
+            <div class="tabs" id="tabs"></div>
+
+            <button class="btn" onclick="addTab()"><i class="fa-solid fa-plus"></i></button>
+            <button class="btn" onclick="showCustomCmdModal()"><i class="fa-solid fa-gear"></i></button>
+        </div>
+
+        <!-- Quick Commands - Categorized -->
+        <div class="quick-commands">
+            <!-- System -->
+            <div class="cmd-category">
+                <span class="cmd-category-label system"><i class="fa-solid fa-server"></i> System</span>
+                <button class="quick-btn system" onclick="quickCmd('htop')"><i class="fa-solid fa-chart-line"></i>
+                    htop</button>
+                <button class="quick-btn system" onclick="quickCmd('top -b -n 1 | head -20')"><i
+                        class="fa-solid fa-list"></i> top</button>
+                <button class="quick-btn system" onclick="quickCmd('df -h')"><i class="fa-solid fa-hard-drive"></i> df
+                    -h</button>
+                <button class="quick-btn system" onclick="quickCmd('free -h')"><i class="fa-solid fa-memory"></i>
+                    free</button>
+                <button class="quick-btn system" onclick="quickCmd('uptime')"><i class="fa-solid fa-clock"></i>
+                    uptime</button>
+            </div>
+
+            <!-- Docker -->
+            <div class="cmd-category">
+                <span class="cmd-category-label docker"><i class="fa-brands fa-docker"></i> Docker</span>
+                <button class="quick-btn docker" onclick="quickCmd('docker ps')"><i class="fa-solid fa-cube"></i>
+                    ps</button>
+                <button class="quick-btn docker" onclick="quickCmd('docker ps -a')"><i class="fa-solid fa-cubes"></i> ps
+                    -a</button>
+                <button class="quick-btn docker" onclick="quickCmd('docker stats --no-stream')"><i
+                        class="fa-solid fa-chart-bar"></i> stats</button>
+                <button class="quick-btn docker" onclick="quickCmd('docker images')"><i
+                        class="fa-solid fa-layer-group"></i> images</button>
+            </div>
+
+            <!-- Network -->
+            <div class="cmd-category">
+                <span class="cmd-category-label network"><i class="fa-solid fa-network-wired"></i> Network</span>
+                <button class="quick-btn network" onclick="quickCmd('netstat -tlnp')"><i class="fa-solid fa-plug"></i>
+                    netstat</button>
+                <button class="quick-btn network" onclick="quickCmd('ip a')"><i class="fa-solid fa-ethernet"></i> ip
+                    a</button>
+                <button class="quick-btn network" onclick="quickCmd('ss -tuln')"><i
+                        class="fa-solid fa-diagram-project"></i> ss</button>
+            </div>
+
+            <!-- Logs -->
+            <div class="cmd-category">
+                <span class="cmd-category-label logs"><i class="fa-solid fa-file-lines"></i> Logs</span>
+                <button class="quick-btn logs" onclick="quickCmd('journalctl -f')"><i class="fa-solid fa-scroll"></i>
+                    journal</button>
+                <button class="quick-btn logs" onclick="quickCmd('dmesg -w')"><i class="fa-solid fa-bug"></i>
+                    dmesg</button>
+                <button class="quick-btn logs" onclick="quickCmd('tail -f /var/log/syslog')"><i
+                        class="fa-solid fa-file-alt"></i> syslog</button>
+            </div>
+
+            <!-- ESP32 -->
+            <div class="cmd-category">
+                <span class="cmd-category-label system" style="background:rgba(255, 107, 107, 0.15); color:#ff6b6b">
+                    <i class="fa-solid fa-microchip"></i> ESP32
+                </span>
+                <button class="quick-btn system" style="border-color: rgba(255, 107, 107, 0.3); color: #ff9f9f"
+                    onclick="quickCmd('export TERM=xterm && screen /dev/ttyACM1 115200')">
+                    <i class="fa-solid fa-bolt"></i> CONNECT SERIAL
+                </button>
+            </div>
+
+            <!-- Custom Commands -->
+            <div class="cmd-category" id="custom-commands"></div>
+        </div>
+
+        <!-- Terminal Area -->
+        <div class="terminal-container" id="terminal-container"></div>
+
+        <!-- Settings -->
+        <div class="settings-bar">
+            <label>Font:
+                <select id="font-size" onchange="changeFontSize(this.value)">
+                    <option value="12">12px</option>
+                    <option value="14" selected>14px</option>
+                    <option value="16">16px</option>
+                    <option value="18">18px</option>
+                </select>
+            </label>
+            <label>
+                <input type="checkbox" id="read-only" onchange="toggleReadOnly(this.checked)"> Read-Only
+            </label>
+            <span id="readonly-badge" class="readonly-badge" style="display:none">READ-ONLY</span>
+            <span style="margin-left:auto; color:#666">Ctrl+C to interrupt • Double-click tab to rename</span>
+        </div>
+    </div>
+
+    <!-- Custom Command Modal -->
+    <div class="modal hidden" id="custom-cmd-modal">
+        <div class="modal-content">
+            <h3><i class="fa-solid fa-terminal"></i> Custom Commands</h3>
+            <p style="color:#888; font-size:0.85rem; margin-bottom:1rem">Add your own quick commands (one per line:
+                name=command)</p>
+            <textarea id="custom-cmd-input" placeholder="Example:
+MySQL=docker exec -it mariadb mysql -u root -p
+Logs=tail -f /var/log/app.log
+Restart App=systemctl restart myapp"></textarea>
+            <div class="modal-actions">
+                <button class="btn" onclick="hideCustomCmdModal()">Cancel</button>
+                <button class="btn active" onclick="saveCustomCommands()"><i class="fa-solid fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let terminals = {};
+        let activeTab = null;
+        let tabCounter = 0;
+        let isReadOnly = false;
+        let currentFontSize = 14;
+
+        // URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const startPath = urlParams.get('path') || '/root';
+        const startCmd = urlParams.get('cmd') || '';
+        const lxdTarget = urlParams.get('lxd') || null;
+
+        // Load custom commands from localStorage
+        let customCommands = JSON.parse(localStorage.getItem('customCommands') || '[]');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addTab(startPath, startCmd ? 'Command' : 'Terminal 1');
+            renderCustomCommands();
+
+            if (startCmd) {
+                setTimeout(() => quickCmd(startCmd), 500);
+            }
+        });
+
+        function addTab(path = '/root', name = null) {
+            tabCounter++;
+            const sessionId = 'term_' + tabCounter;
+            const tabName = name || `Terminal ${tabCounter}`;
+
+            // Create tab button
+            const tabBtn = document.createElement('div');
+            tabBtn.className = 'tab';
+            tabBtn.id = 'tab-btn-' + sessionId;
+            tabBtn.innerHTML = `
+                <i class="fa-solid fa-terminal" style="font-size:0.7rem; opacity:0.7"></i>
+                <span class="tab-name" contenteditable="true" spellcheck="false" 
+                    onblur="saveTabName('${sessionId}', this.textContent)"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${tabName}</span>
+                <span class="close-tab" onclick="closeTab('${sessionId}', event)"><i class="fa-solid fa-xmark"></i></span>
+            `;
+            tabBtn.onclick = (e) => {
+                if (!e.target.classList.contains('close-tab') && !e.target.closest('.close-tab') && !e.target.classList.contains('tab-name')) {
+                    switchTab(sessionId);
+                }
+            };
+            document.getElementById('tabs').appendChild(tabBtn);
+
+            // Create terminal wrap
+            const termWrap = document.createElement('div');
+            termWrap.className = 'terminal-wrap';
+            termWrap.id = 'term-wrap-' + sessionId;
+            document.getElementById('terminal-container').appendChild(termWrap);
+
+            // Create xterm instance with custom theme
+            const term = new Terminal({
+                cursorBlink: true,
+                fontSize: currentFontSize,
+                fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                theme: {
+                    background: '#15151e',
+                    foreground: '#d0d0d0',
+                    cursor: '#55efc4',
+                    cursorAccent: '#15151e',
+                    selection: 'rgba(85,239,196,0.3)',
+                    // Custom colors for better visibility
+                    black: '#1e1e28',
+                    red: '#ff7675',
+                    green: '#55efc4',
+                    yellow: '#ffeaa7',
+                    blue: '#74b9ff',
+                    magenta: '#a29bfe',
+                    cyan: '#81ecec',
+                    white: '#dfe6e9',
+                    brightBlack: '#636e72',
+                    brightRed: '#ff7675',
+                    brightGreen: '#55efc4',
+                    brightYellow: '#ffeaa7',
+                    brightBlue: '#74b9ff',
+                    brightMagenta: '#a29bfe',
+                    brightCyan: '#81ecec',
+                    brightWhite: '#ffffff'
+                }
+            });
+
+            const fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            term.open(termWrap);
+            fitAddon.fit();
+
+            // Handle resize
+            const resizeObserver = new ResizeObserver(() => {
+                fitAddon.fit();
+                if (terminals[sessionId]) {
+                    socket.emit('terminal_resize', {
+                        session_id: sessionId,
+                        rows: term.rows,
+                        cols: term.cols
+                    });
+                }
+            });
+            resizeObserver.observe(termWrap);
+
+            // Handle input
+            term.onData(data => {
+                if (!isReadOnly) {
+                    socket.emit('terminal_input', {
+                        session_id: sessionId,
+                        input: data
+                    });
+                }
+            });
+
+            // Store
+            terminals[sessionId] = { term, fitAddon, path, name: tabName };
+
+            // Start terminal on server
+            socket.emit('start_terminal', {
+                session_id: sessionId,
+                path: path,
+                lxd_target: lxdTarget
+            });
+
+            switchTab(sessionId);
+        }
+
+        function saveTabName(sessionId, name) {
+            if (terminals[sessionId]) {
+                terminals[sessionId].name = name.trim() || 'Terminal';
+            }
+        }
+
+        function switchTab(sessionId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.terminal-wrap').forEach(t => t.classList.remove('active'));
+
+            document.getElementById('tab-btn-' + sessionId)?.classList.add('active');
+            document.getElementById('term-wrap-' + sessionId)?.classList.add('active');
+
+            activeTab = sessionId;
+
+            if (terminals[sessionId]) {
+                terminals[sessionId].term.focus();
+                terminals[sessionId].fitAddon.fit();
+            }
+        }
+
+        function closeTab(sessionId, event) {
+            event.stopPropagation();
+
+            socket.emit('stop_terminal', { session_id: sessionId });
+
+            document.getElementById('tab-btn-' + sessionId)?.remove();
+            document.getElementById('term-wrap-' + sessionId)?.remove();
+
+            if (terminals[sessionId]) {
+                terminals[sessionId].term.dispose();
+                delete terminals[sessionId];
+            }
+
+            if (activeTab === sessionId) {
+                const remaining = Object.keys(terminals);
+                if (remaining.length > 0) {
+                    switchTab(remaining[0]);
+                } else {
+                    activeTab = null;
+                }
+            }
+        }
+
+        function quickCmd(cmd) {
+            if (activeTab && terminals[activeTab] && !isReadOnly) {
+                socket.emit('terminal_input', {
+                    session_id: activeTab,
+                    input: cmd + '\n'
+                });
+            }
+        }
+
+        function changeFontSize(size) {
+            currentFontSize = parseInt(size);
+            Object.values(terminals).forEach(t => {
+                t.term.options.fontSize = currentFontSize;
+                t.fitAddon.fit();
+            });
+        }
+
+        function toggleReadOnly(checked) {
+            isReadOnly = checked;
+            document.getElementById('readonly-badge').style.display = checked ? 'inline-block' : 'none';
+        }
+
+        // Custom Commands
+        function renderCustomCommands() {
+            const container = document.getElementById('custom-commands');
+            if (customCommands.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <span class="cmd-category-label" style="background:rgba(255,255,255,0.1); color:#888">
+                    <i class="fa-solid fa-star"></i> Custom
+                </span>
+                ${customCommands.map(c => `
+                    <button class="quick-btn" onclick="quickCmd('${c.cmd.replace(/'/g, "\\'")}')" title="${c.cmd}">
+                        <i class="fa-solid fa-bolt"></i> ${c.name}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        function showCustomCmdModal() {
+            const modal = document.getElementById('custom-cmd-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+            document.getElementById('custom-cmd-input').value = customCommands.map(c => `${c.name}=${c.cmd}`).join('\n');
+        }
+
+        function hideCustomCmdModal() {
+            const modal = document.getElementById('custom-cmd-modal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300); // Wait for transition
+        }
+
+        function saveCustomCommands() {
+            const input = document.getElementById('custom-cmd-input').value;
+            customCommands = input.split('\n')
+                .map(line => line.trim())
+                .filter(line => line && line.includes('='))
+                .map(line => {
+                    const idx = line.indexOf('=');
+                    return {
+                        name: line.substring(0, idx).trim(),
+                        cmd: line.substring(idx + 1).trim()
+                    };
+                });
+
+            localStorage.setItem('customCommands', JSON.stringify(customCommands));
+            renderCustomCommands();
+            hideCustomCmdModal();
+        }
+
+        // Socket handlers
+        socket.on('terminal_output', data => {
+            const sessionId = data.session_id;
+            if (terminals[sessionId]) {
+                terminals[sessionId].term.write(data.data);
+            }
+        });
+
+        socket.on('terminal_started', data => {
+            console.log('Terminal started:', data.session_id);
+            if (terminals[data.session_id]) {
+                const t = terminals[data.session_id];
+                socket.emit('terminal_resize', {
+                    session_id: data.session_id,
+                    rows: t.term.rows,
+                    cols: t.term.cols
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

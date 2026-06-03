@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speedtest - MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-card: rgba(22, 27, 34, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent-primary: #00cec9;
+            --accent-secondary: #e17055;
+            --accent-gradient: linear-gradient(135deg, #00b894, #00cec9);
+            --accent-red-gradient: linear-gradient(135deg, #d63031, #e17055);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1a202c, var(--bg-primary));
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: 2rem;
+        }
+
+        .container {
+            padding: 1rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: #f0f6fc;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .btn.primary {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: #0d1117;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 206, 201, 0.3);
+        }
+
+        .btn.primary:hover {
+            background: linear-gradient(135deg, #55efc4, #81ecec);
+            box-shadow: 0 6px 20px rgba(0, 206, 201, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Speedtest Grid Layout */
+        .speedtest-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .speedtest-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Speed Card (Glass) */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+        }
+
+        .card.uploading::before {
+            background: var(--accent-red-gradient);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Gauge Area */
+        .gauge-wrapper {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 1rem 0;
+        }
+
+        .gauge-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(from 225deg, var(--accent-primary) 0deg, rgba(255,255,255,0.03) 0deg);
+            mask: radial-gradient(transparent 58%, #000 60%);
+            -webkit-mask: radial-gradient(transparent 58%, #000 60%);
+            transform: rotate(-135deg);
+            transition: all 0.2s cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+
+        .gauge-circle-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(from 225deg, rgba(255,255,255,0.05) 270deg, transparent 270deg);
+            mask: radial-gradient(transparent 58%, #000 60%);
+            -webkit-mask: radial-gradient(transparent 58%, #000 60%);
+            transform: rotate(-135deg);
+        }
+
+        .gauge-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .gauge-speed {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, #fff, #a8b2c1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-feature-settings: "tnum";
+        }
+
+        .gauge-unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gauge-status {
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+            margin-top: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 1.2rem;
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            display: flex;
+            width: 100%;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.8rem;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-box:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-value.download {
+            color: var(--accent-primary);
+        }
+
+        .stat-value.upload {
+            color: var(--accent-secondary);
+        }
+
+        /* History Table & Chart Card */
+        .chart-history-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        .chart-history-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            height: 240px;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        /* History Table */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .history-table th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.8rem 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-table td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Alert Messages */
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .msg.success {
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid #238636;
+            color: #3fb950;
+        }
+
+        .msg.error {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid #da3633;
+            color: #f85149;
+        }
+
+        .msg.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="font-weight:600; font-size:1.2rem; display:flex; align-items:center; gap:0.5rem">
+                <i class="fa-solid fa-gauge-high" style="color:var(--accent-primary)"></i> Speedtest
+            </h2>
+            <div style="margin-left:auto;">
+                <button class="btn primary" id="btn-run" onclick="startTest()"><i class="fa-solid fa-play"></i> Mulai Uji Kecepatan</button>
+            </div>
+        </div>
+
+        <div class="msg hidden" id="global-msg"></div>
+
+        <!-- Main Speedtest Area -->
+        <div class="speedtest-grid">
+            <!-- Gauge Card -->
+            <div class="card" id="main-gauge-card">
+                <div class="card-title"><i class="fa-solid fa-tachometer-alt"></i> Real-time Speed</div>
+                <div class="gauge-wrapper">
+                    <div class="gauge-circle-bg"></div>
+                    <div class="gauge-circle" id="gauge-ring"></div>
+                    <div class="gauge-content">
+                        <div class="gauge-speed" id="gauge-speed-val">0.0</div>
+                        <div class="gauge-unit">Mbps</div>
+                        <div class="gauge-status" id="gauge-status-lbl">READY</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Overview Card -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-square-poll-vertical"></i> Ringkasan Hasil</div>
+                
+                <div class="gauge-content" style="position:static; transform:none; margin: 1.5rem 0 2rem 0;">
+                    <div class="gauge-speed" id="summary-speed" style="font-size:4rem; color:var(--accent-primary)">--</div>
+                    <div class="gauge-unit" id="summary-unit">Rata-Rata Unduhan</div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-label"><i class="fa-solid fa-clock" style="color:#ffeaa7"></i> Ping</div>
+                        <div class="stat-value" id="ping-val">-- <span style="font-size:0.8rem">ms</span></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label"><i class="fa-solid fa-download" style="color:var(--accent-primary)"></i> Download</div>
+                        <div class="stat-value download" id="dl-val">-- <span style="font-size:0.8rem">Mbps</span></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label"><i class="fa-solid fa-upload" style="color:var(--accent-secondary)"></i> Upload</div>
+                        <div class="stat-value upload" id="ul-val">-- <span style="font-size:0.8rem">Mbps</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History & Chart Panel -->
+        <div class="chart-history-card">
+            <div class="section-header">
+                <div class="section-title"><i class="fa-solid fa-chart-area" style="color:var(--accent-primary)"></i> Riwayat Performa Kecepatan</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="speed-chart"></canvas>
+            </div>
+
+            <div class="section-header" style="margin-top:2rem">
+                <div class="section-title"><i class="fa-solid fa-list" style="color:var(--accent-primary)"></i> Catatan Riwayat Uji</div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Waktu Uji</th>
+                            <th>Ping</th>
+                            <th>Download</th>
+                            <th>Upload</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-rows">
+                        <tr>
+                            <td colspan="4" style="text-align:center; padding:2rem; color:var(--text-muted);">Belum ada riwayat uji kecepatan.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let speedChart = null;
+        let testRunning = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            loadHistory();
+        });
+
+        function initChart() {
+            const ctx = document.getElementById('speed-chart').getContext('2d');
+            speedChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Download (Mbps)',
+                            data: [],
+                            borderColor: '#00cec9',
+                            backgroundColor: 'rgba(0, 206, 201, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Upload (Mbps)',
+                            data: [],
+                            borderColor: '#e17055',
+                            backgroundColor: 'rgba(225, 112, 85, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#8b949e', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#8b949e', font: { size: 10 } },
+                            min: 0
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, labels: { color: '#f0f6fc' } }
+                    }
+                }
+            });
+        }
+
+        function setGauge(speed, type) {
+            const ring = document.getElementById('gauge-ring');
+            const speedVal = document.getElementById('gauge-speed-val');
+            
+            // Map speed to degrees (max speed 100Mbps = 270deg)
+            const maxSpeed = 100;
+            const degrees = Math.min((speed / maxSpeed) * 270, 270);
+            
+            let color = '#00cec9'; // Download green-blue
+            if (type === 'upload') color = '#e17055'; // Upload orange-red
+            
+            ring.style.background = `conic-gradient(from 225deg, ${color} ${degrees}deg, rgba(255,255,255,0.03) ${degrees}deg)`;
+            speedVal.textContent = speed.toFixed(1);
+        }
+
+        function loadHistory() {
+            fetch('/api/speedtest/history')
+                .then(r => r.json())
+                .then(data => {
+                    renderHistoryTable(data);
+                    renderChart(data);
+                })
+                .catch(console.error);
+        }
+
+        function renderHistoryTable(data) {
+            const tbody = document.getElementById('history-rows');
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text-muted);">Belum ada riwayat uji kecepatan.</td></tr>`;
+                return;
+            }
+
+            // Show most recent first
+            const sorted = [...data].reverse();
+            tbody.innerHTML = sorted.map(row => {
+                const date = new Date(row.timestamp * 1000).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: 'numeric', month: 'short' });
+                return `
+                    <tr>
+                        <td style="font-weight:600">${date}</td>
+                        <td style="color:#ffeaa7">${row.ping} ms</td>
+                        <td style="color:#00cec9; font-weight:600">${row.download} Mbps</td>
+                        <td style="color:#e17055; font-weight:600">${row.upload} Mbps</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderChart(data) {
+            if (!speedChart) return;
+            
+            // Limit to last 15 for visualization
+            const recent = data.slice(-15);
+            
+            const labels = recent.map(row => {
+                return new Date(row.timestamp * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' ' +
+                       new Date(row.timestamp * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            });
+            const dls = recent.map(row => row.download);
+            const uls = recent.map(row => row.upload);
+
+            speedChart.data.labels = labels;
+            speedChart.data.datasets[0].data = dls;
+            speedChart.data.datasets[1].data = uls;
+            speedChart.update();
+        }
+
+        function startTest() {
+            if (testRunning) return;
+            testRunning = true;
+            
+            const btnRun = document.getElementById('btn-run');
+            const statusLbl = document.getElementById('gauge-status-lbl');
+            const mainCard = document.getElementById('main-gauge-card');
+            
+            btnRun.disabled = true;
+            btnRun.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Menguji...`;
+            
+            // Phase 1: Ping
+            statusLbl.textContent = 'MENGUJI LATENCY...';
+            statusLbl.style.color = '#ffeaa7';
+            mainCard.style.setProperty('--accent-gradient', 'linear-gradient(135deg, #ffeaa7, #ffeaa7)');
+            
+            // Simple visual increment
+            let pingMock = 0;
+            let pingInterval = setInterval(() => {
+                pingMock += 2;
+                if (pingMock > 20) pingMock = 8;
+                setGauge(pingMock, 'download');
+            }, 100);
+
+            // Fetch speedtest run asynchronously
+            fetch('/api/speedtest/run', { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    clearInterval(pingInterval);
+                    if (res.error) {
+                        showMsg(res.error, 'error');
+                        resetTestUI();
+                        return;
+                    }
+                    
+                    // Trigger dynamic visual simulation sequence based on ACTUAL speedtest values
+                    // to make the speed test interactive and wowed!
+                    runVisualSequence(res);
+                })
+                .catch(err => {
+                    clearInterval(pingInterval);
+                    showMsg('Network error running speedtest.', 'error');
+                    resetTestUI();
+                });
+        }
+
+        function runVisualSequence(res) {
+            const statusLbl = document.getElementById('gauge-status-lbl');
+            const mainCard = document.getElementById('main-gauge-card');
+            
+            // Step 1: Display Ping
+            document.getElementById('ping-val').innerHTML = `${res.ping} <span style="font-size:0.8rem">ms</span>`;
+            
+            // Step 2: Download Animation
+            statusLbl.textContent = 'MENGUNDUH...';
+            statusLbl.style.color = '#00cec9';
+            mainCard.classList.remove('uploading');
+            mainCard.style.setProperty('--accent-gradient', 'linear-gradient(135deg, #00b894, #00cec9)');
+            
+            let currentDl = 0.0;
+            let dlStep = res.download / 20;
+            let dlInterval = setInterval(() => {
+                // Strictly progressive dynamic increment
+                currentDl += Math.max(dlStep, 0.1) + (Math.random() * (res.download * 0.05));
+                
+                if (currentDl >= res.download) {
+                    currentDl = res.download;
+                    clearInterval(dlInterval);
+                    
+                    // Finalize download value
+                    document.getElementById('dl-val').innerHTML = `${res.download} <span style="font-size:0.8rem">Mbps</span>`;
+                    
+                    // Step 3: Upload Animation
+                    setTimeout(() => {
+                        statusLbl.textContent = 'MENGUNGGAH...';
+                        statusLbl.style.color = '#e17055';
+                        mainCard.classList.add('uploading');
+                        
+                        let currentUl = 0.0;
+                        let ulStep = res.upload / 20;
+                        let ulInterval = setInterval(() => {
+                            // Strictly progressive dynamic increment
+                            currentUl += Math.max(ulStep, 0.1) + (Math.random() * (res.upload * 0.05));
+                            
+                            if (currentUl >= res.upload) {
+                                currentUl = res.upload;
+                                clearInterval(ulInterval);
+                                
+                                // Finalize Upload
+                                document.getElementById('ul-val').innerHTML = `${res.upload} <span style="font-size:0.8rem">Mbps</span>`;
+                                
+                                // Test Completed successfully
+                                setTimeout(() => {
+                                    finalizeTest(res);
+                                }, 500);
+                            }
+                            setGauge(currentUl, 'upload');
+                        }, 80);
+                    }, 500);
+                }
+                setGauge(currentDl, 'download');
+            }, 80);
+        }
+
+        function finalizeTest(res) {
+            const statusLbl = document.getElementById('gauge-status-lbl');
+            const summarySpeed = document.getElementById('summary-speed');
+            const summaryUnit = document.getElementById('summary-unit');
+            
+            statusLbl.textContent = 'SELESAI';
+            statusLbl.style.color = '#2ecc71';
+            
+            summarySpeed.textContent = res.download.toFixed(1);
+            summaryUnit.textContent = 'Rata-Rata Unduhan (Mbps)';
+            
+            showMsg('Uji Kecepatan Selesai!', 'success');
+            
+            loadHistory();
+            resetTestUI();
+        }
+
+        function resetTestUI() {
+            const btnRun = document.getElementById('btn-run');
+            const statusLbl = document.getElementById('gauge-status-lbl');
+            const mainCard = document.getElementById('main-gauge-card');
+            
+            btnRun.disabled = false;
+            btnRun.innerHTML = `<i class="fa-solid fa-play"></i> Mulai Uji Kecepatan`;
+            testRunning = false;
+            
+            setGauge(0, 'download');
+            mainCard.classList.remove('uploading');
+            mainCard.style.setProperty('--accent-gradient', 'linear-gradient(135deg, #00b894, #00cec9)');
+        }
+
+        function showMsg(text, type) {
+            const msg = document.getElementById('global-msg');
+            msg.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${text}`;
+            msg.className = 'msg ' + type;
+            setTimeout(() => msg.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>

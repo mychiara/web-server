@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0d1117;
+            min-height: 100vh;
+            color: #f0f6fc;
+        }
+
+        .container {
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f6fc;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .btn.secondary {
+            background: #21262d;
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 900px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card */
+        .card {
+            background: #161b22;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .card-header {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-header i {
+            color: #58a6ff;
+        }
+
+        .card-header h3 {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 1.2rem;
+        }
+
+        .card-footer {
+            padding: 1rem 1.2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #8b949e;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f6fc;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: #6e7681;
+            margin-top: 0.3rem;
+        }
+
+        /* Color Picker */
+        .color-options {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.active {
+            border-color: #fff;
+        }
+
+        .color-option.blue {
+            background: #58a6ff;
+        }
+
+        .color-option.green {
+            background: #3fb950;
+        }
+
+        .color-option.orange {
+            background: #d29922;
+        }
+
+        .color-option.red {
+            background: #f85149;
+        }
+
+        .color-option.purple {
+            background: #a371f7;
+        }
+
+        .color-option.teal {
+            background: #39d1e9;
+        }
+
+        /* Toggle */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-row:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+        }
+
+        .toggle-desc {
+            font-size: 0.75rem;
+            color: #6e7681;
+        }
+
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: #21262d;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .toggle.on {
+            background: #238636;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle.on::after {
+            transform: translateX(20px);
+        }
+
+        /* Radio Cards */
+        .radio-cards {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .radio-card {
+            flex: 1;
+            background: #0d1117;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .radio-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .radio-card.active {
+            border-color: #58a6ff;
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .radio-card i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .radio-card span {
+            font-size: 0.85rem;
+            display: block;
+        }
+
+        /* Threshold Inputs */
+        .threshold-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .threshold-group label {
+            min-width: 100px;
+            font-size: 0.85rem;
+            color: #8b949e;
+        }
+
+        .threshold-input {
+            width: 80px;
+            background: #0d1117;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f0f6fc;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .threshold-input.warning {
+            border-color: #d29922;
+        }
+
+        .threshold-input.critical {
+            border-color: #f85149;
+        }
+
+        .threshold-label {
+            font-size: 0.75rem;
+            color: #6e7681;
+        }
+
+        /* Coming Soon */
+        .coming-soon {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px dashed rgba(88, 166, 255, 0.3);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            color: #58a6ff;
+        }
+
+        .coming-soon i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
+        }
+
+        .coming-soon p {
+            font-size: 0.9rem;
+        }
+
+        /* Messages */
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .msg.success {
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid #238636;
+            color: #3fb950;
+        }
+
+        .msg.error {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid #da3633;
+            color: #f85149;
+        }
+
+        .msg.hidden {
+            display: none;
+        }
+
+        /* Access Denied Modal */
+        .ad-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2100;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .ad-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .ad-card {
+            background: linear-gradient(145deg, rgba(40, 40, 50, 0.95), rgba(20, 20, 30, 0.95));
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            box-shadow: 0 0 50px rgba(255, 107, 107, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            width: 380px;
+            transform: scale(0.8);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .ad-overlay.active .ad-card {
+            transform: scale(1);
+        }
+
+        .ad-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem auto;
+            color: #ff6b6b;
+            font-size: 2.5rem;
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(255, 107, 107, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+            }
+        }
+
+        .ad-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .ad-msg {
+            font-size: 1rem;
+            color: #ccc;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .ad-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .ad-btn:hover {
+            background: #ff5252;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(255, 107, 107, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="font-weight:500; font-size:1.1rem"><i class="fa-solid fa-cog" style="color:#58a6ff"></i> Settings
+            </h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                {% if session.get('role') not in ['readonly', 'operator'] %}
+                <button class="btn secondary" onclick="exportSettings()"><i class="fa-solid fa-download"></i>
+                    Export</button>
+                <button class="btn secondary" onclick="document.getElementById('import-file').click()"><i
+                        class="fa-solid fa-upload"></i> Import</button>
+                {% endif %}
+                <input type="file" id="import-file" accept=".json" style="display:none"
+                    onchange="importSettings(event)">
+            </div>
+        </div>
+
+        <div class="msg hidden" id="global-msg"></div>
+
+        <!-- Settings Grid -->
+        <div class="settings-grid">
+            <!-- General Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-server"></i>
+                    <h3>General</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Server Display Name</label>
+                        <input type="text" id="server-name" placeholder="My Server">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Timezone</label>
+                            <select id="timezone">
+                                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Time Format</label>
+                            <select id="time-format">
+                                <option value="24h">24 Hour</option>
+                                <option value="12h">12 Hour (AM/PM)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Format</label>
+                        <select id="date-format">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                    <div class="form-group"
+                        style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1rem">
+                        <label>System Update</label>
+                        <div style="display:flex; gap:1rem; align-items:center">
+                            <button class="btn secondary" onclick="checkUpdate()" id="btn-update-top">
+                                <i class="fa-solid fa-rotate"></i> Check for Updates
+                            </button>
+                            <span id="update-status-top" style="font-size:0.85rem; color:#8b949e">Current: {{
+                                version_info.version if version_info else '1.0.0' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveGeneral()"><i class="fa-solid fa-save"></i> Save</button>
+                </div>
+            </div>
+
+            <!-- Appearance -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-palette"></i>
+                    <h3>Appearance</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Accent Color</label>
+                        <div class="color-options" id="accent-colors">
+                            <div class="color-option blue" data-color="blue" onclick="selectColor('blue')"></div>
+                            <div class="color-option green" data-color="green" onclick="selectColor('green')"></div>
+                            <div class="color-option orange" data-color="orange" onclick="selectColor('orange')"></div>
+                            <div class="color-option red" data-color="red" onclick="selectColor('red')"></div>
+                            <div class="color-option purple" data-color="purple" onclick="selectColor('purple')"></div>
+                            <div class="color-option teal" data-color="teal" onclick="selectColor('teal')"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Layout Density</label>
+                        <div class="radio-cards">
+                            <div class="radio-card" id="density-comfortable" onclick="selectDensity('comfortable')">
+                                <i class="fa-solid fa-expand"></i>
+                                <span>Comfortable</span>
+                            </div>
+                            <div class="radio-card" id="density-compact" onclick="selectDensity('compact')">
+                                <i class="fa-solid fa-compress"></i>
+                                <span>Compact</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveAppearance()"><i class="fa-solid fa-save"></i>
+                        Save</button>
+                </div>
+            </div>
+
+            <!-- Monitoring & Refresh -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-rotate"></i>
+                    <h3>Monitoring & Refresh</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Wallboard Refresh</label>
+                            <select id="wallboard-interval">
+                                <option value="1000">1 second</option>
+                                <option value="2000">2 seconds</option>
+                                <option value="5000">5 seconds</option>
+                                <option value="10000">10 seconds</option>
+                                <option value="30000">30 seconds</option>
+                            </select>
+                            <div class="form-hint">Monitoring page (read-only)</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Metrics Refresh</label>
+                            <select id="metrics-interval">
+                                <option value="2000">2 seconds</option>
+                                <option value="5000">5 seconds</option>
+                                <option value="10000">10 seconds</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>History Duration</label>
+                            <select id="metrics-history">
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                                <option value="120">2 hours</option>
+                            </select>
+                            <div class="form-hint">Data shown in charts</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Default Page (after login)</label>
+                            <select id="default-page">
+                                <option value="dashboard">Dashboard</option>
+                                <option value="metrics">Metrics</option>
+                                <option value="docker">Docker</option>
+                                <option value="files">Files</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveMonitoring()" {% if session.get('role') in
+                        ['readonly', 'operator' ] %}style="display:none" {% endif %}><i class="fa-solid fa-save"></i>
+                        Save</button>
+                </div>
+            </div>
+
+            <!-- Alerts & Thresholds -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-bell"></i>
+                    <h3>Alerts & Thresholds</h3>
+                </div>
+                <div class="card-body">
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Enable Alert Badges</div>
+                            <div class="toggle-desc">Show warning/critical indicators on cards</div>
+                        </div>
+                        <div class="toggle on" id="toggle-alerts" onclick="toggleAlerts()"></div>
+                    </div>
+
+                    <div style="margin-top:1rem">
+                        <label style="font-size:0.85rem; color:#8b949e; display:block; margin-bottom:0.8rem">Thresholds
+                            (%)</label>
+
+                        <div class="threshold-group">
+                            <label>CPU</label>
+                            <input type="number" class="threshold-input warning" id="cpu-warning" min="0" max="100">
+                            <span class="threshold-label">Warning</span>
+                            <input type="number" class="threshold-input critical" id="cpu-critical" min="0" max="100">
+                            <span class="threshold-label">Critical</span>
+                        </div>
+
+                        <div class="threshold-group">
+                            <label>RAM</label>
+                            <input type="number" class="threshold-input warning" id="ram-warning" min="0" max="100">
+                            <span class="threshold-label">Warning</span>
+                            <input type="number" class="threshold-input critical" id="ram-critical" min="0" max="100">
+                            <span class="threshold-label">Critical</span>
+                        </div>
+
+                        <div class="threshold-group">
+                            <label>Disk</label>
+                            <input type="number" class="threshold-input warning" id="disk-warning" min="0" max="100">
+                            <span class="threshold-label">Warning</span>
+                            <input type="number" class="threshold-input critical" id="disk-critical" min="0" max="100">
+                            <span class="threshold-label">Critical</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveAlerts()" {% if session.get('role') in
+                        ['readonly', 'operator' ] %}style="display:none" {% endif %}><i class="fa-solid fa-save"></i>
+                        Save</button>
+                </div>
+            </div>
+
+            <!-- Notification Integrations -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-bell"></i>
+                    <h3>Notification Integrations</h3>
+                </div>
+                <div class="card-body">
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">Enable Telegram Notifications</div>
+                            <div class="toggle-desc">Send alert warnings directly to Telegram chat</div>
+                        </div>
+                        <div class="toggle" id="toggle-telegram" onclick="toggleTelegram()"></div>
+                    </div>
+                    
+                    <div id="telegram-config-area" style="margin-top:1rem; display:none;">
+                        <div class="form-group">
+                            <label>Telegram Bot Token</label>
+                            <input type="password" id="telegram-token" placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+                        </div>
+                        <div class="form-group">
+                            <label>Telegram Chat ID</label>
+                            <input type="text" id="telegram-chat-id" placeholder="e.g. 987654321">
+                        </div>
+                        <button class="btn secondary" onclick="testTelegramAlert()" style="margin-bottom:1rem; width:100%"><i class="fa-solid fa-paper-plane"></i> Test Telegram Alert</button>
+                    </div>
+
+                    <div class="toggle-row" style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:1rem">
+                        <div>
+                            <div class="toggle-label">Enable Discord Notifications</div>
+                            <div class="toggle-desc">Send alerts directly to Discord Webhook channel</div>
+                        </div>
+                        <div class="toggle" id="toggle-discord" onclick="toggleDiscordAlert()"></div>
+                    </div>
+
+                    <div id="discord-config-area" style="margin-top:1rem; display:none;">
+                        <div class="form-group">
+                            <label>Discord Webhook URL</label>
+                            <input type="password" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/...">
+                        </div>
+                        <button class="btn secondary" onclick="testDiscordAlert()" style="margin-bottom:1rem; width:100%"><i class="fa-solid fa-paper-plane"></i> Test Discord Alert</button>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveNotifications()" {% if session.get('role') in ['readonly', 'operator'] %}style="display:none"{% endif %}><i class="fa-solid fa-save"></i> Save</button>
+                </div>
+            </div>
+
+            <!-- Integrations (Service Control) -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <i class="fa-solid fa-plug"></i>
+                    <h3>Service Integrations</h3>
+                    <div style="margin-left:auto; display:flex; gap:0.5rem">
+                        <button class="btn primary" style="padding:0.3rem 0.6rem; font-size:0.75rem"
+                            onclick="discoverServices()">
+                            <i class="fa-solid fa-search"></i> Scan All
+                        </button>
+                        <button class="btn" style="padding:0.3rem 0.6rem; font-size:0.75rem" onclick="loadServices()">
+                            <i class="fa-solid fa-rotate-right"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:0">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9rem">
+                        <thead
+                            style="background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05)">
+                            <tr>
+                                <th style="text-align:left; padding:0.8rem 1.2rem; font-weight:500; color:#8b949e">
+                                    Service Name</th>
+                                <th style="text-align:left; padding:0.8rem 1.2rem; font-weight:500; color:#8b949e">
+                                    Status</th>
+                                <th style="text-align:right; padding:0.8rem 1.2rem; font-weight:500; color:#8b949e">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="services-list">
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:2rem; color:#8b949e">Loading
+                                    services...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Arduino / Home (MQTT) -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <i class="fa-solid fa-microchip"></i>
+                    <h3>Arduino / Home Automation (MQTT)</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Enable MQTT Integration</label>
+                            <div class="toggle" id="toggle-mqtt" onclick="toggleMqtt()"></div>
+                        </div>
+                        <div class="form-group" style="display:flex; align-items:flex-end">
+                            <button class="btn secondary" onclick="testMqtt()" id="btn-mqtt-test"><i
+                                    class="fa-solid fa-plug"></i> Test Connection</button>
+                        </div>
+                    </div>
+
+                    <div id="mqtt-config-area" style="margin-top:1.5rem; display:none">
+                        <h4
+                            style="font-size:0.9rem; margin-bottom:1rem; color:#8b949e; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem">
+                            Broker Configuration</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Broker Host / IP</label>
+                                <input type="text" id="mqtt-broker" placeholder="e.g. 192.168.1.100">
+                            </div>
+                            <div class="form-group">
+                                <label>Port</label>
+                                <input type="number" id="mqtt-port" value="1883">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Username (Optional)</label>
+                                <input type="text" id="mqtt-user">
+                            </div>
+                            <div class="form-group">
+                                <label>Password (Optional)</label>
+                                <input type="password" id="mqtt-pass">
+                            </div>
+                        </div>
+
+                        <h4
+                            style="font-size:0.9rem; margin:1.5rem 0 1rem; color:#8b949e; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem">
+                            Devices Configuration (JSON)</h4>
+                        <div class="form-group">
+                            <label>Devices Map</label>
+                            <div class="form-hint" style="margin-bottom:0.5rem">
+                                Define your sensors and switches here. Structure:
+                                <code>[{"id":"living_temp", "type":"sensor", "topic":"...", ...}]</code>
+                            </div>
+                            <textarea id="mqtt-devices"
+                                style="width:100%; height:200px; background:#0d1117; border:1px solid rgba(255,255,255,0.1); color:#f0f6fc; font-family:monospace; padding:1rem; border-radius:6px">[
+    {
+        "id": "demo_temp",
+        "name": "Suhu Server",
+        "type": "sensor",
+        "topic": "test/eka/server/temp",
+        "unit": "°C",
+        "icon": "fa-temperature-half"
+    }
+]</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveMqtt()" {% if session.get('role') in
+                        ['readonly', 'operator' ] %}style="display:none" {% endif %}><i class="fa-solid fa-save"></i>
+                        Save MQTT
+                        Config</button>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="card full-width">
+                <div class="card-header" style="border-color: rgba(248,81,73,0.3)">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#f85149"></i>
+                    <h3>Danger Zone</h3>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <div>
+                            <div style="font-size:0.9rem">Reset All Settings</div>
+                            <div style="font-size:0.75rem; color:#6e7681">Restore all settings to their default values
+                            </div>
+                        </div>
+                        <button class="btn danger" onclick="resetSettings()" {% if session.get('role') in
+                            ['readonly', 'operator' ] %}style="display:none" {% endif %}><i
+                                class="fa-solid fa-trash"></i> Reset to
+                            Defaults</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About & Update -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <i class="fa-solid fa-info-circle" style="color:#58a6ff"></i>
+                    <h3>Tentang & Pembaruan</h3>
+                </div>
+                <div class="card-body">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem">
+                        <div>
+                            <div style="font-size:1.1rem; font-weight:600" id="app-name">MasanDigital Dashboard</div>
+                            <div style="font-size:0.85rem; color:#8b949e; margin-top:0.3rem">
+                                Versi: <span id="app-version" style="color:#58a6ff; font-weight:500">Loading...</span>
+                            </div>
+                            <div id="update-status" style="font-size:0.8rem; color:#8b949e; margin-top:0.5rem"></div>
+                        </div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+                            <button class="btn" onclick="checkUpdate()" id="btn-check-update">
+                                <i class="fa-solid fa-rotate"></i> Cek Pembaruan
+                            </button>
+                            <a href="https://github.com/masandigital/web_server" target="_blank" class="btn secondary">
+                                <i class="fa-brands fa-github"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Update Available Banner (Hidden by default) -->
+                    <div id="update-banner"
+                        style="display:none; margin-top:1rem; padding:1rem; background:rgba(35,134,54,0.15); border:1px solid rgba(35,134,54,0.3); border-radius:8px">
+                        <div style="display:flex; align-items:center; gap:0.8rem">
+                            <i class="fa-solid fa-arrow-up-circle" style="font-size:1.5rem; color:#3fb950"></i>
+                            <div style="flex:1">
+                                <div style="font-weight:600; color:#3fb950">Pembaruan Tersedia!</div>
+                                <div style="font-size:0.85rem; color:#8b949e" id="update-info">Versi baru tersedia</div>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button onclick="performAutoUpdate()" id="btn-auto-update" class="btn" style="background:#3fb950; color:white; border:none;">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i> Update Sekarang
+                                </button>
+                                <a href="#" id="update-download-link" target="_blank" class="btn secondary">
+                                    <i class="fa-solid fa-download"></i> Manual Zip
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let settings = {};
+        let selectedColor = 'blue';
+        let selectedDensity = 'comfortable';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadServices();
+            loadVersion();
+        });
+
+        // ===== VERSION & UPDATE CHECKER =====
+        function loadVersion() {
+            fetch('/api/version')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('app-name').textContent = data.name || 'MasanDigital Dashboard';
+                    document.getElementById('app-version').textContent = data.version || '?';
+                })
+                .catch(() => {
+                    document.getElementById('app-version').textContent = 'Error';
+                });
+        }
+
+        function checkUpdate() {
+            const btn = document.getElementById('btn-check-update');
+            const btnTop = document.getElementById('btn-update-top');
+            const statusEl = document.getElementById('update-status');
+            const statusTopEl = document.getElementById('update-status-top');
+            const bannerEl = document.getElementById('update-banner');
+
+            // Animasi loading
+            if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memeriksa...'; }
+            if(btnTop) { btnTop.disabled = true; btnTop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memeriksa...'; }
+            if(statusEl) statusEl.innerHTML = '';
+            if(statusTopEl) statusTopEl.innerHTML = '';
+            if(bannerEl) bannerEl.style.display = 'none';
+
+            fetch('/api/check-update')
+                .then(r => r.json())
+                .then(data => {
+                    if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Cek Pembaruan'; }
+                    if(btnTop) { btnTop.disabled = false; btnTop.innerHTML = '<i class="fa-solid fa-rotate"></i> Check for Updates'; }
+
+                    if (data.error) {
+                        const errHtml = `<span style="color:#f85149"><i class="fa-solid fa-exclamation-circle"></i> ${data.error}</span>`;
+                        if(statusEl) statusEl.innerHTML = errHtml;
+                        if(statusTopEl) statusTopEl.innerHTML = errHtml;
+                        return;
+                    }
+
+                    if (data.update_available) {
+                        // Ada update!
+                        if(bannerEl) bannerEl.style.display = 'block';
+                        document.getElementById('update-info').textContent =
+                            `Versi ${data.latest_version} tersedia (Anda: ${data.current_version})`;
+                        document.getElementById('update-download-link').href = data.download_url || '#';
+
+                        if(statusEl) statusEl.innerHTML = '';
+                        if(statusTopEl) statusTopEl.innerHTML = '';
+                    } else {
+                        // Sudah versi terbaru
+                        const successHtml = `<span style="color:#3fb950"><i class="fa-solid fa-check-circle"></i> Anda sudah menggunakan versi terbaru!</span>`;
+                        if(statusEl) statusEl.innerHTML = successHtml;
+                        if(statusTopEl) statusTopEl.innerHTML = successHtml;
+                    }
+                })
+                .catch(err => {
+                    if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Cek Pembaruan'; }
+                    if(btnTop) { btnTop.disabled = false; btnTop.innerHTML = '<i class="fa-solid fa-rotate"></i> Check for Updates'; }
+                    const errHtml = `<span style="color:#f85149"><i class="fa-solid fa-exclamation-circle"></i> Gagal memeriksa update</span>`;
+                    if(statusEl) statusEl.innerHTML = errHtml;
+                    if(statusTopEl) statusTopEl.innerHTML = errHtml;
+                });
+        }
+
+        function performAutoUpdate() {
+            if (!confirm('Apakah Anda yakin ingin melakukan update otomatis? Dashboard akan berhenti sejenak selama proses berlangsung.')) {
+                return;
+            }
+
+            const btn = document.getElementById('btn-auto-update');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengunduh & Rebuild...';
+            }
+
+            fetch('/api/perform-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMsg(data.message, 'success');
+                    // Automatically reload the page after 45 seconds to let docker rebuild
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 45000);
+                } else {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Update Sekarang';
+                    }
+                    showMsg(data.error || 'Gagal memulai update', 'error');
+                }
+            })
+            .catch(err => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Update Sekarang';
+                }
+                showMsg('Koneksi terputus. Ini normal jika container sedang di-restart.', 'info');
+                // Automatically try to reload
+                setTimeout(() => {
+                    window.location.reload();
+                }, 45000);
+            });
+        }
+        // ====================================
+
+        function loadServices() {
+            fetch('/api/services/status')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('services-list');
+                    if (data.services && data.services.length > 0) {
+                        tbody.innerHTML = data.services.map(svc => `
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                                <td style="padding:1rem 1.2rem">
+                                    <div style="font-weight:500">${svc.name}</div>
+                                    <div style="font-size:0.75rem; color:#8b949e; margin-top:0.2rem">${svc.id}</div>
+                                </td>
+                                <td style="padding:1rem 1.2rem">
+                                    <span style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.2rem 0.6rem; border-radius:4px; font-size:0.75rem; font-weight:600; background:${svc.active ? 'rgba(63,185,80,0.15)' : 'rgba(248,81,73,0.15)'}; color:${svc.active ? '#3fb950' : '#f85149'}">
+                                        <span style="width:6px; height:6px; border-radius:50%; background:currentColor"></span>
+                                        ${svc.status_text.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td style="padding:1rem 1.2rem; text-align:right">
+                                    <div style="display:flex; gap:0.5rem; justify-content:flex-end">
+                                        ${svc.active ?
+                                `<button class="btn danger" onclick="controlService('${svc.id}', 'stop')" style="padding:0.3rem 0.6rem; font-size:0.75rem"><i class="fa-solid fa-stop"></i> Stop</button>
+                                             <button class="btn secondary" onclick="controlService('${svc.id}', 'restart')" style="padding:0.3rem 0.6rem; font-size:0.75rem"><i class="fa-solid fa-refresh"></i> Restart</button>` :
+                                `<button class="btn primary" onclick="controlService('${svc.id}', 'start')" style="padding:0.3rem 0.6rem; font-size:0.75rem"><i class="fa-solid fa-play"></i> Start</button>`
+                            }
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:#8b949e">No managed services found</td></tr>';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('services-list').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:#f85149">Failed to load services</td></tr>';
+                });
+        }
+
+        function discoverServices() {
+            const tbody = document.getElementById('services-list');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:#8b949e"><i class="fa-solid fa-spinner fa-spin"></i> Scanning host services... (may take a moment)</td></tr>';
+
+            fetch('/api/services/discover')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:2rem; color:#f85149">${data.error}</td></tr>`;
+                        return;
+                    }
+                    if (data.services && data.services.length > 0) {
+                        tbody.innerHTML = data.services.map(svc => `
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                                <td style="padding:0.8rem 1.2rem">
+                                    <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer">
+                                        <input type="checkbox" class="svc-checkbox" data-id="${svc.id}" data-name="${svc.name}">
+                                        <div>
+                                            <div style="font-weight:500">${svc.name}</div>
+                                            <div style="font-size:0.75rem; color:#8b949e">${svc.id}</div>
+                                        </div>
+                                    </label>
+                                </td>
+                                <td style="padding:0.8rem 1.2rem">
+                                    <span style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.2rem 0.6rem; border-radius:4px; font-size:0.7rem; font-weight:600; background:${svc.active ? 'rgba(63,185,80,0.15)' : 'rgba(248,81,73,0.15)'}; color:${svc.active ? '#3fb950' : '#f85149'}">
+                                        <span style="width:6px; height:6px; border-radius:50%; background:currentColor"></span>
+                                        ${svc.active ? 'RUNNING' : 'STOPPED'}
+                                    </span>
+                                    ${svc.enabled ? '<span style="margin-left:0.5rem; font-size:0.65rem; color:#8b949e">(enabled)</span>' : ''}
+                                </td>
+                                <td style="padding:0.8rem 1.2rem; text-align:right">
+                                    <div style="display:flex; gap:0.5rem; justify-content:flex-end">
+                                        ${svc.active ?
+                                `<button class="btn danger" onclick="controlService('${svc.id}', 'stop')" style="padding:0.2rem 0.5rem; font-size:0.7rem"><i class="fa-solid fa-stop"></i></button>
+                                             <button class="btn secondary" onclick="controlService('${svc.id}', 'restart')" style="padding:0.2rem 0.5rem; font-size:0.7rem"><i class="fa-solid fa-refresh"></i></button>` :
+                                `<button class="btn primary" onclick="controlService('${svc.id}', 'start')" style="padding:0.2rem 0.5rem; font-size:0.7rem"><i class="fa-solid fa-play"></i></button>`
+                            }
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('');
+
+                        // Add save button at the end (Only for Admin/Owner)
+                        if (window.userRole !== 'readonly' && window.userRole !== 'operator') {
+                            tbody.innerHTML += `<tr><td colspan="3" style="padding:1rem 1.2rem; text-align:right; background:rgba(255,255,255,0.02)">
+                                <button class="btn primary" onclick="saveSelectedServices()"><i class="fa-solid fa-save"></i> Save Selected to Dashboard</button>
+                            </td></tr>`;
+                        }
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:#8b949e">No services found</td></tr>';
+                    }
+                })
+                .catch(e => {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:2rem; color:#f85149">Scan failed: ${e}</td></tr>`;
+                });
+        }
+
+        function saveSelectedServices() {
+            const checkboxes = document.querySelectorAll('.svc-checkbox:checked');
+            const selected = Array.from(checkboxes).map(cb => ({
+                id: cb.dataset.id,
+                name: cb.dataset.name
+            }));
+
+            if (selected.length === 0) {
+                showMsg('Please select at least one service', 'error');
+                return;
+            }
+
+            // Save to settings
+            settings.services = selected;
+
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ services: selected })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showMsg(`Saved ${selected.length} services to dashboard!`, 'success');
+                        loadServices(); // Switch back to normal view
+                    } else {
+                        showMsg('Failed to save', 'error');
+                    }
+                })
+                .catch(() => showMsg('Save failed', 'error'));
+        }
+
+        function controlService(serviceId, action) {
+            // Optimistic update
+            showMsg(`${action.charAt(0).toUpperCase() + action.slice(1)}ing service...`, 'info');
+
+            fetch('/api/services/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ service: serviceId, action: action })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showMsg(`Service ${action}ed successfully`, 'success');
+                        setTimeout(loadServices, 1000); // Reload after delay
+                    } else {
+                        showMsg(`Error: ${data.error}`, 'error');
+                    }
+                })
+                .catch(() => showMsg('Command failed', 'error'));
+        }
+
+        function loadSettings() {
+            fetch('/api/settings?_=' + new Date().getTime())
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Settings data loaded:', data);
+                    settings = data;
+                    populateForm(data);
+                    applyPermissions();
+                })
+                .catch(e => {
+                    console.error("Failed to load settings:", e);
+                    showMsg("Connection Error", "error");
+                });
+        }
+
+        function applyPermissions() {
+            // Check if user has write access ('owner' or 'admin')
+            // 'readonly' and 'operator' only have 'view' permission for settings
+            if (['readonly', 'operator'].includes(window.userRole)) {
+                console.log("Read-only mode: Disabling inputs");
+
+                // 1. Disable standard form inputs
+                document.querySelectorAll('input, select, textarea').forEach(el => {
+                    el.disabled = true;
+                });
+
+                // 2. Hide all Primary (Save) buttons
+                document.querySelectorAll('.btn.primary').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+
+                // 3. Disable custom interactive elements (Toggles, Cards, Colors)
+                const interactiveSelectors = [
+                    '.toggle',
+                    '.radio-card',
+                    '.color-option',
+                    '.svc-checkbox',
+                    '.btn.danger' // Also disable Reset/Stop buttons if any
+                ];
+
+                document.querySelectorAll(interactiveSelectors.join(', ')).forEach(el => {
+                    el.style.pointerEvents = 'none';
+                    el.style.opacity = '0.5';
+                    el.style.filter = 'grayscale(100%)';
+                    el.style.cursor = 'not-allowed';
+                });
+
+                // 4. Specific handling for Danger Zone (Reset Button)
+                // The 'resetSettings' button is .btn.danger, handled above.
+            }
+        }
+
+        function populateForm(s) {
+            console.log("Loading settings into form...", s);
+
+            // Safe execute helper
+            const runSafe = (label, fn) => {
+                try { fn(); }
+                catch (e) { console.error("Error loading " + label + ":", e); }
+            };
+
+            runSafe("General", () => {
+                if (!s.general) return;
+                const elName = document.getElementById('server-name');
+                if (elName) elName.value = s.general.server_name || '';
+
+                const elTz = document.getElementById('timezone');
+                if (elTz) elTz.value = s.general.timezone || 'Asia/Jakarta';
+
+                const elTime = document.getElementById('time-format');
+                if (elTime) elTime.value = s.general.time_format || '24h';
+
+                const elDate = document.getElementById('date-format');
+                if (elDate) elDate.value = s.general.date_format || 'DD/MM/YYYY';
+            });
+
+            runSafe("Appearance", () => {
+                if (!s.appearance) return;
+                if (s.appearance.accent_color) selectColor(s.appearance.accent_color);
+                if (s.appearance.density) selectDensity(s.appearance.density);
+            });
+
+            runSafe("Monitoring", () => {
+                if (!s.monitoring) return;
+                const elWall = document.getElementById('wallboard-interval');
+                if (elWall) elWall.value = s.monitoring.wallboard_interval || 2000;
+
+                const elMet = document.getElementById('metrics-interval');
+                if (elMet) elMet.value = s.monitoring.metrics_interval || 2000;
+
+                const elHist = document.getElementById('metrics-history');
+                if (elHist) elHist.value = s.monitoring.metrics_history_minutes || 60;
+
+                const elPage = document.getElementById('default-page');
+                if (elPage) elPage.value = s.monitoring.default_page || 'dashboard';
+            });
+
+            runSafe("Alerts", () => {
+                if (!s.alerts) return;
+                const elTog = document.getElementById('toggle-alerts');
+                if (elTog) elTog.classList.toggle('on', s.alerts.enabled === true);
+
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val !== undefined ? val : 80;
+                };
+                setVal('cpu-warning', s.alerts.cpu_warning);
+                setVal('cpu-critical', s.alerts.cpu_critical);
+                setVal('ram-warning', s.alerts.ram_warning);
+                setVal('ram-critical', s.alerts.ram_critical);
+                setVal('disk-warning', s.alerts.disk_warning);
+                setVal('disk-critical', s.alerts.disk_critical);
+            });
+
+            runSafe("MQTT", () => {
+                if (!s.mqtt) return;
+                const enabled = s.mqtt.enabled === true;
+                const elTog = document.getElementById('toggle-mqtt');
+                if (elTog) elTog.classList.toggle('on', enabled);
+
+                const elArea = document.getElementById('mqtt-config-area');
+                if (elArea) elArea.style.display = enabled ? 'block' : 'none';
+
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val || '';
+                };
+
+                setVal('mqtt-broker', s.mqtt.broker);
+                setVal('mqtt-port', s.mqtt.port || 1883);
+                setVal('mqtt-user', s.mqtt.user);
+                setVal('mqtt-pass', s.mqtt.password);
+
+                const elDev = document.getElementById('mqtt-devices');
+                if (elDev) elDev.value = JSON.stringify(s.mqtt.devices || [], null, 2);
+            });
+
+            runSafe("Notifications", () => {
+                if (!s.integrations) return;
+                const tgEnabled = s.integrations.telegram_enabled === true;
+                const elTgTog = document.getElementById('toggle-telegram');
+                if (elTgTog) elTgTog.classList.toggle('on', tgEnabled);
+                const elTgArea = document.getElementById('telegram-config-area');
+                if (elTgArea) elTgArea.style.display = tgEnabled ? 'block' : 'none';
+
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val || '';
+                };
+
+                setVal('telegram-token', s.integrations.telegram_token);
+                setVal('telegram-chat-id', s.integrations.telegram_chat_id);
+
+                const dcEnabled = s.integrations.webhook_enabled === true;
+                const elDcTog = document.getElementById('toggle-discord');
+                if (elDcTog) elDcTog.classList.toggle('on', dcEnabled);
+                const elDcArea = document.getElementById('discord-config-area');
+                if (elDcArea) elDcArea.style.display = dcEnabled ? 'block' : 'none';
+
+                setVal('discord-webhook-url', s.integrations.webhook_url);
+            });
+        }
+
+        function selectColor(color) {
+            selectedColor = color;
+            document.querySelectorAll('.color-option').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.color-option.${color}`).classList.add('active');
+        }
+
+        function selectDensity(density) {
+            selectedDensity = density;
+            document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('active'));
+            document.getElementById('density-' + density).classList.add('active');
+        }
+
+        function toggleAlerts() {
+            document.getElementById('toggle-alerts').classList.toggle('on');
+        }
+
+        function toggleMqtt() {
+            const t = document.getElementById('toggle-mqtt');
+            t.classList.toggle('on');
+            document.getElementById('mqtt-config-area').style.display = t.classList.contains('on') ? 'block' : 'none';
+        }
+
+        function saveMqtt() {
+            let devices = [];
+            const rawJson = document.getElementById('mqtt-devices').value;
+
+            try {
+                devices = JSON.parse(rawJson);
+            } catch (e) {
+                alert('Invalid JSON in Devices Map:\n' + e.message);
+                return;
+            }
+
+            const payload = {
+                enabled: document.getElementById('toggle-mqtt').classList.contains('on'),
+                broker: document.getElementById('mqtt-broker').value,
+                port: parseInt(document.getElementById('mqtt-port').value) || 1883,
+                user: document.getElementById('mqtt-user').value,
+                password: document.getElementById('mqtt-pass').value,
+                devices: devices
+            };
+
+            saveSection('mqtt', payload);
+        }
+
+        function testMqtt() {
+            alert('Test connection feature is coming in the next update. Please save the config first.');
+        }
+
+        function saveGeneral() {
+            saveSection('general', {
+                server_name: document.getElementById('server-name').value,
+                timezone: document.getElementById('timezone').value,
+                time_format: document.getElementById('time-format').value,
+                date_format: document.getElementById('date-format').value
+            });
+        }
+
+        function saveAppearance() {
+            saveSection('appearance', {
+                accent_color: selectedColor,
+                density: selectedDensity
+            });
+        }
+
+        function saveMonitoring() {
+            saveSection('monitoring', {
+                wallboard_interval: parseInt(document.getElementById('wallboard-interval').value),
+                metrics_interval: parseInt(document.getElementById('metrics-interval').value),
+                metrics_history_minutes: parseInt(document.getElementById('metrics-history').value),
+                default_page: document.getElementById('default-page').value
+            });
+        }
+
+        function saveAlerts() {
+            saveSection('alerts', {
+                enabled: document.getElementById('toggle-alerts').classList.contains('on'),
+                cpu_warning: parseInt(document.getElementById('cpu-warning').value),
+                cpu_critical: parseInt(document.getElementById('cpu-critical').value),
+                ram_warning: parseInt(document.getElementById('ram-warning').value),
+                ram_critical: parseInt(document.getElementById('ram-critical').value),
+                disk_warning: parseInt(document.getElementById('disk-warning').value),
+                disk_critical: parseInt(document.getElementById('disk-critical').value)
+            });
+        }
+
+        function toggleTelegram() {
+            const t = document.getElementById('toggle-telegram');
+            t.classList.toggle('on');
+            document.getElementById('telegram-config-area').style.display = t.classList.contains('on') ? 'block' : 'none';
+        }
+
+        function toggleDiscordAlert() {
+            const t = document.getElementById('toggle-discord');
+            t.classList.toggle('on');
+            document.getElementById('discord-config-area').style.display = t.classList.contains('on') ? 'block' : 'none';
+        }
+
+        function saveNotifications() {
+            const payload = {
+                telegram_enabled: document.getElementById('toggle-telegram').classList.contains('on'),
+                telegram_token: document.getElementById('telegram-token').value,
+                telegram_chat_id: document.getElementById('telegram-chat-id').value,
+                webhook_enabled: document.getElementById('toggle-discord').classList.contains('on'),
+                webhook_url: document.getElementById('discord-webhook-url').value
+            };
+            saveSection('integrations', payload);
+        }
+
+        function testTelegramAlert() {
+            const token = document.getElementById('telegram-token').value;
+            const chat_id = document.getElementById('telegram-chat-id').value;
+            if (!token || !chat_id) {
+                alert('Please enter both Token and Chat ID first.');
+                return;
+            }
+            fetch('/api/settings/test-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'telegram', token: token, chat_id: chat_id })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) showMsg('Telegram test alert sent successfully!', 'success');
+                else showMsg(res.error || 'Failed to send test alert', 'error');
+            })
+            .catch(() => showMsg('Test alert failed', 'error'));
+        }
+
+        function testDiscordAlert() {
+            const url = document.getElementById('discord-webhook-url').value;
+            if (!url) {
+                alert('Please enter a Discord Webhook URL first.');
+                return;
+            }
+            fetch('/api/settings/test-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'discord', webhook_url: url })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) showMsg('Discord test alert sent successfully!', 'success');
+                else showMsg(res.error || 'Failed to send test alert', 'error');
+            })
+            .catch(() => showMsg('Test alert failed', 'error'));
+        }
+
+        function saveSection(section, data) {
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [section]: data })
+            })
+                .then(r => {
+                    // Handle Access Denied (403) specifically
+                    if (r.status === 403) {
+                        // Use our nice modal
+                        showAdModal(section + ' settings (Write Access)');
+                        // Stop the chain
+                        throw new Error("ACCESS_DENIED_HANDLED");
+                    }
+                    if (!r.ok) {
+                        return r.text().then(text => { throw new Error("Server Error " + r.status + ": " + text.substring(0, 50)); });
+                    }
+                    return r.json();
+                })
+                .then(result => {
+                    if (result.success) {
+                        showMsg('Settings saved successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showMsg(result.error || 'Failed to save', 'error');
+                    }
+                })
+                .catch(err => {
+                    if (err.message === "ACCESS_DENIED_HANDLED") return;
+                    console.error(err);
+                    showMsg(err.message || 'Connection Error', 'error');
+                });
+        }
+
+        function exportSettings() {
+            window.location.href = '/api/settings/export';
+        }
+
+        function importSettings(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    fetch('/api/settings/import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    })
+                        .then(r => r.json())
+                        .then(result => {
+                            if (result.success) {
+                                showMsg('Settings imported!', 'success');
+                                loadSettings();
+                            } else {
+                                showMsg(result.error || 'Import failed', 'error');
+                            }
+                        });
+                } catch (err) {
+                    showMsg('Invalid JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetSettings() {
+            if (!confirm('⚠️ This will reset ALL settings to defaults. Are you sure?')) return;
+
+            fetch('/api/settings/reset', { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        showMsg('Settings reset to defaults', 'success');
+                        loadSettings();
+                    }
+                });
+        }
+
+        function showMsg(text, type) {
+            const msg = document.getElementById('global-msg');
+            msg.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${text}`;
+            msg.className = 'msg ' + type;
+            setTimeout(() => msg.classList.add('hidden'), 3000);
+        }
+
+        // Initialize
+        loadSettings();
+
+        // Handle Access Denied Redirects
+        const urlParams = new URLSearchParams(window.location.search);
+
+        function showAdModal(feature) {
+            const m = document.getElementById('ad-modal');
+            const msg = document.getElementById('ad-message');
+            msg.textContent = "Anda tidak memiliki akses untuk menu: " + feature + ". Silakan hubungi Administrator.";
+            m.classList.add('active');
+        }
+
+        function closeAdModal() {
+            const m = document.getElementById('ad-modal');
+            m.classList.remove('active');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+
+
+        if (urlParams.get('error') === 'access_denied') {
+            const feature = urlParams.get('feature') || 'Restricted Area';
+            setTimeout(() => {
+                showAdModal(feature);
+            }, 100);
+        }
+    </script>
+    <!-- Access Denied Modal -->
+    <div class="ad-overlay" id="ad-modal">
+        <div class="ad-card">
+            <div class="ad-icon"><i class="fa-solid fa-lock"></i></div>
+            <div class="ad-title">Access Denied</div>
+            <div class="ad-msg" id="ad-message">
+                Anda tidak memiliki izin untuk mengakses fitur ini.
+            </div>
+            <button class="ad-btn" onclick="closeAdModal()">Mengerti</button>
+        </div>
+    </div>
+</body>
+
+</html>

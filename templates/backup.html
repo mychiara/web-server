@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore - MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <style>
+        .backup-container {
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .backup-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .btn.warning {
+            background: #f0883e;
+            border-color: #f0883e;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+            color: #58a6ff;
+        }
+
+        .card-header h3 {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .card-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .backup-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .backup-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .backup-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .backup-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(88, 166, 255, 0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #58a6ff;
+            font-size: 1.2rem;
+        }
+
+        .backup-info {
+            flex: 1;
+        }
+
+        .backup-name {
+            font-weight: 500;
+        }
+
+        .backup-meta {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-top: 0.2rem;
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .backup-actions .btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .msg.success {
+            display: block;
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            color: #3fb950;
+        }
+
+        .msg.error {
+            display: block;
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: #f85149;
+        }
+
+        .msg.info {
+            display: block;
+            background: rgba(88, 166, 255, 0.15);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            color: #58a6ff;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #58a6ff, #3fb950);
+            width: 0%;
+            transition: width 0.3s;
+            animation: progress-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes progress-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #8b949e;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container backup-container">
+        <!-- Header -->
+        <div class="backup-header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.2rem">
+                <i class="fa-solid fa-box-archive" style="color:#58a6ff"></i> Backup & Restore
+            </h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn" onclick="loadBackups()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            </div>
+        </div>
+
+        <div id="msg-box" class="msg"></div>
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Create Backup -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-plus-circle" style="color:#3fb950"></i>
+                    <h3>Buat Backup Baru</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Nama Backup (opsional)</label>
+                        <input type="text" id="backup-name" placeholder="Contoh: backup-sebelum-update">
+                    </div>
+                    <div class="form-group">
+                        <label>Yang Akan Di-Backup</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="inc-config" checked>
+                                <span>Konfigurasi Dashboard</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="inc-docker" checked>
+                                <span>Docker Compose Files</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="inc-users">
+                                <span>Data Pengguna</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="createBackup()" id="btn-create" {% if session.get('role') not
+                        in ['owner', 'admin' ] %}disabled{% endif %}>
+                        <i class="fa-solid fa-download"></i> Buat Backup
+                    </button>
+                </div>
+            </div>
+
+            <!-- Backup List -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <h3>Daftar Backup</h3>
+                </div>
+                <div class="card-body">
+                    <div class="backup-list" id="backup-list">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <div>Memuat daftar backup...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBackups();
+        });
+
+        function showMsg(msg, type) {
+            const el = document.getElementById('msg-box');
+            el.textContent = msg;
+            el.className = 'msg ' + type;
+            setTimeout(() => { el.className = 'msg'; }, 5000);
+        }
+
+        function setProgress(show, percent = 0) {
+            const bar = document.getElementById('progress-bar');
+            const fill = document.getElementById('progress-fill');
+            bar.className = show ? 'progress-bar active' : 'progress-bar';
+            fill.style.width = percent + '%';
+        }
+
+        function loadBackups() {
+            fetch('/api/backup/list')
+                .then(r => r.json())
+                .then(data => {
+                    renderBackups(data.backups || []);
+                })
+                .catch(err => {
+                    document.getElementById('backup-list').innerHTML =
+                        '<div class="empty-state"><i class="fa-solid fa-exclamation-triangle"></i><div>Gagal memuat daftar backup</div></div>';
+                });
+        }
+
+        function renderBackups(backups) {
+            const container = document.getElementById('backup-list');
+            const canManage = ['owner', 'admin'].includes(window.userRole);
+
+            if (backups.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-box-open"></i>
+                        <div>Belum ada backup</div>
+                        <div style="font-size:0.85rem; margin-top:0.5rem">Buat backup pertama Anda!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = backups.map(b => `
+                <div class="backup-item">
+                    <div class="backup-icon">
+                        <i class="fa-solid fa-file-archive"></i>
+                    </div>
+                    <div class="backup-info">
+                        <div class="backup-name">${b.name}</div>
+                        <div class="backup-meta">
+                            <i class="fa-solid fa-calendar"></i> ${b.date} &nbsp;
+                            <i class="fa-solid fa-database"></i> ${b.size}
+                        </div>
+                    </div>
+                    <div class="backup-actions">
+                        <a href="/api/backup/download/${b.id}" class="btn" title="Download">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                        ${canManage ? `
+                            <button class="btn warning" onclick="restoreBackup('${b.id}', '${b.name}')" title="Restore">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                            <button class="btn danger" onclick="deleteBackup('${b.id}', '${b.name}')" title="Hapus">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function createBackup() {
+            const name = document.getElementById('backup-name').value.trim();
+            const includeConfig = document.getElementById('inc-config').checked;
+            const includeDocker = document.getElementById('inc-docker').checked;
+            const includeUsers = document.getElementById('inc-users').checked;
+
+            if (!includeConfig && !includeDocker && !includeUsers) {
+                showMsg('Pilih minimal satu item untuk di-backup', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-create');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membuat backup...';
+            setProgress(true, 30);
+
+            fetch('/api/backup/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    include_config: includeConfig,
+                    include_docker: includeDocker,
+                    include_users: includeUsers
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-download"></i> Buat Backup';
+                    setProgress(false);
+
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Backup berhasil dibuat: ' + data.filename, 'success');
+                        document.getElementById('backup-name').value = '';
+                        loadBackups();
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-download"></i> Buat Backup';
+                    setProgress(false);
+                    showMsg('Gagal membuat backup', 'error');
+                });
+        }
+
+        function restoreBackup(id, name) {
+            if (!confirm(`Yakin ingin restore backup "${name}"?\n\nSemua konfigurasi saat ini akan diganti dengan data dari backup.`)) {
+                return;
+            }
+
+            setProgress(true, 50);
+            showMsg('Melakukan restore...', 'info');
+
+            fetch('/api/backup/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    setProgress(false);
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Restore berhasil! Halaman akan di-refresh...', 'success');
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                })
+                .catch(err => {
+                    setProgress(false);
+                    showMsg('Gagal restore backup', 'error');
+                });
+        }
+
+        function deleteBackup(id, name) {
+            if (!confirm(`Yakin ingin menghapus backup "${name}"?`)) {
+                return;
+            }
+
+            fetch('/api/backup/delete/' + id, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Backup berhasil dihapus', 'success');
+                        loadBackups();
+                    }
+                })
+                .catch(err => {
+                    showMsg('Gagal menghapus backup', 'error');
+                });
+        }
+    </script>
+</body>
+
+</html>

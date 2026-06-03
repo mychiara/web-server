@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Files - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <style>
+        /* File Manager Specific Styles */
+        .fm-container {
+            display: flex;
+            height: calc(100vh - 120px);
+            gap: 0;
+        }
+
+        /* Sidebar */
+        .fm-sidebar {
+            width: 240px;
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 1px solid var(--glass-border);
+            overflow-y: auto;
+            flex-shrink: 0;
+            padding: 0.5rem;
+        }
+
+        .fm-sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            gap: 0.5rem;
+            color: #ccc;
+        }
+
+        .tree-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tree-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .tree-item i {
+            color: #FF9966;
+            width: 16px;
+        }
+
+        .tree-children {
+            padding-left: 1rem;
+            display: none;
+        }
+
+        .tree-children.open {
+            display: block;
+        }
+
+        /* Main Content */
+        .fm-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        /* Header / Toolbar */
+        .fm-header {
+            padding: 0.8rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border-bottom: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+        }
+
+        /* Breadcrumbs */
+        .fm-breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .fm-crumb {
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .fm-crumb:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .fm-crumb.active {
+            color: #fff;
+            font-weight: 500;
+            cursor: default;
+        }
+
+        .fm-crumb-sep {
+            color: #555;
+            font-size: 0.8rem;
+        }
+
+        /* Table */
+        .fm-table-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .fm-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .fm-table th,
+        .fm-table td {
+            padding: 0.5rem 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .fm-table th {
+            position: sticky;
+            top: 0;
+            background: #1e1e28;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .fm-table tr {
+            cursor: pointer;
+        }
+
+        .fm-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .fm-table tr.selected {
+            background: rgba(100, 150, 255, 0.15);
+        }
+
+        .fm-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 0.5rem;
+        }
+
+        .fm-icon.dir {
+            color: #FF9966;
+        }
+
+        .fm-icon.file {
+            color: #888;
+        }
+
+        /* Compact Mode */
+        body.compact .fm-table td,
+        body.compact .fm-table th {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        body.compact .tree-item {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        /* Detail Panel */
+        .fm-detail {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 1px solid var(--glass-border);
+            padding: 1rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .fm-detail.hidden {
+            display: none;
+        }
+
+        .fm-detail h4 {
+            margin: 0 0 1rem;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .fm-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .fm-detail-row span:first-child {
+            color: var(--text-muted);
+        }
+
+        .fm-detail-row span:last-child {
+            color: #fff;
+            text-align: right;
+            max-width: 150px;
+            word-break: break-all;
+        }
+
+        .fm-detail-actions {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: fixed;
+            background: #2a2a35;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.5rem 0;
+            min-width: 160px;
+            z-index: 300;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .context-menu.hidden {
+            display: none;
+        }
+
+        .ctx-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .ctx-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ctx-item.danger {
+            color: #ff6b6b;
+        }
+
+        .ctx-sep {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0.3rem 0;
+        }
+
+        /* Toolbar Buttons */
+        .fm-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .fm-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .fm-btn.active {
+            background: rgba(100, 150, 255, 0.2);
+            border-color: rgba(100, 150, 255, 0.3);
+        }
+
+        /* Status Bar */
+        .fm-status {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container" style="padding: 0.5rem 1rem; max-width: none;">
+        <!-- Top Header -->
+        <header style="display:flex; align-items:center; gap:1rem; padding:0.5rem 0; margin-bottom:0.5rem">
+            <button class="fm-btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.1rem">File Manager</h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="fm-btn" id="btn-compact" onclick="toggleCompact()"><i class="fa-solid fa-compress"></i>
+                    Compact</button>
+                <button class="fm-btn" id="btn-sidebar" onclick="toggleSidebar()"><i
+                        class="fa-solid fa-bars"></i></button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="fm-container glass">
+            <!-- Sidebar Tree -->
+            <div class="fm-sidebar" id="sidebar">
+                <div class="tree-item active" data-path="/" onclick="loadFiles('/')">
+                    <i class="fa-solid fa-hard-drive"></i> /
+                </div>
+                <div id="sidebar-tree"></div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="fm-main">
+                <!-- Toolbar / Breadcrumbs -->
+                <div class="fm-header">
+                    <div class="fm-breadcrumbs" id="breadcrumbs"></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem">
+                        <input type="text" id="search-input" placeholder="Search files..." style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); 
+                            color:#fff; padding:0.4rem 0.8rem; border-radius:6px; font-size:0.85rem; width:180px"
+                            onkeyup="filterFiles(this.value)">
+                        <button class="fm-btn" onclick="clearSearch()"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <button class="fm-btn" onclick="createNew('folder')"><i
+                            class="fa-solid fa-folder-plus"></i></button>
+                    <button class="fm-btn" onclick="createNew('file')"><i class="fa-solid fa-file-plus"></i></button>
+                    <button class="fm-btn" onclick="loadFiles(currentPath)"><i
+                            class="fa-solid fa-rotate-right"></i></button>
+                    <input type="file" id="upload-input" multiple style="display:none"
+                        onchange="uploadFiles(this.files)">
+                    <button class="fm-btn" onclick="document.getElementById('upload-input').click()"
+                        style="background:#238636">
+                        <i class="fa-solid fa-upload"></i> Upload
+                    </button>
+                    <button class="fm-btn" onclick="downloadSelected()"><i class="fa-solid fa-download"></i></button>
+
+                </div>
+
+                <!-- File Table -->
+                <div class="fm-table-wrap">
+                    <table class="fm-table">
+                        <thead>
+                            <tr>
+                                <th style="width:45%">Name</th>
+                                <th>Size</th>
+                                <th>Permissions</th>
+                                <th>Modified</th>
+                            </tr>
+                        </thead>
+                        <tbody id="file-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="fm-status">
+                    <span id="status-text">0 items</span>
+                    <span id="status-path">/</span>
+                </div>
+
+                <!-- Detail Panel -->
+                <div class="fm-detail hidden" id="detail-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+                        <h4 id="detail-name" style="margin:0; word-break:break-all">-</h4>
+                        <button class="fm-btn" onclick="closeDetailPanel()" style="padding:0.3rem 0.5rem"><i
+                                class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="fm-detail-row"><span>Type</span><span id="detail-type">-</span></div>
+                    <div class="fm-detail-row"><span>Size</span><span id="detail-size">-</span></div>
+                    <div class="fm-detail-row"><span>Modified</span><span id="detail-date">-</span></div>
+                    <div class="fm-detail-row"><span>Permissions</span><span id="detail-perm">-</span></div>
+                    <div class="fm-detail-row"><span>Owner (UID)</span><span id="detail-uid">-</span></div>
+                    <div class="fm-detail-row"><span>Group (GID)</span><span id="detail-gid">-</span></div>
+                    <div class="fm-detail-actions">
+                        <button class="fm-btn" onclick="openSelected()"><i class="fa-solid fa-folder-open"></i>
+                            Open</button>
+                        <button class="fm-btn" onclick="renameItem()"><i class="fa-solid fa-pen"></i> Rename</button>
+                        <button class="fm-btn" style="color:#ff6b6b" onclick="deleteItem()"><i
+                                class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="context-menu hidden" id="context-menu">
+            <div class="ctx-item" onclick="openSelected()"><i class="fa-solid fa-folder-open"></i> Open</div>
+            <div class="ctx-item" onclick="openEditor(selectedItem)"><i class="fa-solid fa-edit"></i> Edit</div>
+            <div class="ctx-item" onclick="openInTerminal()"><i class="fa-solid fa-terminal"></i> Open in Terminal</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" onclick="document.getElementById('upload-input').click(); hideContextMenu()"><i
+                    class="fa-solid fa-upload"></i> Upload</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" onclick="copyItem('cut')"><i class="fa-solid fa-scissors"></i> Cut</div>
+            <div class="ctx-item" onclick="copyItem('copy')"><i class="fa-solid fa-copy"></i> Copy</div>
+            <div class="ctx-item" onclick="pasteItem()"><i class="fa-solid fa-paste"></i> Paste</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" onclick="renameItem()"><i class="fa-solid fa-pen"></i> Rename</div>
+            <div class="ctx-item danger" onclick="deleteItem()"><i class="fa-solid fa-trash"></i> Delete</div>
+        </div>
+
+        <!-- Editor Overlay -->
+        <div id="editor-overlay" class="editor-modal" style="display:none">
+            <div class="editor-header">
+                <h3 id="editor-filename">filename.txt</h3>
+                <div style="display:flex; gap:1rem">
+                    <button class="fm-btn" onclick="saveFile()"><i class="fa-solid fa-save"></i> Save</button>
+                    <button class="fm-btn" style="color:#ff6b6b" onclick="closeEditor()"><i
+                            class="fa-solid fa-xmark"></i>
+                        Close</button>
+                </div>
+            </div>
+            <div class="editor-body">
+                <textarea id="editor-textarea"></textarea>
+            </div>
+        </div>
+
+        <script src="{{ url_for('static', filename='files.js') }}?v=2"></script>
+</body>
+
+</html>

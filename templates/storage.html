@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Monitor — MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --glass-bg: rgba(30, 30, 40, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #a0a0b0;
+            --success: #4ecdc4;
+            --danger: #ff6b6b;
+            --warning: #ffe66d;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; color: var(--text-main); min-height: 100vh; }
+        .wallpaper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            z-index: -1; filter: brightness(0.45);
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .page-wrap { padding: 2rem 3rem; max-width: 1400px; margin: 0 auto; }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border-radius: var(--radius-lg);
+        }
+        .card { padding: 1.5rem; margin-bottom: 1.5rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: none; color: var(--text-muted);
+            padding: 0.4rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;
+            margin-bottom: 0.5rem; font-family: inherit;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+        .page-title { font-size: 2rem; font-weight: 700; display: flex; align-items: center; gap: 0.8rem; }
+        .page-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.2rem; }
+        .action-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            color: white; padding: 0.6rem 1.2rem; border-radius: 12px;
+            cursor: pointer; font-family: inherit; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.18); }
+
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card {
+            background: var(--glass-bg); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius-md);
+            padding: 1.2rem; text-align: center;
+        }
+        .stat-val { font-size: 1.8rem; font-weight: 700; font-family: monospace; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.3rem; }
+
+        /* Section title */
+        .section-title {
+            font-size: 1rem; font-weight: 600; margin-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        /* Partition card */
+        .partition-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: var(--radius-md);
+            padding: 1.2rem; margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+        .partition-card:hover { border-color: rgba(255,255,255,0.15); }
+        .partition-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem; }
+        .partition-info { display: flex; align-items: center; gap: 0.8rem; }
+        .partition-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .partition-stats { display: flex; gap: 1.5rem; }
+        .pstat { text-align: center; }
+        .pstat-val { font-weight: 700; font-size: 0.95rem; }
+        .pstat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Progress bar */
+        .prog-bg { height: 8px; border-radius: 99px; background: rgba(255,255,255,0.1); overflow: hidden; }
+        .prog-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+        .prog-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem; }
+        .loading { text-align: center; padding: 4rem; color: var(--text-muted); }
+        @media(max-width:768px){ .page-wrap{ padding: 1rem; } .partition-stats{ gap: 0.8rem; } }
+    </style>
+</head>
+<body>
+<div class="wallpaper"></div>
+<div class="page-wrap">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <button class="back-btn" onclick="window.location.href='/dashboard'">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <div class="page-title"><i class="fa-solid fa-hard-drive" style="color:#ffe66d"></i> Storage Monitor</div>
+            <div class="page-subtitle">Disk partitions, usage, and I/O activity</div>
+        </div>
+        <button class="action-btn" onclick="fetchStorage()">
+            <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+    </div>
+
+    <!-- IO Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <i class="fa-solid fa-arrow-down" style="color:#23a6d5; margin-bottom:0.3rem;"></i>
+            <div class="stat-val" style="color:#23a6d5" id="io-read">—</div>
+            <div class="stat-label">Total Read (MB)</div>
+        </div>
+        <div class="stat-card">
+            <i class="fa-solid fa-arrow-up" style="color:#4ecdc4; margin-bottom:0.3rem;"></i>
+            <div class="stat-val" style="color:#4ecdc4" id="io-write">—</div>
+            <div class="stat-label">Total Write (MB)</div>
+        </div>
+        <div class="stat-card">
+            <i class="fa-solid fa-list" style="color:#ffe66d; margin-bottom:0.3rem;"></i>
+            <div class="stat-val" style="color:#ffe66d" id="io-reads">—</div>
+            <div class="stat-label">Read Ops</div>
+        </div>
+        <div class="stat-card">
+            <i class="fa-solid fa-pen" style="color:#e73c7e; margin-bottom:0.3rem;"></i>
+            <div class="stat-val" style="color:#e73c7e" id="io-writes">—</div>
+            <div class="stat-label">Write Ops</div>
+        </div>
+    </div>
+
+    <!-- Partitions -->
+    <div class="glass card">
+        <div class="section-title">
+            <i class="fa-solid fa-layer-group" style="color:#4ecdc4"></i> Disk Partitions
+        </div>
+        <div id="partitions-container">
+            <div class="loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Loading storage data...</div>
+        </div>
+    </div>
+
+</div>
+<script>
+async function fetchStorage() {
+    try {
+        const res = await fetch('/api/storage/info');
+        const data = await res.json();
+
+        document.getElementById('io-read').textContent = data.io.read_mb.toLocaleString();
+        document.getElementById('io-write').textContent = data.io.write_mb.toLocaleString();
+        document.getElementById('io-reads').textContent = data.io.read_count.toLocaleString();
+        document.getElementById('io-writes').textContent = data.io.write_count.toLocaleString();
+
+        let html = '';
+        data.partitions.forEach(p => {
+            const pct = p.percent;
+            let fillColor = '#4ecdc4';
+            let pctColor = '#4ecdc4';
+            if (pct >= 85) { fillColor = '#ff6b6b'; pctColor = '#ff6b6b'; }
+            else if (pct >= 70) { fillColor = '#ffe66d'; pctColor = '#ffe66d'; }
+
+            html += `
+            <div class="partition-card">
+                <div class="partition-header">
+                    <div class="partition-info">
+                        <i class="fa-solid fa-hard-drive" style="color:#ffe66d; font-size:1.4rem;"></i>
+                        <div>
+                            <div style="font-weight:700; font-family:monospace; font-size:1rem;">${p.mountpoint}</div>
+                            <div class="partition-meta">${p.device} &nbsp;•&nbsp; ${p.fstype}</div>
+                        </div>
+                    </div>
+                    <div class="partition-stats">
+                        <div class="pstat">
+                            <div class="pstat-val" style="color:#ff6b6b;">${p.used} GB</div>
+                            <div class="pstat-label">Used</div>
+                        </div>
+                        <div class="pstat">
+                            <div class="pstat-val" style="color:#4ecdc4;">${p.free} GB</div>
+                            <div class="pstat-label">Free</div>
+                        </div>
+                        <div class="pstat">
+                            <div class="pstat-val" style="color:var(--text-muted);">${p.total} GB</div>
+                            <div class="pstat-label">Total</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="prog-bg">
+                    <div class="prog-fill" style="width:${pct}%; background:${fillColor};"></div>
+                </div>
+                <div class="prog-labels">
+                    <span>0%</span>
+                    <span style="font-weight:700; color:${pctColor};">${pct}% used</span>
+                    <span>100%</span>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('partitions-container').innerHTML = html || '<div class="loading">No partitions found</div>';
+    } catch(e) {
+        document.getElementById('partitions-container').innerHTML = '<div class="loading" style="color:#ff6b6b;"><i class="fa-solid fa-circle-exclamation" style="margin-right:0.5rem;"></i>Failed to load storage data</div>';
+    }
+}
+fetchStorage();
+setInterval(fetchStorage, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uptime Monitor - MasanDigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-card: rgba(22, 27, 34, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent-primary: #00b894;
+            --accent-danger: #d63031;
+            --accent-gradient: linear-gradient(135deg, #00b894, #00cec9);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1a202c, var(--bg-primary));
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: 3rem;
+        }
+
+        .container {
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: #f0f6fc;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .btn.primary {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: #0d1117;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn.primary:hover {
+            background: linear-gradient(135deg, #55efc4, #81ecec);
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn.danger {
+            background: rgba(214, 48, 49, 0.2);
+            border-color: rgba(214, 48, 49, 0.3);
+            color: #ff7675;
+        }
+
+        .btn.danger:hover {
+            background: rgba(214, 48, 49, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+        }
+
+        .stat-icon.up {
+            color: var(--accent-primary);
+            background: rgba(0, 184, 148, 0.1);
+            border-color: rgba(0, 184, 148, 0.2);
+        }
+
+        .stat-icon.down {
+            color: var(--accent-danger);
+            background: rgba(214, 48, 49, 0.1);
+            border-color: rgba(214, 48, 49, 0.2);
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Monitor List Layout */
+        .uptime-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .monitor-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .monitor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .monitor-card.down::before {
+            background: var(--accent-danger);
+        }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .monitor-identity {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .monitor-status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        .monitor-status-dot.down {
+            background: var(--accent-danger);
+            box-shadow: 0 0 10px var(--accent-danger);
+        }
+
+        .monitor-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .monitor-url {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            margin-top: 0.1rem;
+        }
+
+        .monitor-badges {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid transparent;
+        }
+
+        .badge.up {
+            background: rgba(0, 184, 148, 0.1);
+            color: #00b894;
+            border-color: rgba(0, 184, 148, 0.2);
+        }
+
+        .badge.down {
+            background: rgba(214, 48, 49, 0.1);
+            color: #ff7675;
+            border-color: rgba(214, 48, 49, 0.2);
+        }
+
+        .badge.type {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border-color: var(--border);
+        }
+
+        /* Uptime Bars (Kuma style) */
+        .uptime-bars-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .uptime-bars-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .uptime-bars-row {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            height: 24px;
+        }
+
+        .uptime-bar-block {
+            flex: 1;
+            border-radius: 3px;
+            background: #2d3436;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s ease;
+        }
+
+        .uptime-bar-block:hover {
+            transform: scaleY(1.2);
+            z-index: 10;
+        }
+
+        .uptime-bar-block.up {
+            background: var(--accent-primary);
+        }
+
+        .uptime-bar-block.down {
+            background: var(--accent-danger);
+        }
+
+        /* Tooltip style */
+        .uptime-bar-block[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #fff;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .uptime-bar-block:hover[data-tooltip]::after {
+            opacity: 1;
+        }
+
+        /* Latency Display */
+        .latency-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Modal dialog (Add Monitor) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 460px;
+            max-width: 95%;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 0.7rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .modal-footer {
+            padding: 1rem 1.2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Messages */
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .msg.success {
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid #238636;
+            color: #3fb950;
+        }
+
+        .msg.error {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid #da3633;
+            color: #f85149;
+        }
+
+        .msg.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="font-weight:600; font-size:1.2rem; display:flex; align-items:center; gap:0.5rem">
+                <i class="fa-solid fa-heartbeat" style="color:var(--accent-primary)"></i> Uptime Monitor
+            </h2>
+            <div style="margin-left:auto;">
+                {% if session.get('role') not in ['readonly'] %}
+                <button class="btn primary" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> Tambah Layanan</button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="msg hidden" id="global-msg"></div>
+
+        <!-- Uptime Overall Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-list"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Monitor</span>
+                    <span class="stat-value" id="stat-total">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon up"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Online</span>
+                    <span class="stat-value" id="stat-up">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon down"><i class="fa-solid fa-circle-xmark"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Offline</span>
+                    <span class="stat-value" id="stat-down">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Rata-Rata Latensi</span>
+                    <span class="stat-value" id="stat-latency">-- <span style="font-size:0.8rem">ms</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitor List Grid -->
+        <div class="uptime-layout" id="monitor-list">
+            <div style="text-align:center; padding: 4rem; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 1rem; display:block; margin-left:auto; margin-right:auto;"></i>
+                Sedang memuat data monitor...
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Monitor Modal -->
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Tambah Monitor Baru</h3>
+                <button class="modal-close" onclick="closeAddModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nama Layanan</label>
+                    <input type="text" id="m-name" placeholder="e.g. Website Utama, API server">
+                </div>
+                <div class="form-group">
+                    <label>URL / Host (IP:Port)</label>
+                    <input type="text" id="m-url" placeholder="e.g. google.com atau 192.168.1.10:8080">
+                </div>
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div class="form-group">
+                        <label>Tipe Monitor</label>
+                        <select id="m-type">
+                            <option value="http">HTTP/HTTPS GET</option>
+                            <option value="ping">Socket Connection (TCP)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Interval Cek (Detik)</label>
+                        <select id="m-interval">
+                            <option value="30">30 Detik</option>
+                            <option value="60" selected>60 Detik (1 Menit)</option>
+                            <option value="300">300 Detik (5 Menit)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeAddModal()">Batal</button>
+                <button class="btn primary" onclick="submitAddMonitor()"><i class="fa-solid fa-save"></i> Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMonitors();
+            // Poll for fresh data every 10 seconds to keep bars active & live!
+            setInterval(loadMonitors, 10000);
+        });
+
+        function loadMonitors() {
+            fetch('/api/monitors')
+                .then(r => r.json())
+                .then(data => {
+                    renderStats(data);
+                    renderMonitors(data);
+                })
+                .catch(console.error);
+        }
+
+        function renderStats(monitors) {
+            document.getElementById('stat-total').textContent = monitors.length;
+            
+            const upCount = monitors.filter(m => m.up && m.active).length;
+            const downCount = monitors.filter(m => !m.up && m.active).length;
+            
+            document.getElementById('stat-up').textContent = upCount;
+            document.getElementById('stat-down').textContent = downCount;
+            
+            // Average active latency
+            const activeLatencies = monitors.filter(m => m.active && m.up).map(m => m.last_latency);
+            if (activeLatencies.length > 0) {
+                const avg = Math.round(activeLatencies.reduce((a,b) => a+b, 0) / activeLatencies.length);
+                document.getElementById('stat-latency').innerHTML = `${avg} <span style="font-size:0.8rem">ms</span>`;
+            } else {
+                document.getElementById('stat-latency').innerHTML = `--`;
+            }
+        }
+
+        function renderMonitors(monitors) {
+            const list = document.getElementById('monitor-list');
+            if (monitors.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align:center; padding: 4rem 1.5rem; background: var(--bg-card); border-radius: 16px; border:1px dashed var(--border);">
+                        <i class="fa-solid fa-heart-broken" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                        <p style="color:var(--text-muted);">Belum ada layanan yang dipantau.</p>
+                        ${window.userRole !== 'readonly' ? `<button class="btn primary" onclick="openAddModal()" style="margin-top:1rem"><i class="fa-solid fa-plus"></i> Tambah Sekarang</button>` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = monitors.map(m => {
+                const isUp = m.up && m.active;
+                const statusDotClass = isUp ? '' : 'down';
+                const cardClass = isUp ? '' : 'down';
+                const statusBadge = isUp ? '<span class="badge up">Online</span>' : '<span class="badge down">Offline</span>';
+                
+                // Uptime bar blocks
+                // Create a row of exactly 30 blocks. Pad list if history is shorter.
+                const recentHistory = m.history || [];
+                const blockCount = 30;
+                let blocksHtml = '';
+                
+                // Fill up blocks with placeholder or actual up/down values
+                for (let i = 0; i < blockCount; i++) {
+                    const idx = recentHistory.length - blockCount + i;
+                    if (idx < 0) {
+                        // Empty/inactive placeholder
+                        blocksHtml += `<div class="uptime-bar-block"></div>`;
+                    } else {
+                        const check = recentHistory[idx];
+                        const cUp = check.up;
+                        const cClass = cUp ? 'up' : 'down';
+                        const time = new Date(check.timestamp * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        const tooltip = `${cUp ? 'ONLINE' : 'OFFLINE'} | Respon: ${check.latency}ms | Pukul: ${time}`;
+                        
+                        blocksHtml += `<div class="uptime-bar-block ${cClass}" data-tooltip="${tooltip}"></div>`;
+                    }
+                }
+
+                return `
+                    <div class="monitor-card ${cardClass}">
+                        <div class="monitor-header">
+                            <div class="monitor-identity">
+                                <div class="monitor-status-dot ${statusDotClass}"></div>
+                                <div>
+                                    <div class="monitor-name">${m.name}</div>
+                                    <div class="monitor-url">${m.url}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="monitor-badges">
+                                <span class="badge type">${m.type === 'http' ? 'HTTP' : 'TCP Port'}</span>
+                                ${statusBadge}
+                                <span class="latency-text">
+                                    <i class="fa-solid fa-bolt" style="color:#ffeaa7"></i> ${isUp ? m.last_latency + ' ms' : '--'}
+                                </span>
+                                
+                                ${window.userRole !== 'readonly' ? `
+                                    <button class="btn danger" style="padding:0.4rem 0.6rem; font-size:0.8rem; margin-left:1rem;" onclick="deleteMonitor('${m.id}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Kuma Style Bars -->
+                        <div class="uptime-bars-wrapper">
+                            <div class="uptime-bars-row">
+                                ${blocksHtml}
+                            </div>
+                            <div class="uptime-bars-label">
+                                <span>30 kali cek lalu</span>
+                                <span>Hari ini</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add dialog actions
+        const addModal = document.getElementById('add-modal');
+        function openAddModal() {
+            addModal.classList.add('active');
+        }
+        function closeAddModal() {
+            addModal.classList.remove('active');
+            // Clear inputs
+            document.getElementById('m-name').value = '';
+            document.getElementById('m-url').value = '';
+        }
+
+        function submitAddMonitor() {
+            const name = document.getElementById('m-name').value.trim();
+            const url = document.getElementById('m-url').value.trim();
+            const type = document.getElementById('m-type').value;
+            const interval = parseInt(document.getElementById('m-interval').value);
+
+            if (!name || !url) {
+                alert('Nama dan URL/Host harus diisi.');
+                return;
+            }
+
+            fetch('/api/monitors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, url: url, type: type, interval: interval })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    showMsg('Berhasil memantau layanan baru!', 'success');
+                    closeAddModal();
+                    loadMonitors();
+                } else {
+                    alert(res.error || 'Gagal menambahkan monitor.');
+                }
+            })
+            .catch(() => alert('Gagal menghubungi server.'));
+        }
+
+        function deleteMonitor(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus pemantauan layanan ini?')) return;
+
+            fetch(`/api/monitors/${id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        showMsg('Monitor berhasil dihapus.', 'success');
+                        loadMonitors();
+                    } else {
+                        alert(res.error || 'Gagal menghapus monitor.');
+                    }
+                })
+                .catch(() => alert('Gagal menghubungi server.'));
+        }
+
+        function showMsg(text, type) {
+            const msg = document.getElementById('global-msg');
+            msg.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${text}`;
+            msg.className = 'msg ' + type;
+            setTimeout(() => msg.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>

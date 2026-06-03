@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaringan - Server Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <style>
+        .network-container {
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .network-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+            color: #58a6ff;
+        }
+
+        .card-header h3 {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+
+        .info-value {
+            font-weight: 500;
+            font-family: monospace;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .card-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .interface-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .interface-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .interface-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .interface-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(88, 166, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #58a6ff;
+        }
+
+        .interface-info {
+            flex: 1;
+        }
+
+        .interface-name {
+            font-weight: 500;
+        }
+
+        .interface-ip {
+            font-family: monospace;
+            color: #3fb950;
+            font-size: 0.9rem;
+        }
+
+        .interface-status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .interface-status.up {
+            background: rgba(63, 185, 80, 0.15);
+            color: #3fb950;
+        }
+
+        .interface-status.down {
+            background: rgba(248, 81, 73, 0.15);
+            color: #f85149;
+        }
+
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .msg.success {
+            display: block;
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            color: #3fb950;
+        }
+
+        .msg.error {
+            display: block;
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: #f85149;
+        }
+
+        .warning-box {
+            padding: 1rem;
+            background: rgba(227, 179, 65, 0.1);
+            border: 1px solid rgba(227, 179, 65, 0.3);
+            border-radius: 8px;
+            color: #e3b341;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .warning-box i {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container network-container">
+        <!-- Header -->
+        <div class="network-header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.2rem">
+                <i class="fa-solid fa-network-wired" style="color:#58a6ff"></i> Konfigurasi Jaringan
+            </h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn" onclick="loadNetworkInfo()"><i class="fa-solid fa-rotate-right"></i>
+                    Refresh</button>
+            </div>
+        </div>
+
+        <div id="msg-box" class="msg"></div>
+
+        <div class="cards-grid">
+            <!-- Current Network Info -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <h3>Informasi Jaringan Saat Ini</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Hostname</span>
+                        <span class="info-value" id="current-hostname">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IP Address Utama</span>
+                        <span class="info-value" id="current-ip">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Gateway</span>
+                        <span class="info-value" id="current-gateway">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">DNS Server</span>
+                        <span class="info-value" id="current-dns">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">MAC Address</span>
+                        <span class="info-value" id="current-mac">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Interfaces -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-ethernet"></i>
+                    <h3>Interface Jaringan</h3>
+                </div>
+                <div class="card-body">
+                    <div class="interface-list" id="interface-list">
+                        <div style="text-align:center; padding:2rem; color:#8b949e">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Memuat...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Hostname -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-server"></i>
+                    <h3>Ubah Hostname</h3>
+                </div>
+                <div class="card-body">
+                    <div class="warning-box">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Mengubah hostname memerlukan restart sistem agar berlaku sepenuhnya.
+                    </div>
+                    <div class="form-group">
+                        <label>Hostname Baru</label>
+                        <input type="text" id="new-hostname" placeholder="contoh: my-server">
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="updateHostname()" id="btn-update-hostname" {% if
+                        session.get('role') not in ['owner', 'admin' ] %}disabled{% endif %}>
+                        <i class="fa-solid fa-save"></i> Simpan Hostname
+                    </button>
+                </div>
+            </div>
+
+            <!-- DNS Configuration -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-globe"></i>
+                    <h3>Konfigurasi DNS</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>DNS Server 1</label>
+                        <input type="text" id="dns1" placeholder="8.8.8.8">
+                    </div>
+                    <div class="form-group">
+                        <label>DNS Server 2 (Opsional)</label>
+                        <input type="text" id="dns2" placeholder="8.8.4.4">
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="updateDns()" id="btn-update-dns" {% if session.get('role') not
+                        in ['owner', 'admin' ] %}disabled{% endif %}>
+                        <i class="fa-solid fa-save"></i> Simpan DNS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNetworkInfo();
+        });
+
+        function showMsg(msg, type) {
+            const el = document.getElementById('msg-box');
+            el.textContent = msg;
+            el.className = 'msg ' + type;
+            setTimeout(() => { el.className = 'msg'; }, 5000);
+        }
+
+        function loadNetworkInfo() {
+            fetch('/api/network/info')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                        return;
+                    }
+
+                    // Update current info
+                    document.getElementById('current-hostname').textContent = data.hostname || '-';
+                    document.getElementById('current-ip').textContent = data.primary_ip || '-';
+                    document.getElementById('current-gateway').textContent = data.gateway || '-';
+                    document.getElementById('current-dns').textContent = (data.dns || []).join(', ') || '-';
+                    document.getElementById('current-mac').textContent = data.primary_mac || '-';
+
+                    // Pre-fill form
+                    document.getElementById('new-hostname').value = data.hostname || '';
+                    if (data.dns && data.dns.length > 0) {
+                        document.getElementById('dns1').value = data.dns[0] || '';
+                        document.getElementById('dns2').value = data.dns[1] || '';
+                    }
+
+                    // Render interfaces
+                    renderInterfaces(data.interfaces || []);
+                })
+                .catch(err => {
+                    showMsg('Gagal memuat informasi jaringan', 'error');
+                });
+        }
+
+        function renderInterfaces(interfaces) {
+            const container = document.getElementById('interface-list');
+            if (interfaces.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:2rem; color:#8b949e">Tidak ada interface ditemukan</div>';
+                return;
+            }
+
+            container.innerHTML = interfaces.map(iface => `
+                <div class="interface-item">
+                    <div class="interface-icon">
+                        <i class="fa-solid ${iface.type === 'wifi' ? 'fa-wifi' : 'fa-ethernet'}"></i>
+                    </div>
+                    <div class="interface-info">
+                        <div class="interface-name">${iface.name}</div>
+                        <div class="interface-ip">${iface.ip || 'Tidak ada IP'}</div>
+                    </div>
+                    <span class="interface-status ${iface.status}">${iface.status.toUpperCase()}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateHostname() {
+            const hostname = document.getElementById('new-hostname').value.trim();
+            if (!hostname) {
+                showMsg('Hostname tidak boleh kosong', 'error');
+                return;
+            }
+
+            // Validasi hostname
+            if (!/^[a-zA-Z0-9-]+$/.test(hostname)) {
+                showMsg('Hostname hanya boleh berisi huruf, angka, dan tanda hubung', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-update-hostname');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+            fetch('/api/network/hostname', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hostname: hostname })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan Hostname';
+
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Hostname berhasil diubah! Restart sistem untuk menerapkan sepenuhnya.', 'success');
+                        loadNetworkInfo();
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan Hostname';
+                    showMsg('Gagal mengubah hostname', 'error');
+                });
+        }
+
+        function updateDns() {
+            const dns1 = document.getElementById('dns1').value.trim();
+            const dns2 = document.getElementById('dns2').value.trim();
+
+            if (!dns1) {
+                showMsg('DNS Server 1 tidak boleh kosong', 'error');
+                return;
+            }
+
+            // Validasi IP
+            const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!ipRegex.test(dns1)) {
+                showMsg('Format DNS Server 1 tidak valid', 'error');
+                return;
+            }
+            if (dns2 && !ipRegex.test(dns2)) {
+                showMsg('Format DNS Server 2 tidak valid', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-update-dns');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+            const dnsServers = [dns1];
+            if (dns2) dnsServers.push(dns2);
+
+            fetch('/api/network/dns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dns: dnsServers })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan DNS';
+
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Konfigurasi DNS berhasil disimpan!', 'success');
+                        loadNetworkInfo();
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan DNS';
+                    showMsg('Gagal menyimpan konfigurasi DNS', 'error');
+                });
+        }
+    </script>
+</body>
+
+</html>
