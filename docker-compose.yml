@@ -1,8 +1,8 @@
 services:
   dashboard:
     build: .
-    image: eka-dashboard:latest
-    container_name: eka_dashboard
+    image: masandigital-dashboard:latest
+    container_name: masandigital_dashboard
     restart: unless-stopped
     # Use standard bridge mode with port mapping to enforce Port 80
     ports:

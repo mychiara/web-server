@@ -1,4 +1,4 @@
-# Eka Dashboard
+# MasanDigital Dashboard
 
 ⚠️ **PERHATIAN (DISCLAIMER):**
 **Proyek ini masih dalam tahap pengembangan aktif (Under Development / Beta).**
@@ -7,7 +7,7 @@ Beberapa fitur mungkin masih dalam pengerjaan, terdapat *bug*, atau belum sepenu
 ---
 
 ## Deskripsi
-Eka Dashboard adalah sistem panel web terpadu untuk memanajemen layanan server, analitik website, keamanan, dan pengaturan jaringan (seperti Nginx, Docker, dan **LXD Container**) dengan antarmuka yang dinamis, modern, dan informatif.
+MasanDigital Dashboard adalah sistem panel web terpadu untuk memanajemen layanan server, analitik website, keamanan, dan pengaturan jaringan (seperti Nginx, Docker, dan **LXD Container**) dengan antarmuka yang dinamis, modern, dan informatif.
 
 ### ✨ Pembaruan Terbaru (Update)
 *   **LXD Manager & Resource Limits**: Kelola container LXD kamu langsung dari Dashboard. Mulai dari buat container, Start, Stop, Delete, akses Terminal web-based, hingga konfigurasi limit RAM, CPU, dan Storage per-container!
@@ -18,15 +18,15 @@ Aplikasi ini dijalankan menggunakan **Docker Compose** dan dikonfigurasi untuk b
 
 **Bagi Pengguna Baru (Install Baru):**
 ```bash
-git clone https://github.com/mychiara/web-server.git eka_dashboard
-cd eka_dashboard
+git clone https://github.com/mychiara/web-server.git masandigital_dashboard
+cd masandigital_dashboard
 docker compose up --build -d
 ```
 
 **Bagi Pengguna Lama (Cara Update):**
 Untuk mendapatkan fitur terbaru seperti *LXD Manager*, kamu **wajib** melakukan pull dan build ulang agar container memperbarui API backend-nya.
 ```bash
-cd eka_dashboard
+cd masandigital_dashboard
 git pull origin main
 docker compose down
 docker compose up --build -d
@@ -35,13 +35,13 @@ docker compose up --build -d
 ---
 
 ## Hak Kepemilikan (Copyright & Ownership)
-© 2026 **Eka Harefa**. Hak cipta dilindungi undang-undang.
+© 2026 **MasanDigital**. Hak cipta dilindungi undang-undang.
 
-Seluruh baris kode (source code), desain antarmuka, aset, dan logika sistem di dalam repositori ini adalah milik eksklusif dari **Eka Harefa**. 
+Seluruh baris kode (source code), desain antarmuka, aset, dan logika sistem di dalam repositori ini adalah milik eksklusif dari **MasanDigital**. 
 
 **DILARANG KERAS:**
 1. Menyalin, menduplikasi, atau mencuri kode dari proyek ini (Code Theft).
 2. Memodifikasi dan mendistribusikan ulang (re-distribute) atas nama pihak lain.
-3. Menggunakan proyek ini untuk kepentingan komersial pribadi tanpa izin resmi dan tertulis dari pihak Eka Harefa.
+3. Menggunakan proyek ini untuk kepentingan komersial pribadi tanpa izin resmi dan tertulis dari pihak MasanDigital.
 
 Tindakan penyalahgunaan, pembajakan, atau penggunaan tanpa izin akan ditindak secara tegas sesuai dengan hukum perlindungan Hak Cipta yang berlaku.
