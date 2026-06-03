@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panduan Instalasi - MasanDigital Dashboard</title>
+    <title>Panduan Instalasi Lengkap - MasanDigital Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -60,7 +60,7 @@
         /* Sidebar navigation */
         .sidebar {
             width: var(--sidebar-width);
-            background: rgba(11, 15, 25, 0.85);
+            background: rgba(11, 15, 25, 0.9);
             border-right: 1px solid var(--card-border);
             padding: 2.5rem 1.5rem;
             position: fixed;
@@ -114,7 +114,7 @@
             padding: 0.8rem 1rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
             border-radius: 8px;
             transition: all 0.25s ease;
@@ -151,6 +151,8 @@
         header {
             margin-bottom: 3.5rem;
             position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 2rem;
         }
 
         .badge {
@@ -170,7 +172,7 @@
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.3rem;
             font-weight: 800;
             letter-spacing: -1px;
             margin-bottom: 1rem;
@@ -180,26 +182,28 @@
         }
 
         .subtitle {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--text-secondary);
-            max-width: 700px;
+            max-width: 750px;
         }
 
         /* Documentation Sections */
         section {
-            padding-top: 2rem;
-            margin-bottom: 4.5rem;
+            padding-top: 1.5rem;
+            margin-bottom: 4rem;
             scroll-margin-top: 2rem;
         }
 
         h2 {
-            font-size: 1.6rem;
+            font-size: 1.45rem;
             font-weight: 700;
             letter-spacing: -0.5px;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
             gap: 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 0.5rem;
         }
 
         h2 i {
@@ -210,24 +214,24 @@
 
         p {
             color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: 0.975rem;
-            line-height: 1.7;
+            margin-bottom: 1.25rem;
+            font-size: 0.95rem;
+            line-height: 1.65;
         }
 
         /* Requirements Grid */
         .grid-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.25rem;
-            margin: 2rem 0;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
         }
 
         .req-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1.25rem;
             transition: all 0.3s ease;
         }
 
@@ -238,34 +242,71 @@
         }
 
         .req-card i {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: var(--accent-primary);
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .req-card h3 {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
+            color: #fff;
         }
 
         .req-card p {
-            font-size: 0.85rem;
+            font-size: 0.825rem;
             color: var(--text-secondary);
             margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Subheadings */
+        h3.section-subtitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Link design */
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(0, 210, 255, 0.05);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            margin: 0.25rem 0;
+            border: 1px solid rgba(0, 210, 255, 0.1);
+        }
+
+        .btn-link:hover {
+            background: rgba(0, 210, 255, 0.15);
+            color: #fff;
+            transform: translateY(-1px);
         }
 
         /* Steps Timeline */
         .timeline {
             position: relative;
-            margin: 2rem 0;
-            padding-left: 2.5rem;
+            margin: 1.5rem 0;
+            padding-left: 2rem;
         }
 
         .timeline::before {
             content: '';
             position: absolute;
-            left: 11px;
+            left: 9px;
             top: 5px;
             bottom: 5px;
             width: 2px;
@@ -274,7 +315,7 @@
 
         .timeline-step {
             position: relative;
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .timeline-step:last-child {
@@ -283,27 +324,43 @@
 
         .step-number {
             position: absolute;
-            left: -37px;
+            left: -29px;
             top: -2px;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             background: var(--bg-color);
             border: 2px solid var(--accent-primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--accent-primary);
-            box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+            box-shadow: 0 0 8px rgba(0, 210, 255, 0.2);
             z-index: 2;
         }
 
-        .step-content h3 {
-            font-size: 1.15rem;
+        .step-content h4 {
+            font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        /* Order Lists */
+        ol, ul.step-list {
+            padding-left: 1.5rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        ol li, ul.step-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        ol li strong, ul.step-list li strong {
             color: #fff;
         }
 
@@ -354,10 +411,10 @@
         }
 
         pre {
-            padding: 1.25rem;
+            padding: 1rem;
             overflow-x: auto;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #e5e7eb;
         }
 
@@ -375,17 +432,17 @@
             background: rgba(0, 210, 255, 0.03);
             border-left: 4px solid var(--accent-primary);
             border-radius: 0 10px 10px 0;
-            padding: 1.25rem 1.5rem;
-            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
         }
 
         .callout-title {
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--accent-primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -409,7 +466,7 @@
 
         .callout p {
             margin: 0;
-            font-size: 0.925rem;
+            font-size: 0.9rem;
             color: var(--text-secondary);
         }
 
@@ -434,7 +491,7 @@
             padding: 1.25rem 1.5rem;
             text-align: left;
             color: #fff;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -607,18 +664,28 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#persiapan" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-list-check"></i> Persiapan Sistem
+                        <a href="#install-linux" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-brands fa-linux"></i> 1. Instalasi OS Linux
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#instalasi" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-download"></i> Metode Instalasi
+                        <a href="#akses-ssh" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-key"></i> 2. Akses SSH Server
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#wizard" class="nav-link" onclick="closeSidebarMobile()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Setup Wizard
+                        <a href="#install-docker" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-brands fa-docker"></i> 3. Instalasi Docker
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#deploy-dashboard" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> 4. Deploy Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#setup-wizard" class="nav-link" onclick="closeSidebarMobile()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 5. Setup Wizard
                         </a>
                     </li>
                     <li class="nav-item">
@@ -639,251 +706,483 @@
         <main class="main-content">
             <header>
                 <div class="badge">
-                    <i class="fa-solid fa-book"></i> Dokumentasi Resmi
+                    <i class="fa-solid fa-book"></i> Dokumentasi Lengkap (Mulai dari Nol)
                 </div>
-                <h1>Panduan Instalasi Dashboard</h1>
-                <p class="subtitle">Panduan langkah-demi-langkah dari nol untuk memasang dan menjalankan MasanDigital Dashboard pada server Linux (VPS, STB, Mini PC, atau Local Server).</p>
+                <h1>Panduan Pemasangan Server & Dashboard</h1>
+                <p class="subtitle">Panduan komprehensif langkah-demi-langkah bagi pemilik Laptop / Mini PC untuk menginstal OS Linux, Docker, Docker Compose, hingga aplikasi MasanDigital Dashboard siap digunakan.</p>
             </header>
 
             <!-- Pengenalan -->
             <section id="pengenalan">
                 <h2><i class="fa-solid fa-circle-info"></i> Pengenalan</h2>
-                <p><strong>MasanDigital Dashboard</strong> adalah sistem panel web terintegrasi yang memudahkan pemantauan dan pengelolaan layanan server, container Docker, container LXD, website, status keamanan, serta konfigurasi jaringan melalui visualisasi antarmuka yang modern dan responsif.</p>
+                <p>Dokumentasi ini ditulis khusus untuk membantu Anda menyiapkan infrastruktur server mandiri menggunakan perangkat fisik Laptop atau Mini PC yang menganggur. Melalui panduan ini, perangkat Anda akan disulap menjadi sistem server lokal/publik yang handal dengan panel pengelolaan web yang modern.</p>
                 
                 <div class="callout">
                     <div class="callout-title">
-                        <i class="fa-solid fa-shield-halved"></i> Fitur Utama
+                        <i class="fa-solid fa-network-wired"></i> Konsep Infrastruktur
                     </div>
-                    <p>Mendukung pengelolaan kontainer LXD (limit resource CPU/RAM), integrasi CasaOS otomatis, pemantauan status penyimpanan/disks, pengujian jaringan (speedtest), serta pengiriman notifikasi notifikasi bot Telegram/Discord ketika ada anomali sumber daya server.</p>
+                    <p>Mini PC/Laptop Anda akan berjalan menggunakan sistem operasi Linux Server (Headless/tanpa GUI) untuk memaksimalkan efisiensi RAM dan CPU. Seluruh komponen (Database, Web Server, Monitoring) dibungkus menggunakan Docker agar sistem terisolasi dan mudah dikelola dari perangkat lain di jaringan rumah Anda.</p>
                 </div>
             </section>
 
-            <!-- Persiapan -->
-            <section id="persiapan">
-                <h2><i class="fa-solid fa-list-check"></i> 1. Persiapan Sistem</h2>
-                <p>Sebelum memulai proses instalasi, pastikan sistem operasi dan perangkat Anda memenuhi ketentuan berikut:</p>
+            <!-- Langkah 1: Instalasi OS Linux -->
+            <section id="install-linux">
+                <h2><i class="fa-brands fa-linux"></i> 1. Instalasi OS Linux (Ubuntu Server)</h2>
+                <p>Langkah awal adalah menginstall sistem operasi Linux pada perangkat Laptop atau Mini PC Anda. Kami merekomendasikan **Ubuntu Server 24.04 LTS / 22.04 LTS** karena stabilitasnya.</p>
                 
-                <div class="grid-cards">
-                    <div class="req-card">
-                        <i class="fa-brands fa-linux"></i>
-                        <h3>Sistem Operasi</h3>
-                        <p>Linux (Ubuntu 20.04+, Debian, Armbian, atau OpenWRT berbasis Docker).</p>
+                <h3 class="section-subtitle"><i class="fa-solid fa-download"></i> Download Bahan & Tool Resmi</h3>
+                <p>Unduh seluruh berkas resmi di bawah ini langsung dari PC/Laptop utama Anda:</p>
+                <div style="margin-bottom: 1.5rem;">
+                    <a href="https://ubuntu.com/download/server" target="_blank" class="btn-link">
+                        <i class="fa-solid fa-file-export"></i> Download Ubuntu Server ISO
+                    </a>
+                    <a href="https://rufus.ie/" target="_blank" class="btn-link">
+                        <i class="fa-solid fa-compact-disc"></i> Download Rufus (Tool Flash USB)
+                    </a>
+                </div>
+
+                <h3 class="section-subtitle"><i class="fa-solid fa-microchip"></i> Tahap 1.1: Flash ISO ke Flashdisk</h3>
+                <ol>
+                    <li>Tancapkan Flashdisk kosong (minimal kapasitas <strong>8 GB</strong>) ke PC/Laptop utama Anda.</li>
+                    <li>Jalankan program <strong>Rufus</strong> yang telah diunduh.</li>
+                    <li>Pada kolom <strong>Device</strong>, pilih Flashdisk Anda.</li>
+                    <li>Pada kolom <strong>Boot selection</strong>, klik <strong>SELECT</strong> dan pilih file ISO Ubuntu Server yang sudah diunduh.</li>
+                    <li>Di bagian <strong>Partition scheme</strong>, pilih <strong>GPT</strong> (bila Mini PC Anda mendukung UEFI modern) atau pilih <strong>MBR</strong> (bila laptop lama).</li>
+                    <li>Klik tombol <strong>START</strong>. Jika muncul peringatan, pilih <em>"Write in ISO Image mode"</em> dan klik OK. Tunggu hingga status bertuliskan <strong>READY</strong>.</li>
+                </ol>
+
+                <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Tahap 1.2: Booting ke Installer di Laptop/Mini PC</h3>
+                <ol>
+                    <li>Colok Flashdisk installer yang sudah jadi ke port USB Laptop/Mini PC target.</li>
+                    <li>Nyalakan Laptop/Mini PC, lalu tekan tombol menu boot berulang-ulang hingga muncul layar pilihan boot. Tombol boot bervariasi sesuai merk perangkat:
+                        <ul>
+                            <li><strong>ASUS / Intel NUC</strong>: F8 atau F12</li>
+                            <li><strong>Lenovo / HP</strong>: F12 atau F9</li>
+                            <li><strong>Acer / Dell</strong>: F12</li>
+                            <li><strong>Motherboard Lain / Beelink</strong>: F11 atau Esc</li>
+                        </ul>
+                    </li>
+                    <li>Pilih opsi boot yang merujuk pada nama USB Flashdisk Anda (misal: <em>UEFI: SanDisk, Partition 1</em>).</li>
+                </ol>
+
+                <h3 class="section-subtitle"><i class="fa-solid fa-gears"></i> Tahap 1.3: Proses Pemasangan Ubuntu OS</h3>
+                <p>Ikuti konfigurasi instalasi pada monitor Laptop/Mini PC Anda sebagai berikut:</p>
+                <div class="timeline">
+                    <div class="timeline-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Bahasa & Layout Keyboard</h4>
+                            <p>Pilih bahasa <strong>English</strong> dan layout keyboard default <strong>US</strong>.</p>
+                        </div>
                     </div>
-                    <div class="req-card">
-                        <i class="fa-solid fa-user-shield"></i>
-                        <h3>Akses Administrator</h3>
-                        <p>Hak akses user non-root dengan instruksi sudo, atau login langsung sebagai root.</p>
+                    <div class="timeline-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Type of Installation</h4>
+                            <p>Pilih <strong>Ubuntu Server</strong> (pilihan standar, bukan minimal).</p>
+                        </div>
                     </div>
-                    <div class="req-card">
-                        <i class="fa-solid fa-network-wired"></i>
-                        <h3>Koneksi Internet</h3>
-                        <p>Diperlukan untuk mengkloning kode repositori dan mendownload image Docker.</p>
+                    <div class="timeline-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Network Connections (Koneksi Jaringan)</h4>
+                            <p>Direkomendasikan menggunakan kabel LAN agar koneksi stabil. Installer akan menampilkan IP DHCP yang didapatkan server (misal: <code>192.168.1.15</code>). <strong>Catat IP ini!</strong></p>
+                        </div>
                     </div>
+                    <div class="timeline-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Storage Configuration (Partisi Disk)</h4>
+                            <p>Pilih opsi <strong>Use an entire disk</strong>. Centang bagian <em>"Set up this disk as an LVM group"</em>. Pilih harddisk internal Laptop/Mini PC Anda. Pilih <em>Done</em> dan pilih <em>Continue</em> saat ditanyakan konfirmasi format.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Profile Setup (Akun Pengguna)</h4>
+                            <p>Isi informasi akun server Anda:
+                                <ul>
+                                    <li><strong>Your name</strong>: masandigital</li>
+                                    <li><strong>Your server's name</strong>: server-masandigital</li>
+                                    <li><strong>Pick a username</strong>: masandigital</li>
+                                    <li><strong>Password</strong>: buat sandi yang kuat dan mudah diingat</li>
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h4>SSH Setup (Akses Remote)</h4>
+                            <p>Pada layar pilihan SSH, tekan Spasi untuk <strong>mencentang "[X] Install OpenSSH server"</strong>. Ini wajib agar kita dapat mengontrol server ini secara remote tanpa perlu mencolok monitor/keyboard terus-menerus.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <h4>Proses Finish & Reboot</h4>
+                            <p>Tunggu hingga proses instalasi mendownload update dan selesai. Setelah muncul tombol <strong>"Reboot Now"</strong>, tekan Enter. Cabut flashdisk dari port USB ketika layar komputer Anda mulai mati atau muncul instruksi pencabutan media boot.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout warning">
+                    <div class="callout-title">
+                        <i class="fa-solid fa-laptop-code"></i> Tip Laptop sebagai Server
+                    </div>
+                    <p>Apabila Anda menginstal di laptop fisik, Linux akan otomatis sleep saat layar ditutup. Anda dapat menonaktifkan fitur sleep penutup layar ini setelah masuk ke sistem server nanti.</p>
                 </div>
             </section>
 
-            <!-- Instalasi -->
-            <section id="instalasi">
-                <h2><i class="fa-solid fa-download"></i> 2. Metode Instalasi</h2>
-                <p>Terdapat dua cara untuk menaruh file proyek di server target Anda:</p>
+            <!-- Langkah 2: Akses SSH -->
+            <section id="akses-ssh">
+                <h2><i class="fa-solid fa-key"></i> 2. Hubungkan ke Server via SSH</h2>
+                <p>Setelah proses reboot selesai, Mini PC / Laptop Anda kini sudah berfungsi sebagai server (Headless). Letakkan perangkat di dekat router internet, dan kini Anda dapat mencabut monitor serta keyboard fisik di perangkat tersebut.</p>
 
+                <h3 class="section-subtitle"><i class="fa-solid fa-network-wired"></i> Cara Mengetahui IP Address Server</h3>
+                <p>Apabila belum sempat mencatat IP server saat instalasi, nyalakan layar Mini PC, login, kemudian ketik perintah berikut pada shell hitam lokal:</p>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-lang">Shell Lokal Server</span>
+                        <button class="btn-copy" onclick="copyCode(this)">
+                            <i class="fa-regular fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    <pre><code>hostname -I</code></pre>
+                </div>
+
+                <h3 class="section-subtitle"><i class="fa-solid fa-desktop"></i> Hubungkan dari PC/Laptop Utama</h3>
+                <p>Kembali ke PC/Laptop utama Anda yang terhubung di jaringan Wi-Fi/LAN yang sama:</p>
+                
                 <div class="timeline">
-                    <!-- Step 1 -->
-                    <div class="timeline-step">
+                    <div class="timeline-step" style="margin-bottom:1.5rem">
                         <div class="step-number">A</div>
                         <div class="step-content">
-                            <h3>Metode Git Clone (Sangat Direkomendasikan)</h3>
-                            <p>Metode ini paling efisien karena mempermudah pembaruan sistem di masa mendatang.</p>
-                            
+                            <h4>Menggunakan PowerShell / Command Prompt (Windows/Mac)</h4>
+                            <p>Buka terminal di komputer Anda, lalu jalankan perintah berikut:</p>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">Bash</span>
+                                    <span class="code-lang">Command Prompt / PowerShell</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
                                 </div>
-                                <pre><code><span class="comment"># 1. Update list paket dan pasang git</span>
-sudo apt-get update && sudo apt-get install -y git
+                                <pre><code>ssh masandigital@<span class="string">IP_SERVER_LINUX</span>
+<span class="comment"># Contoh: ssh masandigital@192.168.1.15</span></code></pre>
+                            </div>
+                            <p>Masukkan password user <code>masandigital</code> yang telah Anda buat pada langkah sebelumnya.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-number">B</div>
+                        <div class="step-content">
+                            <h4>Menggunakan Aplikasi GUI (PuTTY)</h4>
+                            <p>Jika Anda lebih menyukai aplikasi berbasis UI, unduh dan instal PuTTY:</p>
+                            <a href="https://www.putty.org/" target="_blank" class="btn-link" style="margin-bottom:1rem">
+                                <i class="fa-solid fa-download"></i> Unduh PuTTY Client Resmi
+                            </a>
+                            <ol>
+                                <li>Buka program PuTTY.</li>
+                                <li>Isi kolom <strong>Host Name (or IP address)</strong> dengan IP Server Anda.</li>
+                                <li>Isi <strong>Port</strong> dengan nilai <strong>22</strong>.</li>
+                                <li>Klik tombol <strong>Open</strong> di bagian bawah.</li>
+                                <li>Ketika muncul pop-up peringatan keamanan pertama kali, klik <strong>Yes</strong>.</li>
+                                <li>Login menggunakan username <code>masandigital</code> dan masukkan password Anda.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-<span class="comment"># 2. Clone repositori ke folder masandigital_dashboard</span>
-git clone <span class="url">https://github.com/mychiara/web-server.git</span> masandigital_dashboard
+            <!-- Langkah 3: Instalasi Docker -->
+            <section id="install-docker">
+                <h2><i class="fa-brands fa-docker"></i> 3. Instalasi Docker & Docker Compose</h2>
+                <p>Setelah berhasil login via SSH, kita perlu memasang Docker Engine dan Docker Compose Plugin. Ini adalah fondasi utama untuk menjalankan kontainer aplikasi dashboard.</p>
+                
+                <p>Jalankan perintah-perintah berikut secara berurutan di dalam sesi SSH server Anda:</p>
 
-<span class="comment"># 3. Masuk ke folder proyek</span>
-cd masandigital_dashboard
-
-<span class="comment"># 4. Berikan izin eksekusi & jalankan installer</span>
-chmod +x install.sh
-sudo bash install.sh</code></pre>
+                <div class="timeline">
+                    <!-- Step 1 -->
+                    <div class="timeline-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Update Indeks Paket Server</h4>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">SSH Terminal</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>sudo apt-get update && sudo apt-get upgrade -y</code></pre>
                             </div>
                         </div>
                     </div>
 
                     <!-- Step 2 -->
                     <div class="timeline-step">
-                        <div class="step-number">B</div>
+                        <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3>Metode File ZIP (Instalasi Manual)</h3>
-                            <p>Gunakan opsi ini apabila Anda memindahkan file manual (melalui WinSCP, FileZilla, dll) dalam bentuk paket file `.zip`:</p>
-                            
+                            <h4>Pasang Paket Dependensi Awal</h4>
                             <div class="code-container">
                                 <div class="code-header">
-                                    <span class="code-lang">Bash</span>
+                                    <span class="code-lang">SSH Terminal</span>
                                     <button class="btn-copy" onclick="copyCode(this)">
                                         <i class="fa-regular fa-copy"></i> Salin
                                     </button>
                                 </div>
-                                <pre><code><span class="comment"># 1. Install utilitas unzip jika belum tersedia</span>
-sudo apt-get update && sudo apt-get install -y unzip
+                                <pre><code>sudo apt-get install -y ca-certificates curl gnupg lsb-release</code></pre>
+                            </div>
+                        </div>
+                    </div>
 
-<span class="comment"># 2. Ekstrak file zip ke direktori masandigital_dashboard</span>
-unzip masandigital_dashboard_retail.zip -d masandigital_dashboard
+                    <!-- Step 3 -->
+                    <div class="timeline-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Tambahkan Docker Official GPG Key</h4>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">SSH Terminal</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg</code></pre>
+                            </div>
+                        </div>
+                    </div>
 
-<span class="comment"># 3. Masuk ke direktori dan eksekusi script instalasi</span>
-cd masandigital_dashboard
-chmod +x install.sh
-sudo bash install.sh</code></pre>
+                    <!-- Step 4 -->
+                    <div class="timeline-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Konfigurasikan Repositori Docker</h4>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">SSH Terminal</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="timeline-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Pasang Docker Engine & Docker Compose Plugin</h4>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">SSH Terminal</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 6 -->
+                    <div class="timeline-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h4>Izinkan User Anda Menjalankan Docker Tanpa Sudo</h4>
+                            <p>Agar Anda tidak perlu menulis kata <code>sudo</code> setiap kali memanggil command docker:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">SSH Terminal</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>sudo usermod -aG docker $USER
+newgrp docker</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 7 -->
+                    <div class="timeline-step">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <h4>Verifikasi Hasil Instalasi</h4>
+                            <p>Jalankan perintah ini untuk memastikan Docker dan Docker Compose berjalan dengan benar:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">SSH Terminal</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>docker --version
+docker compose version</code></pre>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="callout success">
-                    <div class="callout-title">
-                        <i class="fa-solid fa-square-check"></i> Tugas Script Installer
-                    </div>
-                    <p>Script <code>install.sh</code> akan otomatis mendeteksi CasaOS (memindahkan portnya ke 9999 agar tidak bentrok dengan port 80), memastikan port 80 kosong, memasang Docker (jika belum ada), serta membuild ulang kontainer dashboard.</p>
-                </div>
             </section>
 
-            <!-- Wizard -->
-            <section id="wizard">
-                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> 3. Login Awal (Setup Wizard)</h2>
-                <p>Setelah instalasi kontainer berhasil diselesaikan oleh script otomatis:</p>
-                <div class="timeline" style="margin: 1.5rem 0;">
-                    <div class="timeline-step" style="margin-bottom: 1.5rem;">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <p>Buka web browser dan arahkan alamat ke IP server Anda (Contoh: <code>http://192.168.1.10</code>).</p>
-                        </div>
-                    </div>
-                    <div class="timeline-step" style="margin-bottom: 1.5rem;">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <p>Sistem akan memandu Anda menuju halaman <strong>Setup Wizard</strong> untuk membuat kata sandi administrator pertama kali.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <p>Masukkan kata sandi baru Anda, klik simpan, lalu gunakan kata sandi tersebut untuk proses login.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Pengelolaan -->
-            <section id="pengelolaan">
-                <h2><i class="fa-solid fa-sliders"></i> 4. Pengelolaan Layanan Server</h2>
-                <p>Berikut adalah beberapa perintah terminal penting yang sering digunakan untuk memantau, menghentikan, atau memperbarui container dashboard:</p>
+            <!-- Langkah 4: Deploy Dashboard -->
+            <section id="deploy-dashboard">
+                <h2><i class="fa-solid fa-cloud-arrow-up"></i> 4. Kloning & Jalankan Dashboard</h2>
+                <p>Setelah Docker siap, saatnya memasang MasanDigital Dashboard menggunakan berkas installer yang sudah dikonfigurasi.</p>
                 
                 <div class="code-container">
                     <div class="code-header">
-                        <span class="code-lang">Perintah Docker Compose</span>
+                        <span class="code-lang">SSH Terminal</span>
                         <button class="btn-copy" onclick="copyCode(this)">
                             <i class="fa-regular fa-copy"></i> Salin
                         </button>
                     </div>
-                    <pre><code><span class="comment"># Pastikan Anda berada di direktori instalasi:</span>
-cd /root/masandigital_dashboard
+                    <pre><code><span class="comment"># 1. Kembali ke folder home user</span>
+cd ~
 
-<span class="comment"># Menghentikan sementara container dashboard</span>
-sudo docker compose down
+<span class="comment"># 2. Kloning repositori GitHub Anda</span>
+git clone <span class="url">https://github.com/mychiara/web-server.git</span> masandigital_dashboard
 
-<span class="comment"># Menjalankan container di latar belakang (Background)</span>
-sudo docker compose up -d
+<span class="comment"># 3. Masuk ke folder proyek</span>
+cd masandigital_dashboard
 
-<span class="comment"># Melihat output logs real-time dashboard</span>
-sudo docker compose logs -f
+<span class="comment"># 4. Berikan izin eksekusi berkas installer otomatis</span>
+chmod +x install.sh
 
-<span class="comment"># Update & Build ulang container setelah git pull</span>
-git pull origin main
-sudo docker compose up -d --build</code></pre>
+<span class="comment"># 5. Jalankan installer sebagai root</span>
+sudo bash install.sh</code></pre>
+                </div>
+
+                <div class="callout success">
+                    <div class="callout-title">
+                        <i class="fa-solid fa-circle-check"></i> Proses Selesai!
+                    </div>
+                    <p>Tunggu proses download base image Python dan download library selesai sampai terminal Anda memunculkan pesan instalasi sukses berwarna hijau.</p>
+                </div>
+            </section>
+
+            <!-- Langkah 5: Setup Wizard -->
+            <section id="setup-wizard">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> 5. Konfigurasi Awal (Setup Wizard)</h2>
+                <p>Setelah kontainer sukses berjalan di server Anda:</p>
+                <ol>
+                    <li>Buka web browser di PC/Laptop/HP utama Anda yang tersambung di jaringan Wi-Fi router yang sama.</li>
+                    <li>Ketik alamat IP Server Anda pada address bar, contoh: <code>http://192.168.1.15</code>.</li>
+                    <li>Anda akan diarahkan ke halaman **Setup Wizard** (karena file keamanan kosong).</li>
+                    <li>Ketik dan buat **Password Admin** baru Anda, lalu konfirmasikan sandi tersebut.</li>
+                    <li>Gunakan sandi tersebut untuk masuk ke dashboard utama. Konfigurasi selesai!</li>
+                </ol>
+            </section>
+
+            <!-- Pengelolaan -->
+            <section id="pengelolaan">
+                <h2><i class="fa-solid fa-sliders"></i> 6. Pengelolaan Server & Perintah Penting</h2>
+                <p>Berikut adalah list perintah dasar di terminal SSH yang berguna saat mengoperasikan server harian Anda:</p>
+                
+                <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Mengontrol Kontainer Dashboard</h3>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-lang">SSH Terminal</span>
+                        <button class="btn-copy" onclick="copyCode(this)">
+                            <i class="fa-regular fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    <pre><code><span class="comment"># Masuk ke direktori dashboard</span>
+cd ~/masandigital_dashboard
+
+<span class="comment"># Menghentikan layanan dashboard</span>
+docker compose down
+
+<span class="comment"># Menyalakan kembali dashboard</span>
+docker compose up -d
+
+<span class="comment"># Melihat logs backend server dashboard secara real-time</span>
+docker compose logs -f</code></pre>
+                </div>
+
+                <h3 class="section-subtitle"><i class="fa-solid fa-laptop"></i> Konfigurasi Tambahan Laptop (Lid Close Settings)</h3>
+                <p>Jika server Anda menggunakan **Laptop fisik**, secara default layar ditutup akan membuat laptop mati (sleep). Matikan fitur ini dengan perintah:</p>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-lang">SSH Terminal</span>
+                        <button class="btn-copy" onclick="copyCode(this)">
+                            <i class="fa-regular fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    <pre><code><span class="comment"># Buka konfigurasi systemd login</span>
+sudo nano /etc/systemd/logind.conf</code></pre>
+                </div>
+                <p>Cari baris berikut, hilangkan tanda pagar <code>#</code> di depannya dan ubah nilainya menjadi <code>ignore</code>:</p>
+                <pre style="background:#090d16; padding:0.8rem; border-radius:6px; font-family:monospace; margin-bottom:1rem; font-size:0.85rem;">HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleLidSwitchDocked=ignore</pre>
+                <p>Simpan (Ctrl+X, ketik Y, Enter) dan terapkan perubahan dengan merestart service:</p>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-lang">SSH Terminal</span>
+                        <button class="btn-copy" onclick="copyCode(this)">
+                            <i class="fa-regular fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    <pre><code>sudo systemctl restart systemd-logind</code></pre>
                 </div>
             </section>
 
             <!-- Troubleshooting -->
             <section id="troubleshooting">
-                <h2><i class="fa-solid fa-screwdriver-wrench"></i> 5. Troubleshooting (FAQ)</h2>
-                <p>Klik pada pertanyaan untuk melihat solusi penyelesaian masalah:</p>
+                <h2><i class="fa-solid fa-screwdriver-wrench"></i> FAQ & Solusi Kendala</h2>
+                <p>Berikut adalah beberapa daftar kendala yang sering ditemui oleh pemula:</p>
 
                 <div class="accordion">
-                    <!-- Item 1 -->
+                    <!-- FAQ 1 -->
                     <div class="accordion-item">
                         <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>1. Server saya menggunakan CasaOS, apakah akan bermasalah?</span>
+                            <span>1. Saya tidak bisa mengakses dashboard melalui browser, apa yang salah?</span>
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>Tidak. Script installer otomatis mendeteksi CasaOS dan memindahkan port layanannya dari port 80 ke port 9999. Anda tetap dapat membuka CasaOS via browser di <code>http://IP_SERVER:9999</code>.</p>
+                                <p>Pastikan IP server yang Anda masukkan sudah benar dan perangkat Anda terhubung ke router yang sama. Bila Anda menggunakan OS Ubuntu, bisa jadi port 80 diblokir oleh firewall bawaan. Aktifkan port tersebut:</p>
+                                <pre style="background:#111827; padding:0.75rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem;"><code>sudo ufw allow 80/tcp
+sudo ufw reload</code></pre>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Item 2 -->
+                    <!-- FAQ 2 -->
                     <div class="accordion-item">
                         <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>2. Bagaimana cara memindahkan port MasanDigital Dashboard agar tidak menggunakan port 80?</span>
+                            <span>2. Bagaimana cara mengupdate dashboard ke versi terbaru di masa mendatang?</span>
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>1. Jalankan <code>nano docker-compose.yml</code> di dalam folder instalasi.<br>
-                                2. Cari baris port <code>- "80:5000"</code> lalu ubah menjadi <code>- "PORT_PILIHAN_ANDA:5000"</code> (contoh: `8080:5000`).<br>
-                                3. Simpan perubahan (Ctrl+X, tekan Y, tekan Enter).<br>
-                                4. Jalankan perintah <code>sudo docker compose up -d</code> untuk menerapkan port baru.</p>
+                                <p>Karena Anda menginstall menggunakan Git Clone, Anda cukup menarik update terbaru dari GitHub dan melakukan rebuild kontainer:</p>
+                                <pre style="background:#111827; padding:0.75rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem;"><code>cd ~/masandigital_dashboard
+git pull origin main
+docker compose up -d --build</code></pre>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Item 3 -->
+                    <!-- FAQ 3 -->
                     <div class="accordion-item">
                         <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>3. Saya lupa password admin dashboard, bagaimana cara reset?</span>
+                            <span>3. Bagaimana cara mengganti port dashboard agar tidak menggunakan port 80?</span>
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>Hapus berkas proteksi konfigurasi keamanan lama dan restart kontainer untuk memunculkan kembali wizard set-up admin:
-                                <pre style="background:#111827; padding:0.75rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem;"><code>cd /root/masandigital_dashboard
-sudo rm data/security_config.json
-sudo docker compose restart</code></pre></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Item 4 -->
-                    <div class="accordion-item">
-                        <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>4. Muncul error "port is already allocated" saat deploy?</span>
-                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="accordion-body">
-                                <p>Hal ini disebabkan port 80 masih diduduki oleh server lain (seperti Apache/Nginx bawaan OS host). Matikan dengan mengetik <code>sudo systemctl stop apache2</code> atau <code>sudo systemctl stop nginx</code>, kemudian restart proses build container.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Item 5 -->
-                    <div class="accordion-item">
-                        <button class="accordion-header" onclick="toggleAccordion(this)">
-                            <span>5. Mengapa dashboard tidak dapat dimuat atau tampilannya berantakan?</span>
-                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="accordion-body">
-                                <p>Kemungkinan browser menyimpan cache halaman yang usang. Lakukan hard refresh dengan menekan tombol kombinasi <code>Ctrl + F5</code> (Windows) atau <code>Cmd + Shift + R</code> (macOS).</p>
+                                <p>1. Masuk ke folder <code>cd ~/masandigital_dashboard</code><br>
+                                2. Jalankan perintah <code>nano docker-compose.yml</code>.<br>
+                                3. Cari bagian <code>ports:</code> dan ubah baris <code>- "80:5000"</code> menjadi <code>- "8080:5000"</code> (sesuaikan 8080 dengan port pilihan Anda).<br>
+                                4. Simpan file (Ctrl+X, Y, Enter) dan terapkan: <code>docker compose up -d</code>.</p>
                             </div>
                         </div>
                     </div>
