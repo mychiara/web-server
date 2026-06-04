@@ -1244,10 +1244,10 @@ def handle_start_terminal(data):
         # sebenarnya disebabkan oleh select.select eventlet yang membekukan thread Python, bukan nsenter.
         # Kita menggunakan command chain agar jika nsenter gagal, ia otomatis fallback ke bash container.
         fallback_shell = (
-            'exec nsenter -t 1 -m -u -n -i bash --login -c "clear && (neofetch || true) && exec bash -i" 2>/dev/null || '
-            'exec nsenter -t 1 -m -u -n -i sh -c "exec sh" 2>/dev/null || '
-            'exec bash --login -i 2>/dev/null || '
-            'exec bash -i 2>/dev/null || '
+            'exec nsenter -t 1 -m -u -n -i bash --login -c "clear && (neofetch || true) && exec bash -i" || '
+            'exec nsenter -t 1 -m -u -n -i sh -c "exec sh" || '
+            'exec bash --login -i || '
+            'exec bash -i || '
             'exec sh'
         )
         cmd = ['sh', '-c', fallback_shell]
