@@ -671,8 +671,15 @@ Restart App=systemctl restart myapp"></textarea>
             });
             resizeObserver.observe(termWrap);
 
+            // Handle click to focus terminal
+            termWrap.addEventListener('click', () => {
+                term.focus();
+                console.log("Terminal focused via click:", sessionId);
+            });
+
             // Handle input
             term.onData(data => {
+                console.log("xterm data input:", JSON.stringify(data));
                 if (!isReadOnly) {
                     socket.emit('terminal_input', {
                         session_id: sessionId,
