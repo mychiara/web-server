@@ -1298,6 +1298,7 @@ def read_terminal_output(session_id, fd):
         try:
             data = _os.read(fd, 4096)
             if data:
+                print(f"[TERMINAL OUTPUT] {session_id}: {data!r}", flush=True)
                 socketio.emit('terminal_output', {
                     'session_id': session_id,
                     'data': data.decode('utf-8', errors='replace')
@@ -1337,10 +1338,13 @@ def handle_terminal_input(data):
     session_id = data.get('session_id', 'default')
     input_data = data.get('input', '')
     
+    print(f"[TERMINAL INPUT] {session_id}: {input_data!r}", flush=True)
+    
     if session_id in terminal_sessions:
         fd = terminal_sessions[session_id]['fd']
         try:
-            _os.write(fd, input_data.encode())
+            bytes_written = _os.write(fd, input_data.encode())
+            print(f"[TERMINAL INPUT] Wrote {bytes_written} bytes to fd {fd}", flush=True)
         except Exception as e:
             print(f"[TERMINAL INPUT ERROR] failed to write to fd {fd}: {e}", flush=True)
 
