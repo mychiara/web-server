@@ -1219,6 +1219,9 @@ def terminal_page():
 def handle_start_terminal(data):
     session_id = data.get('session_id', 'default')
     start_path = data.get('path', '/root')
+    lxd_target = data.get('lxd_target')
+    
+    print(f"[TERMINAL] Starting session: {session_id}, path: {start_path}, lxd: {lxd_target}")
     
     # Create PTY
     master_fd, slave_fd = pty.openpty()
@@ -1234,21 +1237,33 @@ def handle_start_terminal(data):
         os.dup2(slave_fd, 2)
         os.close(slave_fd)
         
-        lxd_target = data.get('lxd_target')
-        
-        # Use nsenter to enter host PID 1 namespace (root shell on host)
-        # Assuming container is privileged and shares PID namespace
-        # Adding -i to bash for interactive mode and setting TERM/SHELL
         os.environ['TERM'] = 'xterm-256color'
         os.environ['SHELL'] = '/bin/bash'
         
         if lxd_target:
             cmd = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', 'lxc', 'exec', lxd_target, '--', 'bash', '--login', '-i']
+            try:
+                os.execvp('nsenter', cmd)
+            except Exception as e:
+                print(f"[TERMINAL CHILD ERROR] LXD nsenter failed: {e}")
+                os._exit(1)
         else:
-            # Perintah ini akan membersihkan layar, menjalankan neofetch jika ada, lalu masuk ke bash interaktif
-            cmd = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', 'bash', '--login', '-c', 'clear && (neofetch || true) && exec bash -i']
-            
-        os.execvp('nsenter', cmd)
+            # PENTING: Gunakan command chain dengan fallback yang sangat aman.
+            # Jika nsenter gagal masuk ke host namespace (misal karena restriksi kernel/docker),
+            # maka akan otomatis fallback ke bash container lokal, dan terakhir ke sh container lokal.
+            fallback_shell = (
+                "exec nsenter -t 1 -m -u -n -i bash --login -i 2>/dev/null || "
+                "exec nsenter -t 1 -m -u -n -i sh 2>/dev/null || "
+                "exec bash --login -i 2>/dev/null || "
+                "exec bash -i 2>/dev/null || "
+                "exec sh"
+            )
+            cmd = ['sh', '-c', fallback_shell]
+            try:
+                os.execvp('sh', cmd)
+            except Exception as e:
+                print(f"[TERMINAL CHILD ERROR] Exec failed: {e}")
+                os._exit(1)
     else:
         # Parent process
         os.close(slave_fd)
@@ -1256,6 +1271,7 @@ def handle_start_terminal(data):
             'fd': master_fd,
             'pid': pid
         }
+        print(f"[TERMINAL] Spawned child process PID {pid} for session {session_id}")
         
         # Start reading thread
         socketio.start_background_task(read_terminal_output, session_id, master_fd)
