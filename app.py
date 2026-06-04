@@ -1240,30 +1240,13 @@ def handle_start_terminal(data):
         os.environ['TERM'] = 'xterm-256color'
         os.environ['SHELL'] = '/bin/bash'
         
-        if lxd_target:
-            cmd = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', 'lxc', 'exec', lxd_target, '--', 'bash', '--login', '-i']
-            try:
-                os.execvp('nsenter', cmd)
-            except Exception as e:
-                print(f"[TERMINAL CHILD ERROR] LXD nsenter failed: {e}")
-                os._exit(1)
-        else:
-            # PENTING: Gunakan command chain dengan fallback yang sangat aman.
-            # Jika nsenter gagal masuk ke host namespace (misal karena restriksi kernel/docker),
-            # maka akan otomatis fallback ke bash container lokal, dan terakhir ke sh container lokal.
-            fallback_shell = (
-                "exec nsenter -t 1 -m -u -n -i bash --login -i 2>/dev/null || "
-                "exec nsenter -t 1 -m -u -n -i sh 2>/dev/null || "
-                "exec bash --login -i 2>/dev/null || "
-                "exec bash -i 2>/dev/null || "
-                "exec sh"
-            )
-            cmd = ['sh', '-c', fallback_shell]
-            try:
-                os.execvp('sh', cmd)
-            except Exception as e:
-                print(f"[TERMINAL CHILD ERROR] Exec failed: {e}")
-                os._exit(1)
+        # JALANKAN BASH LOKAL UNTUK ISOLASI DEBUG
+        cmd = ['bash', '-i']
+        try:
+            os.execvp('bash', cmd)
+        except Exception as e:
+            print(f"[TERMINAL CHILD ERROR] Exec failed: {e}")
+            os._exit(1)
     else:
         # Parent process
         os.close(slave_fd)
