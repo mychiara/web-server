@@ -1279,30 +1279,56 @@ def handle_start_terminal(data):
 
 def read_terminal_output(session_id, fd):
     import eventlet
-    # PENTING: Gunakan modul select dan os ASLI (bukan yang di-monkey-patch eventlet)
-    # karena PTY file descriptor tidak kompatibel dengan eventlet's green select
-    _select = eventlet.patcher.original('select')
+    import fcntl
+    import errno
+    
     _os = eventlet.patcher.original('os')
     
+    # Set the PTY master file descriptor to non-blocking
+    try:
+        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, flags | _os.O_NONBLOCK)
+        print(f"[TERMINAL] Set fd {fd} to non-blocking for session {session_id}", flush=True)
+    except Exception as e:
+        print(f"[TERMINAL] Error setting non-blocking: {e}", flush=True)
+    
     while session_id in terminal_sessions:
+        # PENTING: Berikan waktu untuk greenlet lain berjalan sebelum mencoba membaca lagi
         eventlet.sleep(0.01)
         try:
-            ready, _, _ = _select.select([fd], [], [], 0.1)
-            if ready:
-                data = _os.read(fd, 4096)
-                if data:
-                    socketio.emit('terminal_output', {
-                        'session_id': session_id,
-                        'data': data.decode('utf-8', errors='replace')
-                    })
-                else:
-                    # EOF - child process exited
-                    break
-        except OSError:
-            break
+            data = _os.read(fd, 4096)
+            if data:
+                socketio.emit('terminal_output', {
+                    'session_id': session_id,
+                    'data': data.decode('utf-8', errors='replace')
+                })
+            else:
+                # EOF - process exited
+                print(f"[TERMINAL] EOF detected on fd {fd} for session {session_id}", flush=True)
+                break
+        except (IOError, OSError) as e:
+            # EAGAIN / EWOULDBLOCK berarti belum ada data baru, aman untuk dicoba lagi nanti
+            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                continue
+            else:
+                print(f"[TERMINAL] OSError on fd {fd} for session {session_id}: {e}", flush=True)
+                break
         except Exception as e:
-            print(f"[TERMINAL READ ERROR] {session_id}: {e}")
+            print(f"[TERMINAL] Read error on fd {fd} for session {session_id}: {e}", flush=True)
             break
+            
+    # Cleanup session
+    if session_id in terminal_sessions:
+        try:
+            pid = terminal_sessions[session_id]['pid']
+            _os.close(fd)
+            # Try to clean up process
+            import signal
+            _os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+        terminal_sessions.pop(session_id, None)
+    print(f"[TERMINAL] Session {session_id} ended", flush=True)
 
 @socketio.on('terminal_input')
 def handle_terminal_input(data):
@@ -1315,8 +1341,8 @@ def handle_terminal_input(data):
         fd = terminal_sessions[session_id]['fd']
         try:
             _os.write(fd, input_data.encode())
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[TERMINAL INPUT ERROR] failed to write to fd {fd}: {e}", flush=True)
 
 @socketio.on('terminal_resize')
 def handle_terminal_resize(data):
