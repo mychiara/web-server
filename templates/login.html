@@ -17,23 +17,40 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(-45deg, #ffdde1, #ee9ca7, #a1c4fd, #c2e9fb);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #fff;
+            color: #1e293b;
+            padding: 1.5rem;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .login-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 24px;
             padding: 2.5rem;
             width: 100%;
             max-width: 400px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
         }
 
         .login-header {
@@ -44,20 +61,22 @@
         .login-header i {
             font-size: 3rem;
             margin-bottom: 1rem;
-            background: linear-gradient(135deg, #55efc4, #74b9ff);
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .login-header h1 {
-            font-size: 1.5rem;
-            font-weight: 500;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e293b;
             margin-bottom: 0.5rem;
         }
 
         .login-header p {
-            color: #888;
-            font-size: 0.9rem;
+            color: #64748b;
+            font-size: 0.92rem;
+            font-weight: 500;
         }
 
         .form-group {
@@ -67,42 +86,46 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #aaa;
-            font-size: 0.85rem;
+            color: #64748b;
+            font-size: 0.88rem;
+            font-weight: 600;
         }
 
         .form-group input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #1e293b;
             padding: 0.8rem 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1rem;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #55efc4;
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
         .btn {
             width: 100%;
-            background: linear-gradient(135deg, #55efc4, #00b894);
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             border: none;
-            color: #1a1a2e;
+            color: #ffffff;
             padding: 0.9rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(85, 239, 196, 0.3);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
         }
 
         .btn:disabled {
@@ -112,13 +135,14 @@
         }
 
         .error-msg {
-            background: rgba(255, 107, 107, 0.2);
-            border: 1px solid #ff6b6b;
-            color: #ff6b6b;
+            background: #fef2f2;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
             padding: 0.8rem;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-bottom: 1rem;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
+            font-weight: 500;
             display: none;
         }
 

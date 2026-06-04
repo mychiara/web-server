@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSL Let's Encrypt - Masandigital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <style>
+        .ssl-container {
+            padding: 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .ssl-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.primary {
+            background: #00b4d8;
+            border-color: #00b4d8;
+            color: #fff;
+        }
+
+        .btn.primary:hover {
+            background: #0096c7;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+        }
+
+        .status-icon.active {
+            background: rgba(0, 180, 216, 0.2);
+            color: #00b4d8;
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.3);
+        }
+
+        .status-icon.inactive {
+            background: rgba(248, 81, 73, 0.2);
+            color: #f85149;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+            color: #00b4d8;
+        }
+
+        .card-header h3 {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #8b949e;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .terminal-box {
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #00ff00;
+            height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .msg.success {
+            display: block;
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            color: #3fb950;
+        }
+
+        .msg.error {
+            display: block;
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: #f85149;
+        }
+
+        .msg.info {
+            display: block;
+            background: rgba(0, 180, 216, 0.15);
+            border: 1px solid rgba(0, 180, 216, 0.3);
+            color: #00b4d8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container ssl-container">
+        <!-- Header -->
+        <div class="ssl-header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.2rem">
+                <i class="fa-solid fa-lock" style="color:#00b4d8"></i> SSL Let's Encrypt Generator
+            </h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn" onclick="checkCertbot()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            </div>
+        </div>
+
+        <div id="msg-box" class="msg"></div>
+
+        <!-- Status Card -->
+        <div class="status-card">
+            <div class="status-icon inactive" id="certbot-status-icon">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div style="flex:1">
+                <div style="font-size:1.3rem; font-weight:600" id="certbot-status-title">Memeriksa Certbot...</div>
+                <div style="color:#8b949e" id="certbot-status-desc">Mohon tunggu sebentar</div>
+            </div>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Generator Form -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <h3>Buat SSL Let's Encrypt Baru</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Domain Name (Pastikan A Record sudah menunjuk ke IP Server)</label>
+                        <input type="text" id="ssl-domain" placeholder="Contoh: mycloud.masandigital.my.id">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address (Untuk notifikasi masa kedaluwarsa Let's Encrypt)</label>
+                        <input type="email" id="ssl-email" placeholder="Contoh: admin@masandigital.com">
+                    </div>
+                    <button class="btn primary" onclick="requestSSL()" id="btn-request" {% if session.get('role') not in ['owner', 'admin'] %}disabled{% endif %}>
+                        <i class="fa-solid fa-circle-check"></i> Generate & Konfigurasi Nginx
+                    </button>
+                </div>
+            </div>
+
+            <!-- Console Log Output -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-receipt"></i>
+                    <h3>Status & Progress Generator</h3>
+                </div>
+                <div class="card-body">
+                    <div class="terminal-box" id="terminal-log">Menunggu aksi generate...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO library to capture real-time updates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkCertbot();
+
+            // Connect to SocketIO to receive Certbot's async response
+            socket.on('ssl_status', (data) => {
+                const logBox = document.getElementById('terminal-log');
+                if (data.status === 'success') {
+                    logBox.innerHTML += `\n<span style="color:#3fb950">[SUCCESS] ${data.message}</span>`;
+                    showMsg('SSL Let\'s Encrypt sukses dibuat dan Nginx direload!', 'success');
+                } else if (data.status === 'error') {
+                    logBox.innerHTML += `\n<span style="color:#f85149">[ERROR] ${data.message}</span>`;
+                    showMsg('Proses pembuatan SSL gagal.', 'error');
+                }
+                logBox.scrollTop = logBox.scrollHeight;
+                document.getElementById('btn-request').disabled = false;
+                document.getElementById('btn-request').innerHTML = '<i class="fa-solid fa-circle-check"></i> Generate & Konfigurasi Nginx';
+            });
+        });
+
+        function showMsg(msg, type) {
+            const el = document.getElementById('msg-box');
+            el.textContent = msg;
+            el.className = 'msg ' + type;
+            setTimeout(() => { el.className = 'msg'; }, 6000);
+        }
+
+        function checkCertbot() {
+            fetch('/api/ssl/check_certbot')
+                .then(r => r.json())
+                .then(data => {
+                    const icon = document.getElementById('certbot-status-icon');
+                    const title = document.getElementById('certbot-status-title');
+                    const desc = document.getElementById('certbot-status-desc');
+
+                    if (data.installed) {
+                        icon.className = 'status-icon active';
+                        title.textContent = 'Certbot Let\'s Encrypt Siap';
+                        desc.innerHTML = 'Certbot terdeteksi di server host. Anda bisa membuat SSL secara otomatis.';
+                    } else {
+                        icon.className = 'status-icon inactive';
+                        title.textContent = 'Certbot Belum Terinstall';
+                        desc.innerHTML = `
+                            <div>Silakan install Certbot & plugin Nginx di server host dengan perintah:</div>
+                            <code style="display:block; background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:4px; margin-top:0.5rem; font-size:0.85rem">
+                                sudo apt update && sudo apt install -y certbot python3-certbot-nginx
+                            </code>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    showMsg('Gagal memeriksa status Certbot', 'error');
+                });
+        }
+
+        function requestSSL() {
+            const domain = document.getElementById('ssl-domain').value.trim();
+            const email = document.getElementById('ssl-email').value.trim();
+
+            if (!domain || !email) {
+                showMsg('Domain dan Email harus diisi lengkap!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-request');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang Memproses SSL...';
+
+            const logBox = document.getElementById('terminal-log');
+            logBox.innerHTML = `[INFO] Mengirim request pembuatan SSL untuk domain ${domain}...\n[INFO] Menunggu respon Let's Encrypt ACME server...`;
+
+            fetch('/api/ssl/generate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ domain, email })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    logBox.innerHTML += `\n[INFO] ${data.message}`;
+                    logBox.scrollTop = logBox.scrollHeight;
+                } else {
+                    logBox.innerHTML += `\n<span style="color:#f85149">[ERROR] ${data.error}</span>`;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Generate & Konfigurasi Nginx';
+                }
+            })
+            .catch(() => {
+                logBox.innerHTML += `\n<span style="color:#f85149">[ERROR] Terjadi kegagalan komunikasi jaringan.</span>`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Generate & Konfigurasi Nginx';
+            });
+        }
+    </script>
+</body>
+
+</html>

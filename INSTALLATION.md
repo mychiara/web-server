@@ -1,6 +1,6 @@
-# Panduan Instalasi MasanDigital Dashboard
+# Panduan Instalasi Masandigital Dashboard
 
-Selamat datang di panduan instalasi **MasanDigital Dashboard**. Panduan ini akan membantu Anda memasang dan menjalankan dashboard pada server atau mesin target Anda (STB, Mini PC, VPS, atau Local Server) yang berbasis sistem operasi Linux.
+Selamat datang di panduan instalasi **Masandigital Dashboard**. Panduan ini akan membantu Anda memasang dan menjalankan dashboard pada server atau mesin target Anda (STB, Mini PC, VPS, atau Local Server) yang berbasis sistem operasi Linux.
 
 ---
 
@@ -23,7 +23,7 @@ Jika server Anda sudah terpasang `git`, Anda dapat langsung mengkloning reposito
 # 1. Update sistem dan install git
 sudo apt-get update && sudo apt-get install -y git
 
-# 2. Clone repositori MasanDigital Dashboard
+# 2. Clone repositori Masandigital Dashboard
 git clone https://github.com/mychiara/web-server.git masandigital_dashboard
 
 # 3. Masuk ke direktori
@@ -58,7 +58,7 @@ Jika Anda memiliki file `.zip` (misalnya `masandigital_dashboard_retail.zip`):
 Saat Anda menjalankan `sudo bash install.sh`, sistem akan melakukan beberapa hal:
 - Mengecek dan memasang **Docker** (serta Docker Compose) secara otomatis jika belum ada.
 - Memeriksa **Port 80**. Jika server Anda menggunakan *CasaOS* di port 80, port CasaOS akan dipindahkan otomatis ke `9999` untuk menghindari bentrok.
-- Membangun dan menjalankan *container* MasanDigital Dashboard secara otomatis.
+- Membangun dan menjalankan *container* Masandigital Dashboard secara otomatis.
 
 Jika instalasi sukses, Anda akan melihat pesan seperti:
 > **INSTALASI SUKSES!**  
@@ -79,9 +79,9 @@ Jika instalasi sukses, Anda akan melihat pesan seperti:
 Berikut adalah 15 daftar kendala yang sering terjadi beserta solusinya:
 
 **1. Server menggunakan CasaOS, apakah akan bermasalah?**
-Tidak. Script installer otomatis mendeteksi CasaOS dan akan memindahkan port CasaOS dari `80` menjadi `9999`. Anda dapat mengakses CasaOS kembali di `http://IP-SERVER:9999`, sementara MasanDigital Dashboard menggunakan port `80`.
+Tidak. Script installer otomatis mendeteksi CasaOS dan akan memindahkan port CasaOS dari `80` menjadi `9999`. Anda dapat mengakses CasaOS kembali di `http://IP-SERVER:9999`, sementara Masandigital Dashboard menggunakan port `80`.
 
-**2. Bagaimana cara mengganti Port MasanDigital Dashboard agar tidak menggunakan Port 80?**
+**2. Bagaimana cara mengganti Port Masandigital Dashboard agar tidak menggunakan Port 80?**
 1. Masuk ke direktori instalasi: `cd /root/masandigital_dashboard`
 2. Buka file konfigurasi: `nano docker-compose.yml`
 3. Ubah bagian `ports:` dari `- "80:5000"` menjadi `- "8080:5000"` (atau port lain).
@@ -105,7 +105,7 @@ Anda membutuhkan hak eksekusi. Ketik perintah `chmod +x install.sh` lalu jalanka
 Pada versi Docker terbaru, gunakan perintah `docker compose` (menggunakan spasi, tanpa tanda hubung). Pastikan plugin Docker Compose sudah terpasang di sistem.
 
 **6. Error "port is already allocated" saat proses instalasi (selain CasaOS).**
-Artinya port 80 sedang dipakai oleh aplikasi lain (seperti Apache atau Nginx bawaan). Matikan aplikasi tersebut dengan `sudo systemctl stop apache2` atau `sudo systemctl stop nginx`, atau ganti port MasanDigital Dashboard (lihat poin 2).
+Artinya port 80 sedang dipakai oleh aplikasi lain (seperti Apache or Nginx bawaan). Matikan aplikasi tersebut dengan `sudo systemctl stop apache2` or `sudo systemctl stop nginx`, or ganti port Masandigital Dashboard (lihat poin 2).
 
 **7. Dashboard tidak bisa dibuka (timeout) dari PC / HP lain.**
 Pastikan perangkat terhubung di jaringan (WiFi/LAN) yang sama dengan server. Pastikan juga IP Address yang dimasukkan benar. Jika menggunakan Ubuntu/Debian, pastikan *firewall* tidak memblokir port 80 dengan menjalankan `sudo ufw allow 80`.
@@ -122,16 +122,20 @@ Artinya *container* web server sudah berjalan, namun aplikasi di dalamnya masih 
 **11. Bagaimana cara melihat pesan error lengkap (Log Sistem)?**
 Masuk ke direktori instalasi (`cd /root/masandigital_dashboard`) dan ketik `sudo docker compose logs -f`. Di situ Anda bisa melihat aktivitas sistem atau peringatan error secara *real-time*. Tekan Ctrl+C untuk keluar.
 
-**12. Bagaimana cara mematikan sementara (stop) MasanDigital Dashboard?**
+**12. Bagaimana cara mematikan sementara (stop) Masandigital Dashboard?**
 Masuk ke direktori instalasi, lalu eksekusi perintah `sudo docker compose down`. Untuk menyalakannya kembali, jalankan `sudo docker compose up -d`.
 
-**13. Bagaimana cara memperbarui (Update) MasanDigital Dashboard ke versi terbaru?**
-Jika Anda menginstal menggunakan metode Git Clone, ketik perintah berikut di direktori instalasi:
+**13. Bagaimana cara memperbarui (Update) Masandigital Dashboard ke versi terbaru?**
+Anda dapat menggunakan script update otomatis yang telah disediakan di folder instalasi:
+```bash
+sudo bash update.sh
+```
+Atau jika ingin melakukannya secara manual menggunakan git:
 ```bash
 git pull
 sudo docker compose up -d --build
 ```
-Sistem akan otomatis mengunduh kode terbaru dan melakukan *build* ulang tanpa menghilangkan data pengaturan.
+Sistem akan otomatis mengunduh kode terbaru, membuat cadangan folder data, dan melakukan *build* ulang tanpa menghilangkan data pengaturan Anda.
 
 **14. Dashboard berjalan sangat lambat atau sering macet.**
 Hal ini bisa terjadi jika memori (RAM) server penuh. Gunakan perintah `htop` untuk mengecek status penggunaan CPU dan RAM. Jika RAM sangat minim (< 1GB), disarankan untuk menambahkan *Swap Memory* di Linux Anda minimal 1GB - 2GB.

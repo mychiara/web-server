@@ -775,6 +775,55 @@
                         </div>
                         <button class="btn secondary" onclick="testDiscordAlert()" style="margin-bottom:1rem; width:100%"><i class="fa-solid fa-paper-plane"></i> Test Discord Alert</button>
                     </div>
+
+                    <div class="toggle-row" style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:1rem">
+                        <div>
+                            <div class="toggle-label">Enable WhatsApp Notifications</div>
+                            <div class="toggle-desc">Send alerts directly to your phone via WhatsApp API</div>
+                        </div>
+                        <div class="toggle" id="toggle-whatsapp" onclick="toggleWhatsapp()"></div>
+                    </div>
+
+                    <div id="whatsapp-config-area" style="margin-top:1rem; display:none;">
+                        <div class="form-group">
+                            <label>WhatsApp Provider</label>
+                            <select id="whatsapp-provider" onchange="onWhatsappProviderChange()">
+                                <option value="fonnte">Fonnte (Rekomendasi Indonesia)</option>
+                                <option value="custom">Custom HTTP API Gateway</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Target Phone Number (Indonesian format recommended: e.g. 62812345678)</label>
+                            <input type="text" id="whatsapp-target" placeholder="e.g. 62812345678">
+                        </div>
+                        <div id="whatsapp-fonnte-fields">
+                            <div class="form-group">
+                                <label>Fonnte API Token</label>
+                                <input type="password" id="whatsapp-token" placeholder="Enter Fonnte token">
+                            </div>
+                        </div>
+                        <div id="whatsapp-custom-fields" style="display:none;">
+                            <div class="form-group">
+                                <label>Custom API Endpoint URL</label>
+                                <input type="text" id="whatsapp-custom-url" placeholder="https://api.mygateway.com/send">
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                <div class="form-group">
+                                    <label>Custom Header Key</label>
+                                    <input type="text" id="whatsapp-custom-header-key" placeholder="e.g. Authorization">
+                                </div>
+                                <div class="form-group">
+                                    <label>Custom Header Value</label>
+                                    <input type="password" id="whatsapp-custom-header-value" placeholder="e.g. Bearer TOKEN">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Custom Payload JSON (Use {target} and {message} as placeholders)</label>
+                                <textarea id="whatsapp-custom-payload" style="font-family:monospace; min-height:80px;" placeholder='{"number": "{target}", "msg": "{message}"}'></textarea>
+                            </div>
+                        </div>
+                        <button class="btn secondary" onclick="testWhatsappAlert()" style="margin-bottom:1rem; width:100%"><i class="fa-solid fa-paper-plane"></i> Test WhatsApp Alert</button>
+                    </div>
                 </div>
                 <div class="card-footer">
                     <button class="btn primary" onclick="saveNotifications()" {% if session.get('role') in ['readonly', 'operator'] %}style="display:none"{% endif %}><i class="fa-solid fa-save"></i> Save</button>
@@ -924,7 +973,7 @@
                     <div
                         style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem">
                         <div>
-                            <div style="font-size:1.1rem; font-weight:600" id="app-name">MasanDigital Dashboard</div>
+                            <div style="font-size:1.1rem; font-weight:600" id="app-name">Masandigital Dashboard</div>
                             <div style="font-size:0.85rem; color:#8b949e; margin-top:0.3rem">
                                 Versi: <span id="app-version" style="color:#58a6ff; font-weight:500">Loading...</span>
                             </div>
@@ -934,7 +983,7 @@
                             <button class="btn" onclick="checkUpdate()" id="btn-check-update">
                                 <i class="fa-solid fa-rotate"></i> Cek Pembaruan
                             </button>
-                            <a href="https://github.com/masandigital/web_server" target="_blank" class="btn secondary">
+                            <a href="https://github.com/mychiara/web-server" target="_blank" class="btn secondary">
                                 <i class="fa-brands fa-github"></i> GitHub
                             </a>
                         </div>
@@ -979,7 +1028,7 @@
             fetch('/api/version')
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('app-name').textContent = data.name || 'MasanDigital Dashboard';
+                    document.getElementById('app-name').textContent = data.name || 'Masandigital Dashboard';
                     document.getElementById('app-version').textContent = data.version || '?';
                 })
                 .catch(() => {
@@ -1392,6 +1441,28 @@
                 if (elDcArea) elDcArea.style.display = dcEnabled ? 'block' : 'none';
 
                 setVal('discord-webhook-url', s.integrations.webhook_url);
+
+                // Load WhatsApp settings
+                const waEnabled = s.integrations.whatsapp_enabled === true;
+                const elWaTog = document.getElementById('toggle-whatsapp');
+                if (elWaTog) elWaTog.classList.toggle('on', waEnabled);
+                const elWaArea = document.getElementById('whatsapp-config-area');
+                if (elWaArea) elWaArea.style.display = waEnabled ? 'block' : 'none';
+
+                const waProvider = s.integrations.whatsapp_provider || 'fonnte';
+                const elWaProv = document.getElementById('whatsapp-provider');
+                if (elWaProv) {
+                    elWaProv.value = waProvider;
+                    // Trigger custom/fonnte field toggling manually
+                    setTimeout(() => { onWhatsappProviderChange(); }, 100);
+                }
+                
+                setVal('whatsapp-target', s.integrations.whatsapp_target);
+                setVal('whatsapp-token', s.integrations.whatsapp_token);
+                setVal('whatsapp-custom-url', s.integrations.whatsapp_custom_url);
+                setVal('whatsapp-custom-header-key', s.integrations.whatsapp_custom_header_key);
+                setVal('whatsapp-custom-header-value', s.integrations.whatsapp_custom_header_value);
+                setVal('whatsapp-custom-payload', s.integrations.whatsapp_custom_payload);
             });
         }
 
@@ -1493,15 +1564,76 @@
             document.getElementById('discord-config-area').style.display = t.classList.contains('on') ? 'block' : 'none';
         }
 
+        function toggleWhatsapp() {
+            const t = document.getElementById('toggle-whatsapp');
+            t.classList.toggle('on');
+            document.getElementById('whatsapp-config-area').style.display = t.classList.contains('on') ? 'block' : 'none';
+        }
+
+        function onWhatsappProviderChange() {
+            const val = document.getElementById('whatsapp-provider').value;
+            if (val === 'fonnte') {
+                document.getElementById('whatsapp-fonnte-fields').style.display = 'block';
+                document.getElementById('whatsapp-custom-fields').style.display = 'none';
+            } else {
+                document.getElementById('whatsapp-fonnte-fields').style.display = 'none';
+                document.getElementById('whatsapp-custom-fields').style.display = 'block';
+            }
+        }
+
         function saveNotifications() {
             const payload = {
                 telegram_enabled: document.getElementById('toggle-telegram').classList.contains('on'),
                 telegram_token: document.getElementById('telegram-token').value,
                 telegram_chat_id: document.getElementById('telegram-chat-id').value,
                 webhook_enabled: document.getElementById('toggle-discord').classList.contains('on'),
-                webhook_url: document.getElementById('discord-webhook-url').value
+                webhook_url: document.getElementById('discord-webhook-url').value,
+                whatsapp_enabled: document.getElementById('toggle-whatsapp').classList.contains('on'),
+                whatsapp_provider: document.getElementById('whatsapp-provider').value,
+                whatsapp_target: document.getElementById('whatsapp-target').value,
+                whatsapp_token: document.getElementById('whatsapp-token').value,
+                whatsapp_custom_url: document.getElementById('whatsapp-custom-url').value,
+                whatsapp_custom_header_key: document.getElementById('whatsapp-custom-header-key').value,
+                whatsapp_custom_header_value: document.getElementById('whatsapp-custom-header-value').value,
+                whatsapp_custom_payload: document.getElementById('whatsapp-custom-payload').value
             };
             saveSection('integrations', payload);
+        }
+
+        function testWhatsappAlert() {
+            const provider = document.getElementById('whatsapp-provider').value;
+            const target = document.getElementById('whatsapp-target').value;
+            const token = document.getElementById('whatsapp-token').value;
+            const custom_url = document.getElementById('whatsapp-custom-url').value;
+            const header_key = document.getElementById('whatsapp-custom-header-key').value;
+            const header_val = document.getElementById('whatsapp-custom-header-value').value;
+            const custom_payload = document.getElementById('whatsapp-custom-payload').value;
+            
+            if (!target) {
+                alert('Please enter a target phone number first.');
+                return;
+            }
+            
+            fetch('/api/settings/test-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'whatsapp',
+                    whatsapp_provider: provider,
+                    whatsapp_target: target,
+                    whatsapp_token: token,
+                    whatsapp_custom_url: custom_url,
+                    whatsapp_custom_header_key: header_key,
+                    whatsapp_custom_header_value: header_val,
+                    whatsapp_custom_payload: custom_payload
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) showMsg('WhatsApp test alert sent successfully!', 'success');
+                else showMsg(res.error || 'Failed to send test alert', 'error');
+            })
+            .catch(() => showMsg('Test alert failed', 'error'));
         }
 
         function testTelegramAlert() {

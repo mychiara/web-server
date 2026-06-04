@@ -1,4 +1,4 @@
-# MasanDigital Dashboard
+# Masandigital Dashboard
 
 ⚠️ **PERHATIAN (DISCLAIMER):**
 **Proyek ini masih dalam tahap pengembangan aktif (Under Development / Beta).**
@@ -7,7 +7,7 @@ Beberapa fitur mungkin masih dalam pengerjaan, terdapat *bug*, atau belum sepenu
 ---
 
 ## Deskripsi
-MasanDigital Dashboard adalah sistem panel web terpadu untuk memanajemen layanan server, analitik website, keamanan, dan pengaturan jaringan (seperti Nginx, Docker, dan **LXD Container**) dengan antarmuka yang dinamis, modern, dan informatif.
+Masandigital Dashboard adalah sistem panel web terpadu untuk memanajemen layanan server, analitik website, keamanan, dan pengaturan jaringan (seperti Nginx, Docker, dan **LXD Container**) dengan antarmuka yang dinamis, modern, dan informatif.
 
 ### ✨ Pembaruan Terbaru (Update)
 *   **LXD Manager & Resource Limits**: Kelola container LXD kamu langsung dari Dashboard. Mulai dari buat container, Start, Stop, Delete, akses Terminal web-based, hingga konfigurasi limit RAM, CPU, dan Storage per-container!
@@ -35,13 +35,13 @@ docker compose up --build -d
 ---
 
 ## Hak Kepemilikan (Copyright & Ownership)
-© 2026 **MasanDigital**. Hak cipta dilindungi undang-undang.
+© 2026 **Masandigital**. Hak cipta dilindungi undang-undang.
 
-Seluruh baris kode (source code), desain antarmuka, aset, dan logika sistem di dalam repositori ini adalah milik eksklusif dari **MasanDigital**. 
+Seluruh baris kode (source code), desain antarmuka, aset, dan logika sistem di dalam repositori ini adalah milik eksklusif dari **Masandigital**. 
 
 **DILARANG KERAS:**
 1. Menyalin, menduplikasi, atau mencuri kode dari proyek ini (Code Theft).
 2. Memodifikasi dan mendistribusikan ulang (re-distribute) atas nama pihak lain.
-3. Menggunakan proyek ini untuk kepentingan komersial pribadi tanpa izin resmi dan tertulis dari pihak MasanDigital.
+3. Menggunakan proyek ini untuk kepentingan komersial pribadi tanpa izin resmi dan tertulis dari pihak Masandigital.
 
 Tindakan penyalahgunaan, pembajakan, atau penggunaan tanpa izin akan ditindak secara tegas sesuai dengan hukum perlindungan Hak Cipta yang berlaku.

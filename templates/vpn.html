@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPN Manager - MasanDigital Dashboard</title>
+    <title>VPN Manager - Masandigital Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -273,14 +273,17 @@
         </div>
 
         <!-- Tab Switcher -->
-        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
-            <button class="btn" id="tab-wg" onclick="switchTab('wireguard')" style="flex:1; justify-content:center;">
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap: wrap;">
+            <button class="btn" id="tab-wg" onclick="switchTab('wireguard')" style="flex:1; min-width: 100px; justify-content:center;">
                 <i class="fa-solid fa-shield-halved"></i> WireGuard
             </button>
-            <button class="btn" id="tab-zt" onclick="switchTab('zerotier')" style="flex:1; justify-content:center;">
+            <button class="btn" id="tab-zt" onclick="switchTab('zerotier')" style="flex:1; min-width: 100px; justify-content:center;">
                 <i class="fa-solid fa-globe"></i> ZeroTier
             </button>
-            <button class="btn" id="tab-scan" onclick="switchTab('smartscan')" style="flex:1; justify-content:center;">
+            <button class="btn" id="tab-ts" onclick="switchTab('tailscale')" style="flex:1; min-width: 100px; justify-content:center;">
+                <i class="fa-solid fa-route"></i> Tailscale
+            </button>
+            <button class="btn" id="tab-scan" onclick="switchTab('smartscan')" style="flex:1; min-width: 100px; justify-content:center;">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Smart Scan
             </button>
         </div>
@@ -392,6 +395,73 @@
             </div>
         </div>
 
+        <!-- Tailscale Section -->
+        <div id="section-tailscale" style="display:none;">
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-icon not-installed" id="ts-status-icon">
+                    <i class="fa-solid fa-route"></i>
+                </div>
+                <div style="flex:1">
+                    <div style="font-size:1.3rem; font-weight:600" id="ts-status-title">Memeriksa...</div>
+                    <div style="color:#8b949e" id="ts-status-desc">Mohon tunggu</div>
+                </div>
+                <div id="ts-status-actions"></div>
+            </div>
+
+            <!-- Auth URL Card -->
+            <div class="card" id="ts-auth-card" style="display:none; border-color: #f38020; margin-bottom:1rem">
+                <div class="card-header" style="background: rgba(243, 128, 32, 0.1)">
+                    <i class="fa-solid fa-key" style="color:#f38020"></i>
+                    <h3 style="color:#f38020">Login Tailscale Diperlukan</h3>
+                </div>
+                <div class="card-body">
+                    <p style="color:#ccc; margin-bottom:1rem">Koneksi Tailscale memerlukan autentikasi. Silakan klik tombol di bawah untuk mendaftarkan perangkat ini:</p>
+                    <a href="#" id="ts-auth-url" target="_blank" class="btn primary" style="background:#f38020; border-color:#f38020; color:#fff; font-weight:bold">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Hubungkan Perangkat
+                    </a>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <!-- Connect / Authenticate -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-circle-play" style="color:#3fb950"></i>
+                        <h3>Aktifkan Tailscale</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Auth Key (Opsional)</label>
+                            <input type="password" id="ts-auth-key" placeholder="tskey-auth-xxxxxx">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn primary" onclick="upTailscale()" id="btn-ts-up" {% if session.get('role') not in ['owner', 'admin'] %}disabled{% endif %}>
+                            <i class="fa-solid fa-circle-check"></i> Hubungkan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Peer / Device List -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-network-wired"></i>
+                        <h3>Daftar Node / Peers</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="client-list" id="ts-peer-list">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+                                <div>Memuat...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <!-- Smart Scan Section -->
         <div id="section-smartscan" style="display:none;">
             <div class="status-card">
@@ -452,18 +522,22 @@
             currentTab = tab;
             document.getElementById('section-wireguard').style.display = tab === 'wireguard' ? 'block' : 'none';
             document.getElementById('section-zerotier').style.display = tab === 'zerotier' ? 'block' : 'none';
+            document.getElementById('section-tailscale').style.display = tab === 'tailscale' ? 'block' : 'none';
             document.getElementById('section-smartscan').style.display = tab === 'smartscan' ? 'block' : 'none';
 
             document.getElementById('tab-wg').style.background = tab === 'wireguard' ? '#238636' : '';
             document.getElementById('tab-zt').style.background = tab === 'zerotier' ? '#58a6ff' : '';
+            document.getElementById('tab-ts').style.background = tab === 'tailscale' ? '#f38020' : '';
             document.getElementById('tab-scan').style.background = tab === 'smartscan' ? '#bc8cf2' : '';
             
             if (tab === 'smartscan') runSmartScan();
+            if (tab === 'tailscale') loadTailscaleStatus();
         }
 
         function loadAll() {
             loadWireGuardStatus();
             loadZerotierStatus();
+            loadTailscaleStatus();
             runSmartScan();
         }
 
@@ -866,6 +940,138 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // ===== Tailscale Functions =====
+        function loadTailscaleStatus() {
+            fetch('/api/tailscale/status')
+                .then(r => r.json())
+                .then(data => {
+                    updateTailscaleStatus(data);
+                })
+                .catch(err => {
+                    updateTailscaleStatus({ installed: false });
+                });
+        }
+
+        function updateTailscaleStatus(data) {
+            const icon = document.getElementById('ts-status-icon');
+            const title = document.getElementById('ts-status-title');
+            const desc = document.getElementById('ts-status-desc');
+            const actions = document.getElementById('ts-status-actions');
+            const authCard = document.getElementById('ts-auth-card');
+            const authUrl = document.getElementById('ts-auth-url');
+            const canManage = ['owner', 'admin'].includes(window.userRole);
+
+            authCard.style.display = 'none';
+
+            if (!data.installed) {
+                icon.className = 'status-icon not-installed';
+                title.textContent = 'Tailscale Belum Terinstall';
+                desc.innerHTML = `
+                    <div>Silakan install Tailscale di sistem host Anda dengan perintah:</div>
+                    <code style="display:block; background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:4px; margin-top:0.5rem; font-size:0.85rem">
+                        curl -fsSL https://tailscale.com/install.sh | sh
+                    </code>
+                `;
+                actions.innerHTML = '';
+            } else if (data.running && data.authenticated) {
+                icon.className = 'status-icon active';
+                title.textContent = 'Tailscale Aktif';
+                desc.innerHTML = `IP: <strong>${data.ip}</strong> | Host: <strong>${data.host_name}</strong>`;
+                actions.innerHTML = canManage ? '<button class="btn danger" onclick="downTailscale()"><i class="fa-solid fa-stop"></i> Nonaktifkan</button>' : '';
+                renderTailscalePeers(data.peers || []);
+            } else if (data.running) {
+                icon.className = 'status-icon inactive';
+                title.textContent = 'Tailscale Menunggu Autentikasi';
+                desc.textContent = 'Service aktif, silakan login untuk menghubungkan node.';
+                actions.innerHTML = '';
+            } else {
+                icon.className = 'status-icon inactive';
+                title.textContent = 'Tailscale Nonaktif';
+                desc.textContent = 'Koneksi VPN Tailscale tidak berjalan.';
+                actions.innerHTML = canManage ? '<button class="btn primary" onclick="upTailscale()"><i class="fa-solid fa-play"></i> Hubungkan</button>' : '';
+            }
+        }
+
+        function renderTailscalePeers(peers) {
+            const container = document.getElementById('ts-peer-list');
+            if (peers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-circle-nodes" style="font-size:2rem; opacity:0.5"></i>
+                        <div style="margin-top:0.5rem">Tidak ada node peer terhubung</div>
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = peers.map(p => `
+                <div class="client-item">
+                    <div class="client-icon" style="background: rgba(243, 128, 32, 0.15); color: #f38020">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <div class="client-info">
+                        <div class="client-name">${p.name}</div>
+                        <div class="client-meta">IP: ${p.ip} | OS: ${p.os || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <span class="status-badge" style="background:${p.active ? '#238636' : 'rgba(255,255,255,0.05)'}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                            ${p.active ? 'Aktif' : 'Idle'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function upTailscale() {
+            const authKey = document.getElementById('ts-auth-key').value.trim();
+            const btn = document.getElementById('btn-ts-up');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...';
+
+            fetch('/api/tailscale/up', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auth_key: authKey })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Hubungkan';
+                    
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else if (data.needs_auth && data.auth_url) {
+                        const authCard = document.getElementById('ts-auth-card');
+                        const authUrlLink = document.getElementById('ts-auth-url');
+                        authUrlLink.href = data.auth_url;
+                        authCard.style.display = 'block';
+                        showMsg('Autentikasi diperlukan. Buka link yang tampil.', 'info');
+                    } else {
+                        showMsg('Tailscale berhasil diaktifkan!', 'success');
+                        loadTailscaleStatus();
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Hubungkan';
+                    showMsg('Gagal mengaktifkan Tailscale', 'error');
+                });
+        }
+
+        function downTailscale() {
+            if (!confirm('Yakin ingin memutuskan koneksi Tailscale?')) return;
+            fetch('/api/tailscale/down', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showMsg(data.error, 'error');
+                    } else {
+                        showMsg('Tailscale berhasil dimatikan', 'success');
+                        loadTailscaleStatus();
+                    }
+                })
+                .catch(err => showMsg('Gagal menonaktifkan Tailscale', 'error'));
         }
     </script>
 </body>

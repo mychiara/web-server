@@ -388,6 +388,7 @@
                         <button class="fm-btn" onclick="closeDetailPanel()" style="padding:0.3rem 0.5rem"><i
                                 class="fa-solid fa-xmark"></i></button>
                     </div>
+                    <div id="detail-media-preview" style="margin-bottom: 1rem; width: 100%; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.05); border: 1px solid rgba(0, 0, 0, 0.08); display: none; justify-content: center; align-items: center; max-height: 150px; cursor: pointer;"></div>
                     <div class="fm-detail-row"><span>Type</span><span id="detail-type">-</span></div>
                     <div class="fm-detail-row"><span>Size</span><span id="detail-size">-</span></div>
                     <div class="fm-detail-row"><span>Modified</span><span id="detail-date">-</span></div>
@@ -435,6 +436,24 @@
             </div>
             <div class="editor-body">
                 <textarea id="editor-textarea"></textarea>
+            </div>
+        </div>
+
+        <!-- Lightbox / Media Preview Modal -->
+        <div id="media-preview-modal" class="logout-overlay" style="display:none; pointer-events:all; z-index: 2050;">
+            <div class="logout-card" style="width: 85%; max-width: 900px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 0.5rem;">
+                    <h3 id="preview-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 600; word-break: break-all; color: var(--text-main);">File Preview</h3>
+                    <button class="fm-btn" onclick="closeMediaPreviewModal()" style="padding: 0.3rem 0.6rem; color: #ff6b6b;"><i class="fa-solid fa-xmark"></i> Close</button>
+                </div>
+                <div id="preview-modal-content" style="width: 100%; display: flex; justify-content: center; align-items: center; min-height: 350px; max-height: 60vh; overflow: auto; background: rgba(0,0,0,0.05); border-radius: 8px; padding: 0.5rem; position: relative;">
+                    <!-- dynamic preview content -->
+                </div>
+                <div id="preview-modal-controls" style="display: flex; gap: 0.8rem; margin-top: 0.5rem;">
+                    <button class="fm-btn" id="btn-zoom-in" onclick="zoomPreview(0.1)"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom In</button>
+                    <button class="fm-btn" id="btn-zoom-out" onclick="zoomPreview(-0.1)"><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom Out</button>
+                    <button class="fm-btn" id="btn-rotate" onclick="rotatePreview()"><i class="fa-solid fa-rotate"></i> Rotate</button>
+                </div>
             </div>
         </div>
 

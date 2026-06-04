@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Tunnel Manager - Masandigital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <script>
+        window.userRole = "{{ session.get('role', 'readonly') }}";
+    </script>
+    <style>
+        .tunnel-container {
+            padding: 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .tunnel-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.primary {
+            background: #f38020;
+            border-color: #f38020;
+            color: #fff;
+        }
+
+        .btn.primary:hover {
+            background: #e07016;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+        }
+
+        .status-icon.active {
+            background: rgba(243, 128, 32, 0.2);
+            color: #f38020;
+            box-shadow: 0 0 15px rgba(243, 128, 32, 0.3);
+        }
+
+        .status-icon.inactive {
+            background: rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+            color: #f38020;
+        }
+
+        .card-header h3 {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #8b949e;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.65rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .console-box {
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #00ff00;
+            height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .msg {
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .msg.success {
+            display: block;
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            color: #3fb950;
+        }
+
+        .msg.error {
+            display: block;
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: #f85149;
+        }
+
+        .msg.info {
+            display: block;
+            background: rgba(243, 128, 32, 0.15);
+            border: 1px solid rgba(243, 128, 32, 0.3);
+            color: #f38020;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container tunnel-container">
+        <!-- Header -->
+        <div class="tunnel-header">
+            <button class="btn" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-home"></i></button>
+            <h2 style="margin:0; font-weight:400; font-size:1.2rem">
+                <i class="fa-brands fa-cloudflare" style="color:#f38020"></i> Cloudflare Tunnel GUI Manager
+            </h2>
+            <div style="margin-left:auto; display:flex; gap:0.5rem">
+                <button class="btn" onclick="fetchStatus()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            </div>
+        </div>
+
+        <div id="msg-box" class="msg"></div>
+
+        <!-- Status Card -->
+        <div class="status-card">
+            <div class="status-icon inactive" id="tunnel-status-icon">
+                <i class="fa-brands fa-cloudflare"></i>
+            </div>
+            <div style="flex:1">
+                <div style="font-size:1.3rem; font-weight:600" id="tunnel-status-title">Memeriksa Tunnel...</div>
+                <div style="color:#8b949e" id="tunnel-status-desc">Menghubungkan ke Docker daemon</div>
+            </div>
+            <div id="tunnel-status-actions"></div>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Configuration Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-gears"></i>
+                    <h3>Konfigurasi Token Tunnel</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Cloudflare Tunnel Token</label>
+                        <textarea id="tunnel-token" placeholder="Tempel token tunnel Anda di sini..."></textarea>
+                    </div>
+                    <button class="btn primary" onclick="saveConfig()" id="btn-save" {% if session.get('role') not in ['owner', 'admin'] %}disabled{% endif %}>
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan Konfigurasi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Logs / Live Monitoring Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-terminal"></i>
+                    <h3>Log Koneksi Tunnel (Live)</h3>
+                </div>
+                <div class="card-body">
+                    <div class="console-box" id="log-console">Tunnel tidak aktif atau log belum tersedia.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logInterval = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStatus();
+        });
+
+        function showMsg(msg, type) {
+            const el = document.getElementById('msg-box');
+            el.textContent = msg;
+            el.className = 'msg ' + type;
+            setTimeout(() => { el.className = 'msg'; }, 6000);
+        }
+
+        function fetchStatus() {
+            fetch('/api/cloudflare/status')
+                .then(r => r.json())
+                .then(data => {
+                    const icon = document.getElementById('tunnel-status-icon');
+                    const title = document.getElementById('tunnel-status-title');
+                    const desc = document.getElementById('tunnel-status-desc');
+                    const actions = document.getElementById('tunnel-status-actions');
+                    const tokenText = document.getElementById('tunnel-token');
+                    const canManage = ['owner', 'admin'].includes(window.userRole);
+
+                    if (data.token) {
+                        tokenText.value = data.token;
+                    }
+
+                    if (data.running) {
+                        icon.className = 'status-icon active';
+                        title.textContent = 'Cloudflare Tunnel Berjalan';
+                        desc.innerHTML = `Container ID: <strong>${data.container_id}</strong> | Status: <strong style="color:#3fb950">${data.status}</strong>`;
+                        actions.innerHTML = canManage ? '<button class="btn danger" onclick="stopTunnel()"><i class="fa-solid fa-stop"></i> Stop Tunnel</button>' : '';
+                        startLogPolling();
+                    } else {
+                        icon.className = 'status-icon inactive';
+                        title.textContent = 'Cloudflare Tunnel Berhenti';
+                        desc.textContent = 'Layanan tunnel aman terputus. Silakan konfigurasi token dan start.';
+                        actions.innerHTML = canManage ? '<button class="btn primary" onclick="startTunnel()"><i class="fa-solid fa-play"></i> Start Tunnel</button>' : '';
+                        stopLogPolling();
+                    }
+                })
+                .catch(err => {
+                    showMsg('Gagal memuat status Cloudflare Tunnel', 'error');
+                });
+        }
+
+        function saveConfig() {
+            const token = document.getElementById('tunnel-token').value.trim();
+            if (!token) {
+                showMsg('Token tunnel tidak boleh kosong', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+            fetch('/api/cloudflare/configure', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ token })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Konfigurasi';
+                if (data.success) {
+                    showMsg('Konfigurasi token tunnel berhasil disimpan!', 'success');
+                    fetchStatus();
+                } else {
+                    showMsg(data.error || 'Gagal menyimpan konfigurasi', 'error');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Konfigurasi';
+                showMsg('Terjadi kesalahan jaringan', 'error');
+            });
+        }
+
+        function startTunnel() {
+            showMsg('Memulai container Cloudflare tunnel...', 'info');
+            fetch('/api/cloudflare/start', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMsg('Container Cloudflare tunnel berhasil dijalankan!', 'success');
+                    fetchStatus();
+                } else {
+                    showMsg(data.error, 'error');
+                }
+            })
+            .catch(() => showMsg('Gagal terhubung ke API', 'error'));
+        }
+
+        function stopTunnel() {
+            if (!confirm('Yakin ingin mematikan Cloudflare tunnel?')) return;
+            showMsg('Menghentikan tunnel...', 'info');
+            fetch('/api/cloudflare/stop', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMsg('Cloudflare tunnel berhasil dihentikan!', 'success');
+                    fetchStatus();
+                } else {
+                    showMsg(data.error, 'error');
+                }
+            })
+            .catch(() => showMsg('Gagal terhubung ke API', 'error'));
+        }
+
+        function startLogPolling() {
+            if (logInterval) clearInterval(logInterval);
+            pollLogs();
+            logInterval = setInterval(pollLogs, 3000);
+        }
+
+        function stopLogPolling() {
+            if (logInterval) {
+                clearInterval(logInterval);
+                logInterval = null;
+            }
+        }
+
+        function pollLogs() {
+            fetch('/api/cloudflare/logs')
+            .then(r => r.json())
+            .then(data => {
+                const consoleBox = document.getElementById('log-console');
+                if (data.logs) {
+                    consoleBox.textContent = data.logs;
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                } else if (data.error) {
+                    consoleBox.textContent = "Error: " + data.error;
+                }
+            })
+            .catch(() => {
+                document.getElementById('log-console').textContent = "Kesalahan memuat live log.";
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panduan Instalasi Server & Dashboard - MasanDigital</title>
+    <title>Panduan Instalasi Server & Dashboard - Masandigital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -858,7 +858,7 @@
                     <div class="logo-icon">
                         <i class="fa-solid fa-server"></i>
                     </div>
-                    <span class="logo-text">MasanDigital</span>
+                    <span class="logo-text">Masandigital</span>
                 </div>
 
                 <nav>
@@ -899,8 +899,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="#deploy-eklinik" class="nav-link" onclick="closeSidebarMobile()">
+                                <i class="fa-solid fa-code" style="color:var(--accent-green)"></i> 7. Deploy e-klinik (PHP/MySQL)
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="#pengelolaan" class="nav-link" onclick="closeSidebarMobile()">
-                                <i class="fa-solid fa-sliders"></i> 7. Operasional Harian
+                                <i class="fa-solid fa-sliders"></i> 8. Operasional Harian
                             </a>
                         </li>
                         <li class="nav-item">
@@ -913,7 +918,7 @@
             </div>
 
             <div class="sidebar-footer">
-                &copy; 2026 MasanDigital<br>Documentation Portal
+                &copy; 2026 Masandigital<br>Documentation Portal
             </div>
         </aside>
 
@@ -930,7 +935,7 @@
             <!-- Pengenalan -->
             <section id="pengenalan">
                 <h2><i class="fa-solid fa-compass"></i> Pengenalan</h2>
-                <p class="section-desc">MasanDigital Dashboard dirancang untuk berjalan di atas sistem berbasis Docker pada platform Linux. Dibandingkan menggunakan virtual machine (VM) yang boros memori, server lokal berbasis Linux Server harian mengonsumsi sumber daya perangkat keras yang sangat minimal, sangat cocok dipasang di perangkat Mini PC hemat daya atau Laptop dengan layar retak.</p>
+                <p class="section-desc">Masandigital Dashboard dirancang untuk berjalan di atas sistem berbasis Docker pada platform Linux. Dibandingkan menggunakan virtual machine (VM) yang boros memori, server lokal berbasis Linux Server harian mengonsumsi sumber daya perangkat keras yang sangat minimal, sangat cocok dipasang di perangkat Mini PC hemat daya atau Laptop dengan layar retak.</p>
                 
                 <div class="grid-cards">
                     <div class="req-card linux-card">
@@ -1304,7 +1309,7 @@ docker compose version</code></pre>
 
             <!-- Langkah 4: Deploy Dashboard -->
             <section id="deploy-dashboard" class="color-deploy">
-                <h2><i class="fa-solid fa-rocket"></i> 4. Kloning & Deploy MasanDigital Dashboard</h2>
+                <h2><i class="fa-solid fa-rocket"></i> 4. Kloning & Deploy Masandigital Dashboard</h2>
                 <p class="section-desc">Instalasi software dasar sudah selesai. Sekarang kita tinggal mendownload source-code dashboard dan mengeksekusi script instalasi otomatis.</p>
                 
                 <div class="timeline">
@@ -1363,7 +1368,7 @@ sudo bash install.sh</code></pre>
                 <ol>
                     <li>Buka aplikasi web browser (Chrome/Edge/Safari/Firefox).</li>
                     <li>Ketikkan IP address server Anda pada address bar (Contoh: <code>http://192.168.1.15</code>) lalu tekan Enter.</li>
-                    <li>Layar browser Anda akan memuat halaman <strong>Setup Wizard - MasanDigital Dashboard</strong>.</li>
+                    <li>Layar browser Anda akan memuat halaman <strong>Setup Wizard - Masandigital Dashboard</strong>.</li>
                     <li>Ketikkan password administratif yang ingin Anda buat, lalu konfirmasi ulang password tersebut pada kolom di bawahnya.</li>
                     <li>Simpan password Anda. Halaman web otomatis dialihkan ke form login utama.</li>
                     <li>Masukkan password admin yang baru saja Anda buat untuk mulai masuk ke sistem dashboard server.</li>
@@ -1437,7 +1442,187 @@ sudo cloudflared service install &lt;TOKEN_UNIK_AKUN_ANDA&gt;</code></pre>
                                 <li><strong>URL</strong>: Masukkan <code>localhost:80</code> (karena dashboard utama berjalan di port 80).</li>
                                 <li>Klik **Save Tunnel** di bagian bawah.</li>
                             </ol>
-                            <p>Selamat! Sekarang Anda dapat mengakses MasanDigital Dashboard Anda dari manapun di seluruh dunia menggunakan koneksi aman HTTPS di URL domain Anda: <strong><code>https://panel.domainanda.com</code></strong>.</p>
+                            <p>Selamat! Sekarang Anda dapat mengakses Masandigital Dashboard Anda dari manapun di seluruh dunia menggunakan koneksi aman HTTPS di URL domain Anda: <strong><code>https://panel.domainanda.com</code></strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Deploy e-klinik -->
+            <section id="deploy-eklinik" class="color-deploy" style="scroll-margin-top: 3rem;">
+                <h2><i class="fa-solid fa-code"></i> 7. Deploy Aplikasi PHP & MySQL (e-klinik)</h2>
+                <p class="section-desc">Ikuti langkah-langkah di bawah ini untuk mendeploy script PHP dan meng-import database SQL aplikasi <strong>e-klinik</strong> Anda secara mandiri di dalam container Docker:</p>
+                
+                <div class="timeline">
+                    <!-- Step 7.1 -->
+                    <div class="timeline-step">
+                        <div class="step-number">7.1</div>
+                        <div class="step-content">
+                            <h4>Persiapan Folder Proyek</h4>
+                            <p>Buat folder terpusat di server host Linux Anda untuk menyimpan file website dan database SQL:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Terminal SSH</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>sudo mkdir -p /opt/e-klinik/html
+sudo mkdir -p /opt/e-klinik/db_init
+sudo chown -R $USER:$USER /opt/e-klinik/html</code></pre>
+                            </div>
+                            <p>Pindahkan berkas Anda ke folder tersebut:</p>
+                            <ul class="step-list">
+                                <li>Salin semua source code PHP e-klinik ke dalam folder: <code>/opt/e-klinik/html/</code></li>
+                                <li>Salin berkas backup database <code>.sql</code> Anda ke dalam folder: <code>/opt/e-klinik/db_init/</code></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 7.2 -->
+                    <div class="timeline-step">
+                        <div class="step-number">7.2</div>
+                        <div class="step-content">
+                            <h4>Membuat File docker-compose.yml</h4>
+                            <p>Buat berkas konfigurasi Docker Compose di dalam folder <code>/opt/e-klinik/docker-compose.yml</code>:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">docker-compose.yml</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: eklinik_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_rahasia
+      MYSQL_DATABASE: eklinik
+      MYSQL_USER: eklinik_user
+      MYSQL_PASSWORD: password_database_rahasia
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db_init:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+
+  php:
+    image: php:8.2-fpm
+    container_name: eklinik_php
+    restart: always
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - ./html:/var/www/html
+    depends_on:
+      - db
+
+volumes:
+  db_data:</code></pre>
+                            </div>
+                            <div class="callout warning-orange">
+                                <div class="callout-title">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Konfigurasi Database di Script PHP
+                                </div>
+                                <p>Pastikan Anda menyesuaikan berkas konfigurasi database di dalam script PHP e-klinik Anda (contoh: <code>config.php</code> atau <code>database.php</code>) dengan parameter berikut:<br>
+                                • Host: <strong><code>db</code></strong> (bukan localhost/127.0.0.1)<br>
+                                • Database: <strong><code>eklinik</code></strong><br>
+                                • User: <strong><code>eklinik_user</code></strong><br>
+                                • Password: <strong><code>password_database_rahasia</code></strong></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 7.3 -->
+                    <div class="timeline-step">
+                        <div class="step-number">7.3</div>
+                        <div class="step-content">
+                            <h4>Menjalankan Container & Auto-Import SQL</h4>
+                            <p>Jalankan kontainer di server menggunakan command:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Terminal SSH</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>cd /opt/e-klinik
+docker compose up -d</code></pre>
+                            </div>
+                            <p>MySQL otomatis meng-import berkas <code>.sql</code> Anda dari folder <code>db_init</code> ke database <code>eklinik</code> saat booting awal.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 7.4 -->
+                    <div class="timeline-step">
+                        <div class="step-number">7.4</div>
+                        <div class="step-content">
+                            <h4>Konfigurasi Nginx Virtual Host</h4>
+                            <p>Buat berkas konfigurasi Nginx baru pada sistem Host OS Anda di <code>/etc/nginx/sites-available/e-klinik.conf</code>:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">e-klinik.conf</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>server {
+    listen 80;
+    server_name e-klinik.local;
+
+    root /opt/e-klinik/html;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+    }
+
+    access_log /var/log/nginx/eklinik_access.log;
+    error_log /var/log/nginx/eklinik_error.log;
+}</code></pre>
+                            </div>
+                            <p>Aktifkan virtual host dan terapkan perubahan Nginx via Dashboard:</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-lang">Terminal SSH</span>
+                                    <button class="btn-copy" onclick="copyCode(this)">
+                                        <i class="fa-regular fa-copy"></i> Salin
+                                    </button>
+                                </div>
+                                <pre><code>sudo ln -s /etc/nginx/sites-available/e-klinik.conf /etc/nginx/sites-enabled/</code></pre>
+                            </div>
+                            <p>Buka halaman <strong>Websites</strong> di dashboard admin server Anda, lalu klik tombol <strong>Reload Nginx</strong>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 7.5 -->
+                    <div class="timeline-step">
+                        <div class="step-number">7.5</div>
+                        <div class="step-content">
+                            <h4>Ekspos Online via Cloudflare Tunnel</h4>
+                            <ol>
+                                <li>Masuk ke dasbor **Cloudflare Zero Trust** di browser Anda.</li>
+                                <li>Edit Tunnel yang aktif, buka tab **Public Hostname**, lalu klik **Add a public hostname**.</li>
+                                <li>Ketik subdomain yang Anda inginkan (misal: <code>e-klinik</code>) dan pilih domain Anda (misal: <code>domainanda.com</code>).</li>
+                                <li>Atur Service Type: **HTTP** dan URL: **<code>localhost:80</code>**, lalu simpan.</li>
+                                <li>Edit berkas <code>e-klinik.conf</code> di server Anda untuk menyesuaikan domain Anda:
+                                    <pre style="background:#0c0f1d; padding:0.5rem; border-radius:6px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>server_name e-klinik.domainanda.com;</code></pre>
+                                </li>
+                                <li>Klik **Reload Nginx** di panel Dashboard Anda.</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -1445,7 +1630,7 @@ sudo cloudflared service install &lt;TOKEN_UNIK_AKUN_ANDA&gt;</code></pre>
 
             <!-- Pengelolaan -->
             <section id="pengelolaan">
-                <h2><i class="fa-solid fa-sliders"></i> 7. Operasional & Perintah Dasar Harian</h2>
+                <h2><i class="fa-solid fa-sliders"></i> 8. Operasional & Perintah Dasar Harian</h2>
                 <p class="section-desc">Simpan atau catat instruksi di bawah ini untuk kebutuhan pengelolaan/pemeliharaan server di masa depan:</p>
                 
                 <h3 class="section-subtitle"><i class="fa-solid fa-power-off"></i> Mematikan & Menyalakan Dashboard</h3>
@@ -1538,7 +1723,10 @@ docker compose restart</code></pre>
                         </button>
                         <div class="accordion-content">
                             <div class="accordion-body">
-                                <p>Karena Anda mengunduh dashboard menggunakan Git, Anda dapat memperbarui kode lokal langsung dengan menarik update repository GitHub dan membuild ulang image Docker Anda:</p>
+                                <p>Anda dapat menggunakan script update otomatis yang telah disediakan di dalam folder instalasi:</p>
+                                <pre style="background:#0c0f1d; padding:0.75rem; border-radius:8px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>cd ~/masandigital_dashboard
+sudo bash update.sh</code></pre>
+                                <p>Atau secara manual menggunakan Git dan Docker Compose:</p>
                                 <pre style="background:#0c0f1d; padding:0.75rem; border-radius:8px; margin-top:0.5rem; font-size:0.85rem; font-family:var(--font-code);"><code>cd ~/masandigital_dashboard
 git pull origin main
 docker compose up -d --build</code></pre>

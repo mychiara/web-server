@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backup & Restore - MasanDigital Dashboard</title>
+    <title>Backup & Restore - Masandigital Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -344,6 +344,67 @@
                 </div>
             </div>
 
+            <!-- Scheduled Auto Backup -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa-solid fa-calendar-check" style="color:#f093fb"></i>
+                    <h3>Penjadwal Backup Otomatis</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="checkbox-item" style="margin-bottom: 1rem;">
+                            <input type="checkbox" id="auto-enabled">
+                            <strong>Aktifkan Penjadwalan Harian</strong>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Waktu Eksekusi Harian</label>
+                        <input type="time" id="auto-time" value="02:00">
+                    </div>
+                    <div class="form-group">
+                        <label>Destinasi Penyimpanan</label>
+                        <select id="auto-dest-type" onchange="toggleDestFields()" style="width: 100%; padding: 0.6rem 0.8rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: #fff;">
+                            <option value="local">Penyimpanan Lokal</option>
+                            <option value="usb">USB Mount Point</option>
+                            <option value="s3">S3 Cloud Storage</option>
+                        </select>
+                    </div>
+
+                    <!-- USB Fields -->
+                    <div id="usb-fields" style="display:none;">
+                        <div class="form-group">
+                            <label>Host USB Mount Path</label>
+                            <input type="text" id="auto-usb-path" placeholder="Contoh: /media/USB_BACKUP">
+                        </div>
+                    </div>
+
+                    <!-- S3 Fields -->
+                    <div id="s3-fields" style="display:none;">
+                        <div class="form-group">
+                            <label>S3 Custom Endpoint</label>
+                            <input type="text" id="auto-s3-endpoint" placeholder="https://s3.ap-southeast-1.amazonaws.com">
+                        </div>
+                        <div class="form-group">
+                            <label>S3 Bucket Name</label>
+                            <input type="text" id="auto-s3-bucket" placeholder="my-server-backups">
+                        </div>
+                        <div class="form-group">
+                            <label>S3 Access Key</label>
+                            <input type="text" id="auto-s3-access" placeholder="Access Key ID">
+                        </div>
+                        <div class="form-group">
+                            <label>S3 Secret Key</label>
+                            <input type="password" id="auto-s3-secret" placeholder="Secret Access Key">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn primary" onclick="saveSchedule()" id="btn-save-schedule" {% if session.get('role') not in ['owner', 'admin'] %}disabled{% endif %}>
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan Jadwal
+                    </button>
+                </div>
+            </div>
+
             <!-- Backup List -->
             <div class="card">
                 <div class="card-header">
@@ -365,6 +426,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadBackups();
+            loadSchedule();
         });
 
         function showMsg(msg, type) {
@@ -532,6 +594,67 @@
                 .catch(err => {
                     showMsg('Gagal menghapus backup', 'error');
                 });
+        }
+
+        // ===== Auto Backup Scheduler Functions =====
+        function toggleDestFields() {
+            const dest = document.getElementById('auto-dest-type').value;
+            document.getElementById('usb-fields').style.display = dest === 'usb' ? 'block' : 'none';
+            document.getElementById('s3-fields').style.display = dest === 's3' ? 'block' : 'none';
+        }
+
+        function loadSchedule() {
+            fetch('/api/backup/schedule/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('auto-enabled').checked = data.enabled;
+                    document.getElementById('auto-time').value = data.time || '02:00';
+                    document.getElementById('auto-dest-type').value = data.dest_type || 'local';
+                    document.getElementById('auto-usb-path').value = data.usb_path || '/media/USB_BACKUP';
+                    document.getElementById('auto-s3-endpoint').value = data.s3_endpoint || '';
+                    document.getElementById('auto-s3-bucket').value = data.s3_bucket || '';
+                    document.getElementById('auto-s3-access').value = data.s3_access_key || '';
+                    document.getElementById('auto-s3-secret').value = data.s3_secret_key || '';
+                    toggleDestFields();
+                });
+        }
+
+        function saveSchedule() {
+            const btn = document.getElementById('btn-save-schedule');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+            const payload = {
+                enabled: document.getElementById('auto-enabled').checked,
+                time: document.getElementById('auto-time').value,
+                dest_type: document.getElementById('auto-dest-type').value,
+                usb_path: document.getElementById('auto-usb-path').value,
+                s3_endpoint: document.getElementById('auto-s3-endpoint').value,
+                s3_bucket: document.getElementById('auto-s3-bucket').value,
+                s3_access_key: document.getElementById('auto-s3-access').value,
+                s3_secret_key: document.getElementById('auto-s3-secret').value
+            };
+
+            fetch('/api/backup/schedule/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Jadwal';
+                if (data.success) {
+                    showMsg('Jadwal backup otomatis berhasil diperbarui!', 'success');
+                } else {
+                    showMsg(data.error || 'Gagal menyimpan jadwal', 'error');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Jadwal';
+                showMsg('Kesalahan koneksi', 'error');
+            });
         }
     </script>
 </body>

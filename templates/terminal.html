@@ -606,6 +606,7 @@ Restart App=systemctl restart myapp"></textarea>
             // Create xterm instance with custom theme
             const term = new Terminal({
                 cursorBlink: true,
+                copyOnSelect: true, // Auto copy selection to clipboard
                 fontSize: currentFontSize,
                 fontFamily: 'Consolas, Monaco, "Courier New", monospace',
                 theme: {
@@ -637,17 +638,34 @@ Restart App=systemctl restart myapp"></textarea>
             const fitAddon = new FitAddon.FitAddon();
             term.loadAddon(fitAddon);
             term.open(termWrap);
-            fitAddon.fit();
+
+            // Handle paste event (Ctrl+V and right-click paste)
+            termWrap.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                if (!isReadOnly) {
+                    socket.emit('terminal_input', {
+                        session_id: sessionId,
+                        input: text
+                    });
+                }
+            });
 
             // Handle resize
             const resizeObserver = new ResizeObserver(() => {
-                fitAddon.fit();
-                if (terminals[sessionId]) {
-                    socket.emit('terminal_resize', {
-                        session_id: sessionId,
-                        rows: term.rows,
-                        cols: term.cols
-                    });
+                if (termWrap.clientWidth > 0 && termWrap.clientHeight > 0) {
+                    try {
+                        fitAddon.fit();
+                        if (terminals[sessionId]) {
+                            socket.emit('terminal_resize', {
+                                session_id: sessionId,
+                                rows: term.rows,
+                                cols: term.cols
+                            });
+                        }
+                    } catch (e) {
+                        console.warn("Resize fit error:", e);
+                    }
                 }
             });
             resizeObserver.observe(termWrap);
@@ -692,7 +710,11 @@ Restart App=systemctl restart myapp"></textarea>
 
             if (terminals[sessionId]) {
                 terminals[sessionId].term.focus();
-                terminals[sessionId].fitAddon.fit();
+                try {
+                    terminals[sessionId].fitAddon.fit();
+                } catch (e) {
+                    console.warn("Switch tab fit error:", e);
+                }
             }
         }
 
@@ -732,7 +754,11 @@ Restart App=systemctl restart myapp"></textarea>
             currentFontSize = parseInt(size);
             Object.values(terminals).forEach(t => {
                 t.term.options.fontSize = currentFontSize;
-                t.fitAddon.fit();
+                try {
+                    t.fitAddon.fit();
+                } catch (e) {
+                    console.warn("Font size change fit error:", e);
+                }
             });
         }
 

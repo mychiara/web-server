@@ -38,8 +38,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ============ VERSI APLIKASI ============
 APP_VERSION = "1.3"
-APP_NAME = "MasanDigital Dashboard"
-UPDATE_CHECK_URL = "https://raw.githubusercontent.com/masandigital/web_server/main/version.json"
+APP_NAME = "Masandigital Dashboard"
 # ========================================
 
 # Data Directory (For Persistence across updates)
@@ -56,8 +55,7 @@ LICENSE_FILE = os.path.join(DATA_DIR, 'license.lic')
 IS_ACTIVATED = False  # Cache validation status
 
 # Update Check URL (Administrator configurable via Code or ENV)
-UPDATE_CHECK_URL = os.environ.get('UPDATE_URL', "https://raw.githubusercontent.com/masandigital/web_server/main/version.json")
-CURRENT_VERSION = "1.1"
+UPDATE_CHECK_URL = os.environ.get('UPDATE_URL', "https://raw.githubusercontent.com/mychiara/web-server/main/version.json")
 
 def energy_monitor_loop():
     global TOTAL_KWH
@@ -101,7 +99,29 @@ mqtt_client = None
 HOME_DEVICES_STATE = {}
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
+
+# Persistent SECRET_KEY: simpan ke file agar session tidak invalid setiap restart
+_SECRET_KEY_FILE = os.path.join(DATA_DIR, '.secret_key')
+def _get_or_create_secret_key():
+    if os.environ.get('SECRET_KEY'):
+        return os.environ['SECRET_KEY']
+    try:
+        if os.path.exists(_SECRET_KEY_FILE):
+            with open(_SECRET_KEY_FILE, 'r') as f:
+                key = f.read().strip()
+                if key:
+                    return key
+    except:
+        pass
+    key = os.urandom(32).hex()
+    try:
+        with open(_SECRET_KEY_FILE, 'w') as f:
+            f.write(key)
+    except:
+        pass
+    return key
+
+app.config['SECRET_KEY'] = _get_or_create_secret_key()
 app.config['UPLOAD_FOLDER'] = DATA_DIR
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB Limit
 
@@ -237,7 +257,15 @@ def load_app_settings():
             'telegram_token': '',
             'telegram_chat_id': '',
             'webhook_enabled': False,
-            'webhook_url': ''
+            'webhook_url': '',
+            'whatsapp_enabled': False,
+            'whatsapp_provider': 'fonnte',
+            'whatsapp_token': '',
+            'whatsapp_target': '',
+            'whatsapp_custom_url': '',
+            'whatsapp_custom_header_key': '',
+            'whatsapp_custom_header_value': '',
+            'whatsapp_custom_payload': ''
         },
         'services': [
             {'id': 'ssh', 'name': 'SSH Server'},
@@ -387,7 +415,7 @@ def login_required(f):
 
         # 2. Mobile App Bypass (Fix SameSite Cookie Issues)
         mobile_key = request.headers.get('X-Mobile-Key')
-        if mobile_key in ['EkaBackupSync_2024_Secret', 'MasanDigitalBackupSync_2026_Secret']:
+        if mobile_key in ['EkaBackupSync_2024_Secret', 'MasandigitalBackupSync_2026_Secret']:
             return f(*args, **kwargs)
             
         # 2. Check Session
@@ -401,8 +429,6 @@ def login_required(f):
                 if request.is_json:
                      return jsonify({'error': 'Session expired'}), 401
                 return redirect(url_for('login_page'))
-            
-            session['last_active'] = time.time()
             
             session['last_active'] = time.time()
             return f(*args, **kwargs)
@@ -1219,8 +1245,8 @@ def handle_start_terminal(data):
         if lxd_target:
             cmd = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', 'lxc', 'exec', lxd_target, '--', 'bash', '--login', '-i']
         else:
-            # Perintah ini akan membersihkan layar, menjalankan neofetch, lalu masuk ke bash interaktif
-            cmd = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', 'bash', '--login', '-c', 'clear && neofetch && exec bash -i']
+            # Perintah ini akan membersihkan layar, menjalankan neofetch jika ada, lalu masuk ke bash interaktif
+            cmd = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', 'bash', '--login', '-c', 'clear && (neofetch || true) && exec bash -i']
             
         os.execvp('nsenter', cmd)
     else:
@@ -1237,29 +1263,43 @@ def handle_start_terminal(data):
 
 def read_terminal_output(session_id, fd):
     import eventlet
+    # PENTING: Gunakan modul select dan os ASLI (bukan yang di-monkey-patch eventlet)
+    # karena PTY file descriptor tidak kompatibel dengan eventlet's green select
+    _select = eventlet.patcher.original('select')
+    _os = eventlet.patcher.original('os')
+    
     while session_id in terminal_sessions:
         eventlet.sleep(0.01)
         try:
-            if select.select([fd], [], [], 0.1)[0]:
-                data = os.read(fd, 1024)
+            ready, _, _ = _select.select([fd], [], [], 0.1)
+            if ready:
+                data = _os.read(fd, 4096)
                 if data:
                     socketio.emit('terminal_output', {
                         'session_id': session_id,
                         'data': data.decode('utf-8', errors='replace')
                     })
-        except:
+                else:
+                    # EOF - child process exited
+                    break
+        except OSError:
+            break
+        except Exception as e:
+            print(f"[TERMINAL READ ERROR] {session_id}: {e}")
             break
 
 @socketio.on('terminal_input')
 def handle_terminal_input(data):
+    import eventlet
+    _os = eventlet.patcher.original('os')
     session_id = data.get('session_id', 'default')
     input_data = data.get('input', '')
     
     if session_id in terminal_sessions:
         fd = terminal_sessions[session_id]['fd']
         try:
-            os.write(fd, input_data.encode())
-        except:
+            _os.write(fd, input_data.encode())
+        except Exception:
             pass
 
 @socketio.on('terminal_resize')
@@ -1787,11 +1827,7 @@ def reset_settings():
 CASAOS_URL = 'http://host.docker.internal:9999'
 CASAOS_ALLOWED_IPS = {}  # {ip: expiry_time}
 
-@app.route('/files')
-@login_required
-def files():
-    path = request.args.get('path', '/')
-    return render_template('files.html', current_path=path)
+
 
 @app.route('/face')
 def face_ui():
@@ -1811,10 +1847,7 @@ def face_stats_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/terminal')
-@login_required
-def terminal():
-    return render_template('terminal.html')
+
 
 @app.route('/casaos')
 @login_required
@@ -2299,6 +2332,46 @@ def send_alert(subject, message):
                     }]
                 }
                 requests.post(webhook_url, json=payload, timeout=5)
+
+        # 3. WhatsApp Alert
+        if integrations.get('whatsapp_enabled', False):
+            provider = integrations.get('whatsapp_provider', 'fonnte')
+            target = integrations.get('whatsapp_target', '')
+            message_text = f"⚠️ *{subject}*\n\n{plain_message}"
+            
+            if provider == 'fonnte':
+                token = integrations.get('whatsapp_token', '')
+                if token and target:
+                    url = "https://api.fonnte.com/send"
+                    headers = {"Authorization": token}
+                    payload = {
+                        "target": target,
+                        "message": message_text
+                    }
+                    requests.post(url, data=payload, timeout=5)
+            elif provider == 'custom':
+                custom_url = integrations.get('whatsapp_custom_url', '')
+                header_key = integrations.get('whatsapp_custom_header_key', '')
+                header_val = integrations.get('whatsapp_custom_header_value', '')
+                custom_payload = integrations.get('whatsapp_custom_payload', '')
+                
+                if custom_url and target:
+                    headers = {}
+                    if header_key and header_val:
+                        headers[header_key] = header_val
+                    
+                    if custom_payload:
+                        try:
+                            formatted_payload = custom_payload.replace('{target}', target).replace('{message}', message_text)
+                            import json
+                            json_payload = json.loads(formatted_payload)
+                            requests.post(custom_url, json=json_payload, headers=headers, timeout=5)
+                        except Exception:
+                            payload = {"target": target, "message": message_text}
+                            requests.post(custom_url, data=payload, headers=headers, timeout=5)
+                    else:
+                        payload = {"target": target, "message": message_text}
+                        requests.post(custom_url, data=payload, headers=headers, timeout=5)
     except Exception as e:
         print(f"Failed to send alert: {e}")
 
@@ -2528,69 +2601,118 @@ def record_metrics_background():
         eventlet.sleep(60)
 
 def init_app_catalog():
-    """Membuat file default app_catalog.json jika belum ada"""
+    """Membuat file default app_catalog.json jika belum ada atau memperbaruinya"""
     catalog_path = os.path.join(DATA_DIR, 'app_catalog.json')
-    if not os.path.exists(catalog_path):
-        default_apps = [
-            {
-                "id": "mariadb",
-                "name": "MariaDB Server",
-                "category": "Database",
-                "description": "Database SQL MariaDB yang berkinerja tinggi, ideal untuk WordPress dan aplikasi web lainnya.",
-                "image": "mariadb:10.11",
-                "ports": [{"container": 3306, "host": 3306, "protocol": "tcp"}],
-                "env": ["MYSQL_ROOT_PASSWORD=masandigitalrootpwd", "MYSQL_DATABASE=masandigital_db"],
-                "icon": "fa-solid fa-database",
-                "restart": "always"
-            },
-            {
-                "id": "adminer",
-                "name": "Adminer DB Manager",
-                "category": "Database",
-                "description": "Alat manajemen database web super ringan dalam satu file PHP. Sangat hemat RAM dan cepat.",
-                "image": "adminer:latest",
-                "ports": [{"container": 8080, "host": 8080, "protocol": "tcp"}],
-                "icon": "fa-solid fa-folder-tree",
-                "restart": "always"
-            },
-            {
-                "id": "phpmyadmin",
-                "name": "phpMyAdmin Client",
-                "category": "Database",
-                "description": "Aplikasi berbasis web terpopuler untuk mengelola database MySQL/MariaDB secara visual.",
-                "image": "phpmyadmin:latest",
-                "ports": [{"container": 80, "host": 8081, "protocol": "tcp"}],
-                "env": ["PMA_ARBITRARY=1"],
-                "icon": "fa-solid fa-server",
-                "restart": "always"
-            },
-            {
-                "id": "nginx",
-                "name": "Nginx Web Server",
-                "category": "Web",
-                "description": "Server web & reverse proxy HTTP berkinerja tinggi untuk meng-host website Anda.",
-                "image": "nginx:alpine",
-                "ports": [{"container": 80, "host": 8082, "protocol": "tcp"}],
-                "icon": "fa-solid fa-globe",
-                "restart": "always"
-            },
-            {
-                "id": "adguardhome",
-                "name": "AdGuard Home",
-                "category": "Security",
-                "description": "DNS server lokal untuk memblokir iklan & tracking di seluruh jaringan rumah Anda.",
-                "image": "adguard/adguardhome:latest",
-                "ports": [{"container": 80, "host": 3000, "protocol": "tcp"}],
-                "icon": "fa-solid fa-shield-halved",
-                "restart": "always"
-            }
-        ]
-        try:
-            with open(catalog_path, 'w') as f:
-                json.dump(default_apps, f, indent=4)
-            print("Default app_catalog.json initialized successfully!")
-        except Exception as e:
-            print(f"Error initializing app_catalog.json: {e}")
+    default_apps = [
+        {
+            "id": "mariadb",
+            "name": "MariaDB Server",
+            "category": "Database",
+            "description": "Database SQL MariaDB yang berkinerja tinggi, ideal untuk WordPress dan aplikasi web lainnya.",
+            "image": "mariadb:10.11",
+            "ports": [{"container": 3306, "host": 3306, "protocol": "tcp"}],
+            "env": [
+                {"key": "MYSQL_ROOT_PASSWORD", "value": "masandigitalrootpwd"},
+                {"key": "MYSQL_DATABASE", "value": "masandigital_db"}
+            ],
+            "volumes": [
+                {"container": "/var/lib/mysql", "bind": "/data/mariadb", "description": "Database Files"}
+            ],
+            "icon": "fa-solid fa-database",
+            "restart": "always"
+        },
+        {
+            "id": "adminer",
+            "name": "Adminer DB Manager",
+            "category": "Database",
+            "description": "Alat manajemen database web super ringan dalam satu file PHP. Sangat hemat RAM dan cepat.",
+            "image": "adminer:latest",
+            "ports": [{"container": 8080, "host": 8080, "protocol": "tcp"}],
+            "icon": "fa-solid fa-folder-tree",
+            "restart": "always"
+        },
+        {
+            "id": "phpmyadmin",
+            "name": "phpMyAdmin Client",
+            "category": "Database",
+            "description": "Aplikasi berbasis web terpopuler untuk mengelola database MySQL/MariaDB secara visual.",
+            "image": "phpmyadmin:latest",
+            "ports": [{"container": 80, "host": 8081, "protocol": "tcp"}],
+            "env": [{"key": "PMA_ARBITRARY", "value": "1"}],
+            "icon": "fa-solid fa-server",
+            "restart": "always"
+        },
+        {
+            "id": "nginx",
+            "name": "Nginx Web Server",
+            "category": "Web",
+            "description": "Server web & reverse proxy HTTP berkinerja tinggi untuk meng-host website Anda.",
+            "image": "nginx:alpine",
+            "ports": [{"container": 80, "host": 8082, "protocol": "tcp"}],
+            "volumes": [
+                {"container": "/usr/share/nginx/html", "bind": "/data/nginx/html", "description": "Website Files"}
+            ],
+            "icon": "fa-solid fa-globe",
+            "restart": "always"
+        },
+        {
+            "id": "adguardhome",
+            "name": "AdGuard Home",
+            "category": "Security",
+            "description": "DNS server lokal untuk memblokir iklan & tracking di seluruh jaringan rumah Anda.",
+            "image": "adguard/adguardhome:latest",
+            "ports": [{"container": 80, "host": 3000, "protocol": "tcp"}],
+            "volumes": [
+                {"container": "/opt/adguardhome/work", "bind": "/data/adguard/work", "description": "Work Directory"},
+                {"container": "/opt/adguardhome/conf", "bind": "/data/adguard/conf", "description": "Configuration"}
+            ],
+            "icon": "fa-solid fa-shield-halved",
+            "restart": "always"
+        },
+        {
+            "id": "nextcloud",
+            "name": "Nextcloud Hub",
+            "category": "Cloud",
+            "description": "Platform penyimpanan cloud pribadi. Simpan foto, video, dokumen, kalender, dan kontak Anda secara aman dari iPhone Anda.",
+            "image": "nextcloud:latest",
+            "ports": [{"container": 80, "host": 8085, "protocol": "tcp"}],
+            "volumes": [
+                {"container": "/var/www/html", "bind": "/data/nextcloud", "description": "Folder Penyimpanan Data Nextcloud"}
+            ],
+            "env": [
+                {"key": "NEXTCLOUD_ADMIN_USER", "value": "admin"},
+                {"key": "NEXTCLOUD_ADMIN_PASSWORD", "value": "masandigitalcloud"}
+            ],
+            "icon": "fa-solid fa-cloud",
+            "restart": "always"
+        },
+        {
+            "id": "immich",
+            "name": "Immich Hub",
+            "category": "Cloud",
+            "description": "Alternatif Google Photos dengan deteksi wajah bertenaga AI dan pencarian objek cerdas untuk backup foto & video iPhone.",
+            "image": "ghcr.io/immich-app/immich-server:release",
+            "ports": [{"container": 3001, "host": 8090, "protocol": "tcp"}],
+            "volumes": [
+                {"container": "/usr/src/app/upload", "bind": "/data/immich", "description": "Folder Galeri Foto & Video"}
+            ],
+            "env": [
+                {"key": "DB_HOSTNAME", "value": "masandigital_immich_db"},
+                {"key": "DB_USERNAME", "value": "postgres"},
+                {"key": "DB_PASSWORD", "value": "postgres_password"},
+                {"key": "DB_DATABASE_NAME", "value": "immich"},
+                {"key": "REDIS_HOSTNAME", "value": "masandigital_immich_redis"}
+            ],
+            "icon": "fa-solid fa-images",
+            "restart": "always"
+        }
+    ]
+    try:
+        with open(catalog_path, 'w') as f:
+            json.dump(default_apps, f, indent=4)
+        print("Default app_catalog.json initialized successfully!")
+    except Exception as e:
+        print(f"Error initializing app_catalog.json: {e}")
 
 # Init DB and Catalog on start
 if not os.path.exists(DATA_DIR):
@@ -2686,7 +2808,7 @@ def check_update_layout():
     """Cek apakah ada versi baru tersedia (Standardized)"""
     try:
         # Coba ambil info versi dari GitHub
-        headers = {'User-Agent': 'MasanDigitalDashboard/1.0'}
+        headers = {'User-Agent': 'MasandigitalDashboard/1.0'}
         response = requests.get(UPDATE_CHECK_URL, headers=headers, timeout=10)
         
         if response.status_code == 200:
@@ -2962,7 +3084,7 @@ def update_dns():
         
         # Write to resolv.conf
         # Note: This might be overwritten by DHCP or networkmanager
-        resolv_content = "# Generated by MasanDigital Dashboard\n"
+        resolv_content = "# Generated by Masandigital Dashboard\n"
         for dns in dns_servers:
             resolv_content += f"nameserver {dns}\n"
         
@@ -4191,6 +4313,65 @@ def install_worker(app_id, config, username):
             if app_id == 'phpmyadmin':
                 image = 'linuxserver/phpmyadmin:latest'
                 
+            # Special setup for Immich (Multi-Container: Database + Redis + Network)
+            if app_id == 'immich':
+                socketio.emit('install_log', {'app_id': app_id, 'message': "Mulai pemasangan Multi-Container Immich...", 'type': 'info'})
+                
+                # Ensure custom docker network exists
+                try:
+                    client.networks.get('masandigital_net')
+                except docker.errors.NotFound:
+                    client.networks.create('masandigital_net', driver='bridge')
+                
+                # Deploy Postgres with Vector Search Extension
+                socketio.emit('install_log', {'app_id': app_id, 'message': "Mempersiapkan database pgvecto-rs (Vector PostgreSQL)...", 'type': 'info'})
+                try:
+                    old_db = client.containers.get('masandigital_immich_db')
+                    old_db.remove(force=True)
+                except docker.errors.NotFound:
+                    pass
+                
+                # Make sure host folder exists
+                try:
+                    os.makedirs('/host/root/data/immich_db', exist_ok=True)
+                except:
+                    pass
+                
+                client.containers.run(
+                    'tensorchord/pgvecto-rs:pg14-v0.1.11',
+                    name='masandigital_immich_db',
+                    environment={
+                        'POSTGRES_DB': 'immich',
+                        'POSTGRES_USER': 'postgres',
+                        'POSTGRES_PASSWORD': 'postgres_password'
+                    },
+                    volumes={'/data/immich_db': {'bind': '/var/lib/postgresql/data', 'mode': 'rw'}},
+                    network='masandigital_net',
+                    restart_policy={"Name": "always"},
+                    detach=True
+                )
+                socketio.emit('install_log', {'app_id': app_id, 'message': "Database PostgreSQL (pgvecto-rs) sukses dijalankan.", 'type': 'success'})
+                
+                # Deploy Redis Container
+                socketio.emit('install_log', {'app_id': app_id, 'message': "Mempersiapkan Redis cache container...", 'type': 'info'})
+                try:
+                    old_redis = client.containers.get('masandigital_immich_redis')
+                    old_redis.remove(force=True)
+                except docker.errors.NotFound:
+                    pass
+                
+                client.containers.run(
+                    'redis:6.2-alpine',
+                    name='masandigital_immich_redis',
+                    network='masandigital_net',
+                    restart_policy={"Name": "always"},
+                    detach=True
+                )
+                socketio.emit('install_log', {'app_id': app_id, 'message': "Redis cache container sukses dijalankan.", 'type': 'success'})
+                
+                config['network_mode'] = 'masandigital_net'
+
+                
             # Merge defaults from catalog if config is empty/partial
             if 'ports' not in config and 'ports' in found:
                 config['ports'] = found['ports']
@@ -4569,6 +4750,8 @@ SYSTEM_APPS = [
     {"id": "network", "name": "Network", "icon": "fa-solid fa-network-wired", "color": "linear-gradient(135deg, #11998e, #38ef7d)", "url": "/network"},
     {"id": "storage", "name": "Storage", "icon": "fa-solid fa-hard-drive", "color": "linear-gradient(135deg, #667eea, #764ba2)", "url": "/storage"},
     {"id": "websites", "name": "Websites", "icon": "fa-solid fa-globe", "color": "linear-gradient(135deg, #23a6d5, #23d5ab)", "url": "/websites"},
+    {"id": "cloudflare", "name": "Cloudflare Tunnel", "icon": "fa-brands fa-cloudflare", "color": "linear-gradient(135deg, #f38020, #faad3f)", "url": "/cloudflare"},
+    {"id": "ssl", "name": "SSL Let's Encrypt", "icon": "fa-solid fa-lock", "color": "linear-gradient(135deg, #02b3e4, #02ccfe)", "url": "/ssl"},
     {"id": "backup", "name": "Backup", "icon": "fa-solid fa-box-archive", "color": "linear-gradient(135deg, #f093fb, #f5576c)", "url": "/backup"},
     {"id": "sharing", "name": "Sharing", "icon": "fa-solid fa-share-nodes", "color": "linear-gradient(135deg, #a18cd1, #fbc2eb)", "url": "/sharing"},
     {"id": "vpn", "name": "VPN", "icon": "fa-solid fa-shield-halved", "color": "linear-gradient(135deg, #ff9a9e, #fecfef)", "url": "/vpn"},
@@ -4881,52 +5064,7 @@ def install_app():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/store/manage', methods=['POST'])
-@login_required
-@admin_required
-def manage_app():
-    """Manage app lifecycle (start/stop/restart/uninstall)"""
-    try:
-        data = request.json
-        app_id = data.get('app_id')
-        action = data.get('action')
-        
-        if not app_id or not action:
-            return jsonify({'error': 'Invalid request'}), 400
-            
-        container_name = f"masandigital_{app_id}"
-        try:
-            import docker
-            client = docker.from_env()
-            client.containers.get(container_name)
-        except:
-            container_name = f"eka_{app_id}"
-        
-        if action == 'uninstall':
-            subprocess.run(['docker', 'rm', '-f', container_name], capture_output=True)
-            # Optional: Remove volumes? No, keep data safe by default.
-            msg = f"{app_id} uninstalled"
-            
-        elif action == 'start':
-            subprocess.run(['docker', 'start', container_name], capture_output=True)
-            msg = f"{app_id} started"
-            
-        elif action == 'stop':
-            subprocess.run(['docker', 'stop', container_name], capture_output=True)
-            msg = f"{app_id} stopped"
-            
-        elif action == 'restart':
-            subprocess.run(['docker', 'restart', container_name], capture_output=True)
-            msg = f"{app_id} restarted"
-            
-        else:
-            return jsonify({'error': 'Unknown action'}), 400
-            
-        audit_log('APP_MANAGE', f"Action {action} on {app_id}", session.get('username'))
-        return jsonify({'success': True, 'message': msg})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 # =========================================
 
 # --- SYSTEM UPDATE CHECKER ---
@@ -5187,6 +5325,22 @@ def files_download_endpoint():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/files/preview', methods=['GET'])
+@login_required
+def files_preview_endpoint():
+    """Preview file inline"""
+    try:
+        path = request.args.get('path')
+        if not path or not os.path.exists(path):
+            return jsonify({'error': 'File not found'}), 404
+        if os.path.isdir(path):
+            return jsonify({'error': 'Cannot preview directory'}), 400
+            
+        from flask import send_file
+        return send_file(path, as_attachment=False)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ==============================================================================
 # MOBILE BACKUP ENDPOINTS
 # ==============================================================================
@@ -5260,7 +5414,7 @@ def mobile_backup_save_config():
 @app.route('/api/mobile-backup/ping', methods=['GET'])
 def mobile_backup_ping():
     """Endpoint untuk deteksi server oleh aplikasi Android"""
-    return jsonify({"server": "MasanDigitalDashboard", "status": "online", "version": "1.0"})
+    return jsonify({"server": "MasandigitalDashboard", "status": "online", "version": "1.0"})
 
 @app.route('/api/mobile-backup/disk-usage', methods=['GET'])
 @login_required
@@ -6360,6 +6514,76 @@ def save_speedtests(history):
     except Exception as e:
         print(f"Failed to save speedtests: {e}")
 
+def run_automatic_speedtest(force_mock=False):
+    if force_mock:
+        import random
+        result = {
+            'timestamp': int(time.time()),
+            'ping': round(random.uniform(8.0, 28.0), 1),
+            'download': round(random.uniform(40.0, 95.0), 2),
+            'upload': round(random.uniform(15.0, 45.0), 2),
+            'is_mocked': True
+        }
+    else:
+        try:
+            # 1. Latency (Ping) Check
+            ping_start = time.time()
+            requests.get("https://speed.cloudflare.com/__down?bytes=0", timeout=5)
+            ping = round((time.time() - ping_start) * 1000, 1)
+            
+            # 2. Download Speed Test (Cloudflare 5MB chunk)
+            dl_start = time.time()
+            resp = requests.get("https://speed.cloudflare.com/__down?bytes=5000000", timeout=10)
+            dl_duration = time.time() - dl_start
+            total_bytes = len(resp.content)
+            download = round((total_bytes * 8) / dl_duration / 1000000, 2)
+            
+            # 3. Upload Speed Test (Post 1MB of random bytes)
+            upload_bytes = os.urandom(1000000)
+            ul_start = time.time()
+            requests.post("https://speed.cloudflare.com/__up", data=upload_bytes, timeout=10)
+            ul_duration = time.time() - ul_start
+            upload = round((len(upload_bytes) * 8) / ul_duration / 1000000, 2)
+            
+            result = {
+                'timestamp': int(time.time()),
+                'ping': ping,
+                'download': download,
+                'upload': upload
+            }
+        except Exception as e:
+            print(f"Speedtest failed, using mock: {e}")
+            import random
+            result = {
+                'timestamp': int(time.time()),
+                'ping': round(random.uniform(8.0, 28.0), 1),
+                'download': round(random.uniform(40.0, 95.0), 2),
+                'upload': round(random.uniform(15.0, 45.0), 2),
+                'is_mocked': True
+            }
+            
+    history = load_speedtests()
+    history.append(result)
+    if len(history) > 50:
+        history.pop(0)
+    save_speedtests(history)
+    return result
+
+def speedtest_scheduler_loop():
+    time.sleep(60) # wait for startup
+    while True:
+        try:
+            print("[SPEEDTEST SCHEDULER] Running periodic speedtest for network health...")
+            run_automatic_speedtest()
+        except Exception as e:
+            print(f"[SPEEDTEST SCHEDULER ERROR] {e}")
+        # Run every 6 hours
+        time.sleep(21600)
+
+# Start Speedtest Scheduler Thread
+t_speedtest = threading.Thread(target=speedtest_scheduler_loop, daemon=True)
+t_speedtest.start()
+
 @app.route('/speedtest')
 @login_required
 def speedtest_page():
@@ -6375,67 +6599,8 @@ def speedtest_history():
 def run_speedtest():
     if session.get('role') in ['readonly']:
         return jsonify({'error': 'Permission denied'}), 403
-        
-    def execute_test():
-        try:
-            # 1. Latency (Ping) Check
-            ping_start = time.time()
-            requests.get("https://speed.cloudflare.com/__down?bytes=0", timeout=5)
-            ping = round((time.time() - ping_start) * 1000, 1)
-            
-            # 2. Download Speed Test (Cloudflare 5MB chunk)
-            dl_start = time.time()
-            resp = requests.get("https://speed.cloudflare.com/__down?bytes=5000000", timeout=10)
-            dl_duration = time.time() - dl_start
-            
-            total_bytes = len(resp.content)
-            download = round((total_bytes * 8) / dl_duration / 1000000, 2)
-            
-            # 3. Upload Speed Test (Post 1MB of random bytes)
-            upload_bytes = os.urandom(1000000)
-            ul_start = time.time()
-            requests.post("https://speed.cloudflare.com/__up", data=upload_bytes, timeout=10)
-            ul_duration = time.time() - ul_start
-            
-            upload = round((len(upload_bytes) * 8) / ul_duration / 1000000, 2)
-            
-            result = {
-                'timestamp': int(time.time()),
-                'ping': ping,
-                'download': download,
-                'upload': upload
-            }
-            
-            history = load_speedtests()
-            history.append(result)
-            if len(history) > 20:
-                history.pop(0)
-            save_speedtests(history)
-            
-            return result
-        except Exception as e:
-            print(f"Speedtest failed: {e}")
-            return None
-
-    res = execute_test()
-    if res:
-        return jsonify(res)
-    else:
-        # Fallback to dynamic realistic simulation in case of network blocking/VPS offline
-        import random
-        result = {
-            'timestamp': int(time.time()),
-            'ping': round(random.uniform(5.0, 25.0), 1),
-            'download': round(random.uniform(20.0, 95.0), 2),
-            'upload': round(random.uniform(10.0, 50.0), 2),
-            'is_mocked': True
-        }
-        history = load_speedtests()
-        history.append(result)
-        if len(history) > 20:
-            history.pop(0)
-        save_speedtests(history)
-        return jsonify(result)
+    res = run_automatic_speedtest()
+    return jsonify(res)
 
 @app.route('/uptime')
 @login_required
@@ -6533,7 +6698,7 @@ def test_alert_api():
             url = f"https://api.telegram.org/bot{token}/sendMessage"
             payload = {
                 "chat_id": chat_id,
-                "text": "🎉 <b>MasanDigital Dashboard</b> - Tes Notifikasi Telegram Sukses!\nLayanan monitoring Anda telah berhasil terhubung.",
+                "text": "🎉 <b>Masandigital Dashboard</b> - Tes Notifikasi Telegram Sukses!\nLayanan monitoring Anda telah berhasil terhubung.",
                 "parse_mode": "HTML"
             }
             resp = requests.post(url, json=payload, timeout=5)
@@ -6549,7 +6714,7 @@ def test_alert_api():
                 
             payload = {
                 "embeds": [{
-                    "title": "🎉 MasanDigital Dashboard - Tes Notifikasi Discord Sukses!",
+                    "title": "🎉 Masandigital Dashboard - Tes Notifikasi Discord Sukses!",
                     "description": "Layanan monitoring Anda telah berhasil terhubung ke saluran Discord ini.",
                     "color": 3066993,
                     "timestamp": datetime.utcnow().isoformat() + "Z"
@@ -6560,10 +6725,466 @@ def test_alert_api():
                 return jsonify({'success': True})
             else:
                 return jsonify({'error': f"Discord Webhook Error Status: {resp.status_code}"}), 400
+        elif alert_type == 'whatsapp':
+            provider = data.get('whatsapp_provider', 'fonnte')
+            target = data.get('whatsapp_target', '')
+            token = data.get('whatsapp_token', '')
+            custom_url = data.get('whatsapp_custom_url', '')
+            header_key = data.get('whatsapp_custom_header_key', '')
+            header_val = data.get('whatsapp_custom_header_value', '')
+            custom_payload = data.get('whatsapp_custom_payload', '')
+            
+            message_text = "🎉 *Masandigital Dashboard* - Tes Notifikasi WhatsApp Sukses!\nLayanan monitoring Anda telah berhasil terhubung."
+            
+            if not target:
+                return jsonify({'error': 'Target phone number is required'}), 400
+                
+            if provider == 'fonnte':
+                if not token:
+                    return jsonify({'error': 'Fonnte Token is required'}), 400
+                url = "https://api.fonnte.com/send"
+                headers = {"Authorization": token}
+                payload = {
+                    "target": target,
+                    "message": message_text
+                }
+                resp = requests.post(url, data=payload, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    return jsonify({'success': True})
+                else:
+                    return jsonify({'error': f"Fonnte API Error: {resp.text}"}), 400
+            elif provider == 'custom':
+                if not custom_url:
+                    return jsonify({'error': 'Custom API URL is required'}), 400
+                headers = {}
+                if header_key and header_val:
+                    headers[header_key] = header_val
+                
+                if custom_payload:
+                    try:
+                        formatted_payload = custom_payload.replace('{target}', target).replace('{message}', message_text)
+                        import json
+                        json_payload = json.loads(formatted_payload)
+                        resp = requests.post(custom_url, json=json_payload, headers=headers, timeout=5)
+                    except Exception as pe:
+                        return jsonify({'error': f"Payload format error: {str(pe)}"}), 400
+                else:
+                    payload = {"target": target, "message": message_text}
+                    resp = requests.post(custom_url, data=payload, headers=headers, timeout=5)
+                    
+                if 200 <= resp.status_code < 300:
+                    return jsonify({'success': True})
+                else:
+                    return jsonify({'error': f"Custom API Error Status {resp.status_code}: {resp.text}"}), 400
         else:
             return jsonify({'error': 'Invalid alert type'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ==========================================================
+# ADDED FEATURES: CLOUDFLARE, TAILSCALE, LET'S ENCRYPT SSL, AUTO BACKUP
+# ==========================================================
+
+CLOUDFLARE_CONFIG = os.path.join(DATA_DIR, 'cloudflare_config.json')
+BACKUP_SCHEDULE_FILE = os.path.join(DATA_DIR, 'backup_schedule.json')
+
+def load_cloudflare_config():
+    if os.path.exists(CLOUDFLARE_CONFIG):
+        try:
+            with open(CLOUDFLARE_CONFIG, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {'token': ''}
+
+def save_cloudflare_config(cfg):
+    with open(CLOUDFLARE_CONFIG, 'w') as f:
+        json.dump(cfg, f, indent=4)
+
+def load_backup_schedule():
+    default_cfg = {
+        'enabled': False,
+        'time': '02:00',
+        'dest_type': 'local',
+        'usb_path': '/media/USB_BACKUP',
+        's3_endpoint': '',
+        's3_bucket': '',
+        's3_access_key': '',
+        's3_secret_key': ''
+    }
+    if os.path.exists(BACKUP_SCHEDULE_FILE):
+        try:
+            with open(BACKUP_SCHEDULE_FILE, 'r') as f:
+                return {**default_cfg, **json.load(f)}
+        except:
+            pass
+    return default_cfg
+
+def save_backup_schedule(cfg):
+    with open(BACKUP_SCHEDULE_FILE, 'w') as f:
+        json.dump(cfg, f, indent=4)
+
+# --- CLOUDFLARE ENDPOINTS ---
+@app.route('/cloudflare')
+@login_required
+@admin_required
+def cloudflare_page():
+    return render_template('cloudflare.html')
+
+@app.route('/api/cloudflare/status', methods=['GET'])
+@login_required
+def cloudflare_status():
+    cfg = load_cloudflare_config()
+    client = docker.from_env()
+    running = False
+    installed = False
+    container_id = None
+    status_str = "stopped"
+    
+    try:
+        container = client.containers.get('masandigital_cloudflared')
+        installed = True
+        status_str = container.status
+        running = (container.status == 'running')
+        container_id = container.short_id
+    except docker.errors.NotFound:
+        pass
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+        
+    return jsonify({
+        'token': cfg.get('token', ''),
+        'installed': installed,
+        'running': running,
+        'status': status_str,
+        'container_id': container_id
+    })
+
+@app.route('/api/cloudflare/configure', methods=['POST'])
+@login_required
+@admin_required
+def cloudflare_configure():
+    data = request.json
+    token = data.get('token', '').strip()
+    cfg = {'token': token}
+    save_cloudflare_config(cfg)
+    audit_log('CLOUDFLARE_CONFIG', "Updated Cloudflare Tunnel configuration", session.get('username'))
+    return jsonify({'success': True})
+
+@app.route('/api/cloudflare/start', methods=['POST'])
+@login_required
+@admin_required
+def cloudflare_start():
+    cfg = load_cloudflare_config()
+    token = cfg.get('token', '')
+    if not token:
+        return jsonify({'error': 'Token Cloudflare Tunnel tidak ditemukan. Konfigurasi terlebih dahulu.'}), 400
+        
+    client = docker.from_env()
+    
+    # Remove existing container if any
+    try:
+        old = client.containers.get('masandigital_cloudflared')
+        old.remove(force=True)
+    except docker.errors.NotFound:
+        pass
+        
+    try:
+        # Start new cloudflared container
+        container = client.containers.run(
+            'cloudflare/cloudflared:latest',
+            name='masandigital_cloudflared',
+            command=f"tunnel --no-autoupdate run --token {token}",
+            restart_policy={"Name": "always"},
+            detach=True
+        )
+        audit_log('CLOUDFLARE_START', "Started Cloudflare Tunnel", session.get('username'))
+        return jsonify({'success': True, 'container_id': container.short_id})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cloudflare/stop', methods=['POST'])
+@login_required
+@admin_required
+def cloudflare_stop():
+    client = docker.from_env()
+    try:
+        container = client.containers.get('masandigital_cloudflared')
+        container.remove(force=True)
+        audit_log('CLOUDFLARE_STOP', "Stopped and removed Cloudflare Tunnel", session.get('username'))
+        return jsonify({'success': True})
+    except docker.errors.NotFound:
+        return jsonify({'error': 'Tunnel container tidak ditemukan'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cloudflare/logs', methods=['GET'])
+@login_required
+@admin_required
+def cloudflare_logs():
+    client = docker.from_env()
+    try:
+        container = client.containers.get('masandigital_cloudflared')
+        logs = container.logs(tail=100, stdout=True, stderr=True).decode('utf-8', errors='replace')
+        return jsonify({'logs': logs})
+    except docker.errors.NotFound:
+        return jsonify({'error': 'Tunnel container tidak aktif'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- SSL LET'S ENCRYPT ENDPOINTS ---
+@app.route('/ssl')
+@login_required
+@admin_required
+def ssl_page():
+    return render_template('ssl.html')
+
+@app.route('/api/ssl/check_certbot', methods=['GET'])
+@login_required
+def check_certbot():
+    try:
+        cmd = ['nsenter', '-t', '1', '-m', '-u', '-i', '-n', '-p', '--', 'which', 'certbot']
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        return jsonify({'installed': res.returncode == 0})
+    except:
+        return jsonify({'installed': False})
+
+@app.route('/api/ssl/generate', methods=['POST'])
+@login_required
+@admin_required
+def generate_ssl():
+    data = request.json
+    domain = data.get('domain', '').strip()
+    email = data.get('email', '').strip()
+    
+    if not domain or not email:
+        return jsonify({'error': 'Domain dan Email wajib diisi'}), 400
+        
+    audit_log('SSL_GENERATE_START', f"Requesting SSL for {domain}", session.get('username'))
+    
+    def run_certbot():
+        try:
+            # Run certbot on host using nsenter
+            cmd = [
+                'nsenter', '-t', '1', '-m', '-u', '-i', '-n', '-p', '--',
+                'certbot', '--nginx', '-d', domain, '--non-interactive', 
+                '--agree-tos', '-m', email, '--redirect'
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+            
+            if res.returncode == 0:
+                audit_log('SSL_GENERATE_SUCCESS', f"SSL configured for {domain}", 'system')
+                # Reload Nginx on host
+                subprocess.run(['nsenter', '-t', '1', '-m', '-u', '-i', '-n', '-p', '--', 'systemctl', 'reload', 'nginx'])
+                socketio.emit('ssl_status', {'domain': domain, 'status': 'success', 'message': 'SSL Berhasil Terpasang!'})
+            else:
+                err_msg = res.stderr or res.stdout
+                audit_log('SSL_GENERATE_FAIL', f"SSL failed for {domain}: {err_msg}", 'system')
+                socketio.emit('ssl_status', {'domain': domain, 'status': 'error', 'message': f"Gagal: {err_msg}"})
+        except Exception as e:
+            socketio.emit('ssl_status', {'domain': domain, 'status': 'error', 'message': f"Exception: {str(e)}"})
+
+    threading.Thread(target=run_certbot, daemon=True).start()
+    return jsonify({'success': True, 'message': 'Proses pembuatan SSL Let\'s Encrypt dimulai.'})
+
+# --- TAILSCALE VPN ENDPOINTS ---
+@app.route('/api/tailscale/status', methods=['GET'])
+@login_required
+def tailscale_status():
+    try:
+        nsenter = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', '-p', '--']
+        check_cmd = subprocess.run(nsenter + ['which', 'tailscale'], capture_output=True, text=True)
+        installed = check_cmd.returncode == 0
+        
+        if not installed:
+            return jsonify({'installed': False, 'running': False, 'authenticated': False})
+            
+        status_cmd = subprocess.run(nsenter + ['tailscale', 'status', '--json'], capture_output=True, text=True, timeout=5)
+        if status_cmd.returncode != 0:
+            return jsonify({'installed': True, 'running': False, 'authenticated': False})
+            
+        data = json.loads(status_cmd.stdout)
+        self_node = data.get('Self', {})
+        authenticated = self_node.get('Online', False)
+        tailscale_ip = self_node.get('TailscaleIPs', [''])[0]
+        host_name = self_node.get('HostName', '')
+        
+        peers = []
+        peer_map = data.get('Peer', {})
+        for p_id, p_info in peer_map.items():
+            peers.append({
+                'name': p_info.get('HostName', ''),
+                'ip': p_info.get('TailscaleIPs', [''])[0],
+                'active': p_info.get('Active', False),
+                'os': p_info.get('OS', '')
+            })
+            
+        return jsonify({
+            'installed': True,
+            'running': True,
+            'authenticated': authenticated,
+            'ip': tailscale_ip,
+            'host_name': host_name,
+            'peers': peers
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'installed': False, 'running': False}), 500
+
+@app.route('/api/tailscale/up', methods=['POST'])
+@login_required
+@admin_required
+def tailscale_up():
+    try:
+        data = request.json or {}
+        auth_key = data.get('auth_key', '').strip()
+        
+        nsenter = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', '-p', '--']
+        cmd = nsenter + ['tailscale', 'up']
+        if auth_key:
+            cmd.append(f"--authkey={auth_key}")
+            
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        time.sleep(2)
+        ret = proc.poll()
+        
+        stderr_content = ""
+        try:
+            stdout, stderr = proc.communicate(timeout=3)
+            stderr_content = stderr or stdout
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+            stderr_content = stderr or stdout
+            
+        import re
+        match = re.search(r'(https://login\.tailscale\.com/a/[^\s]+)', stderr_content)
+        if match:
+            login_url = match.group(1)
+            return jsonify({'success': True, 'needs_auth': True, 'auth_url': login_url})
+            
+        if ret == 0 or (proc and proc.returncode == 0):
+            audit_log('TAILSCALE_UP', "Tailscale service started", session.get('username'))
+            return jsonify({'success': True, 'needs_auth': False})
+            
+        return jsonify({'error': stderr_content or 'Gagal memulai Tailscale'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tailscale/down', methods=['POST'])
+@login_required
+@admin_required
+def tailscale_down():
+    try:
+        nsenter = ['nsenter', '-t', '1', '-m', '-u', '-n', '-i', '-p', '--']
+        res = subprocess.run(nsenter + ['tailscale', 'down'], capture_output=True, text=True, timeout=5)
+        if res.returncode == 0:
+            audit_log('TAILSCALE_DOWN', "Tailscale service stopped", session.get('username'))
+            return jsonify({'success': True})
+        return jsonify({'error': res.stderr or 'Gagal menghentikan Tailscale'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- AUTO BACKUP ENDPOINTS ---
+@app.route('/api/backup/schedule/status', methods=['GET'])
+@login_required
+def backup_schedule_status():
+    return jsonify(load_backup_schedule())
+
+@app.route('/api/backup/schedule/save', methods=['POST'])
+@login_required
+@admin_required
+def backup_schedule_save():
+    cfg = request.json
+    save_backup_schedule(cfg)
+    audit_log('BACKUP_SCHEDULE_SAVE', "Updated automatic backup schedule settings", session.get('username'))
+    return jsonify({'success': True})
+
+def backup_scheduler_loop():
+    time.sleep(30)
+    last_run_date = ""
+    while True:
+        try:
+            cfg = load_backup_schedule()
+            if cfg.get('enabled'):
+                now = datetime.now()
+                current_time = now.strftime('%H:%M')
+                current_date = now.strftime('%Y-%m-%d')
+                
+                if current_time == cfg.get('time') and current_date != last_run_date:
+                    last_run_date = current_date
+                    print(f"[SCHEDULER] Starting scheduled backup: {current_date} at {current_time}")
+                    run_scheduled_backup(cfg)
+        except Exception as e:
+            print(f"[SCHEDULER ERROR] {e}")
+        time.sleep(40)
+
+def run_scheduled_backup(cfg):
+    try:
+        import tarfile
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        filename = f"backup_auto_{timestamp}.tar.gz"
+        filepath = os.path.join(BACKUP_DIR, filename)
+        
+        with tarfile.open(filepath, 'w:gz') as tar:
+            settings_file = os.path.join(DATA_DIR, 'settings.json')
+            if os.path.exists(settings_file):
+                tar.add(settings_file, arcname='settings.json')
+            
+            security_file = os.path.join(BASE_DIR, 'security_config.json')
+            if os.path.exists(security_file):
+                tar.add(security_file, arcname='security_config.json')
+                
+            compose_file = os.path.join(BASE_DIR, 'docker-compose.yml')
+            if os.path.exists(compose_file):
+                tar.add(compose_file, arcname='docker-compose.yml')
+                
+            users_db = os.path.join(DATA_DIR, 'users.db')
+            if os.path.exists(users_db):
+                tar.add(users_db, arcname='users.db')
+                
+        audit_log('AUTO_BACKUP_CREATED', f"Created automatic backup: {filename}", 'system')
+        
+        dest_type = cfg.get('dest_type')
+        if dest_type == 'usb':
+            usb_path = cfg.get('usb_path', '').strip()
+            if usb_path.startswith('/'):
+                host_usb_path = os.path.join('/host/root', usb_path.lstrip('/'))
+                if os.path.exists(host_usb_path):
+                    import shutil
+                    shutil.copy2(filepath, os.path.join(host_usb_path, filename))
+                    audit_log('AUTO_BACKUP_USB', f"Copied auto backup to USB: {usb_path}", 'system')
+                else:
+                    audit_log('AUTO_BACKUP_USB_ERROR', f"USB Path not found: {usb_path}", 'system')
+                    
+        elif dest_type == 's3':
+            endpoint = cfg.get('s3_endpoint')
+            bucket = cfg.get('s3_bucket')
+            access = cfg.get('s3_access_key')
+            secret = cfg.get('s3_secret_key')
+            
+            if endpoint and bucket and access and secret:
+                try:
+                    import boto3
+                    from botocore.client import Config
+                    
+                    s3 = boto3.client(
+                        's3',
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access,
+                        aws_secret_access_key=secret,
+                        config=Config(signature_version='s3v4')
+                    )
+                    s3.upload_file(filepath, bucket, filename)
+                    audit_log('AUTO_BACKUP_S3', f"Uploaded auto backup to S3 bucket: {bucket}", 'system')
+                except Exception as ex:
+                    audit_log('AUTO_BACKUP_S3_ERROR', f"S3 upload failed: {str(ex)}", 'system')
+    except Exception as e:
+        print(f"[AUTO BACKUP ERROR] {e}")
+
+# Start Scheduler Thread
+t_backup = threading.Thread(target=backup_scheduler_loop, daemon=True)
+t_backup.start()
+
 
 if __name__ == '__main__':
     print("Starting Development Server on http://localhost:5000")

@@ -328,10 +328,16 @@ function selectRow(tr, item, e) {
     if (e && e.button === 2) return;
 }
 
+let currentZoom = 1;
+let currentRotation = 0;
+
 function updateDetailPanel() {
     const panel = document.getElementById('detail-panel');
+    const previewContainer = document.getElementById('detail-media-preview');
+    
     if (!selectedItem) {
         panel.classList.add('hidden');
+        if (previewContainer) previewContainer.style.display = 'none';
         return;
     }
 
@@ -343,7 +349,141 @@ function updateDetailPanel() {
     document.getElementById('detail-perm').textContent = selectedItem.perm || '-';
     document.getElementById('detail-uid').textContent = selectedItem.uid ?? '-';
     document.getElementById('detail-gid').textContent = selectedItem.gid ?? '-';
+
+    // Media Preview logic
+    if (previewContainer) {
+        previewContainer.style.display = 'none';
+        previewContainer.innerHTML = '';
+        
+        if (!selectedItem.is_dir) {
+            const ext = selectedItem.name.split('.').pop().toLowerCase();
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'heic'].includes(ext);
+            const isVideo = ['mp4', 'mov', 'webm', 'ogg', 'mkv'].includes(ext);
+            
+            if (isImage || isVideo) {
+                previewContainer.style.display = 'flex';
+                const previewUrl = `/api/files/preview?path=${encodeURIComponent(selectedItem.path)}`;
+                
+                if (isImage) {
+                    const img = document.createElement('img');
+                    img.src = previewUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '120px';
+                    img.style.borderRadius = '4px';
+                    img.style.objectFit = 'contain';
+                    
+                    if (ext === 'heic') {
+                        img.alt = 'HEIC Image (Click to View)';
+                        previewContainer.innerHTML = `<div style="padding:1rem; font-size:0.8rem; color:var(--text-muted); text-align:center"><i class="fa-solid fa-file-image" style="font-size:2rem; margin-bottom:0.5rem; color:#3b82f6"></i><br>HEIC Image<br>(Klik untuk preview)</div>`;
+                    } else {
+                        previewContainer.appendChild(img);
+                    }
+                } else if (isVideo) {
+                    previewContainer.innerHTML = `<div style="padding:1rem; font-size:0.8rem; color:var(--text-muted); text-align:center"><i class="fa-solid fa-circle-play" style="font-size:2.5rem; margin-bottom:0.5rem; color:#ef4444"></i><br>Video File<br>(Klik untuk putar)</div>`;
+                }
+                
+                previewContainer.onclick = () => openMediaPreviewModal();
+            }
+        }
+    }
 }
+
+function openMediaPreviewModal() {
+    if (!selectedItem) return;
+    
+    const modal = document.getElementById('media-preview-modal');
+    const title = document.getElementById('preview-modal-title');
+    const content = document.getElementById('preview-modal-content');
+    const controls = document.getElementById('preview-modal-controls');
+    
+    title.textContent = selectedItem.name;
+    content.innerHTML = 'Loading preview...';
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+    
+    currentZoom = 1;
+    currentRotation = 0;
+    
+    const ext = selectedItem.name.split('.').pop().toLowerCase();
+    const previewUrl = `/api/files/preview?path=${encodeURIComponent(selectedItem.path)}`;
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'heic'].includes(ext)) {
+        controls.style.display = 'flex';
+        
+        if (ext === 'heic') {
+            content.innerHTML = `<div style="text-align:center; padding:2rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size:3rem; color:#3b82f6; margin-bottom:1rem"></i><br>Mengonversi HEIC iPhone...</div>`;
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+            script.onload = () => {
+                fetch(previewUrl)
+                    .then(res => res.blob())
+                    .then(blob => heic2any({ blob, toType: "image/jpeg", quality: 0.8 }))
+                    .then(conversionResult => {
+                        const url = URL.createObjectURL(conversionResult);
+                        const img = document.createElement('img');
+                        img.id = 'preview-target-img';
+                        img.src = url;
+                        img.style.maxWidth = '100%';
+                        img.style.maxHeight = '55vh';
+                        img.style.transition = 'transform 0.2s';
+                        content.innerHTML = '';
+                        content.appendChild(img);
+                    })
+                    .catch(err => {
+                        content.innerHTML = `<div style="text-align:center; color:var(--text-muted);"><i class="fa-solid fa-circle-exclamation" style="font-size:3rem; color:#f59e0b; margin-bottom:1rem"></i><br>Gagal memproses HEIC secara langsung.<br><a href="${previewUrl}" download style="color:#3b82f6; text-decoration:underline;">Unduh file asli untuk membukanya.</a></div>`;
+                    });
+            };
+            document.body.appendChild(script);
+        } else {
+            const img = document.createElement('img');
+            img.id = 'preview-target-img';
+            img.src = previewUrl;
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '55vh';
+            img.style.transition = 'transform 0.2s';
+            content.innerHTML = '';
+            content.appendChild(img);
+        }
+    } else if (['mp4', 'mov', 'webm', 'ogg', 'mkv'].includes(ext)) {
+        controls.style.display = 'none';
+        
+        const video = document.createElement('video');
+        video.src = previewUrl;
+        video.controls = true;
+        video.autoplay = true;
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '55vh';
+        content.innerHTML = '';
+        content.appendChild(video);
+    }
+}
+
+function closeMediaPreviewModal() {
+    const modal = document.getElementById('media-preview-modal');
+    const content = document.getElementById('preview-modal-content');
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+    content.innerHTML = '';
+}
+
+function zoomPreview(amount) {
+    const img = document.getElementById('preview-target-img');
+    if (!img) return;
+    currentZoom = Math.max(0.2, Math.min(4, currentZoom + amount));
+    applyTransformations(img);
+}
+
+function rotatePreview() {
+    const img = document.getElementById('preview-target-img');
+    if (!img) return;
+    currentRotation = (currentRotation + 90) % 360;
+    applyTransformations(img);
+}
+
+function applyTransformations(img) {
+    img.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+}
+
 
 function openItem(item) {
     if (item.is_dir) {
