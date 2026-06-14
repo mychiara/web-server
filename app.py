@@ -6047,35 +6047,385 @@ def get_blocked_ips():
 def storage_info():
     """Info lengkap semua mount point disk"""
     partitions = []
+    seen_mountpoints = set()
     try:
-
-        for part in psutil.disk_partitions(all=False):
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-                partitions.append({
-                    'device': part.device,
-                    'mountpoint': part.mountpoint,
-                    'fstype': part.fstype,
-                    'total': round(usage.total / (1024**3), 2),
-                    'used': round(usage.used / (1024**3), 2),
-                    'free': round(usage.free / (1024**3), 2),
-                    'percent': usage.percent
-                })
-            except:
-                pass
+        # Use all=True to find virtual filesystems like mergerfs
+        for part in psutil.disk_partitions(all=True):
+            if part.mountpoint in seen_mountpoints:
+                continue
+                
+            # Filter out docker overlay, snaps, loop devices and virtual system paths
+            if 'loop' in part.device or part.mountpoint.startswith(('/var/lib/docker', '/snap', '/sys', '/proc', '/dev', '/run')):
+                continue
+                
+            is_physical = False
+            is_mergerfs = False
+            
+            if platform.system() == "Linux":
+                is_physical = part.fstype in ['ext4', 'ext3', 'ext2', 'vfat', 'ntfs', 'exfat', 'btrfs', 'xfs', 'zfs', 'hfsplus', 'apfs', 'fuseblk']
+                is_mergerfs = 'mergerfs' in part.fstype or part.device.startswith('mergerfs')
+            elif platform.system() == "Windows":
+                # On Windows, keep it simple for disk partitions
+                is_physical = part.fstype in ['NTFS', 'FAT32', 'exFAT'] or part.mountpoint in ['C:\\', 'D:\\', 'E:\\']
+                is_mergerfs = 'mergerfs' in part.device or 'pool' in part.device.lower()
+                
+            if is_physical or is_mergerfs:
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    partitions.append({
+                        'device': part.device,
+                        'mountpoint': part.mountpoint,
+                        'fstype': part.fstype,
+                        'total': round(usage.total / (1024**3), 2),
+                        'used': round(usage.used / (1024**3), 2),
+                        'free': round(usage.free / (1024**3), 2),
+                        'percent': usage.percent
+                    })
+                    seen_mountpoints.add(part.mountpoint)
+                except:
+                    pass
     except Exception as e:
         pass
     
     # IO counters
-    io = psutil.disk_io_counters()
-    io_data = {
-        'read_mb': round(io.read_bytes / (1024**2), 1) if io else 0,
-        'write_mb': round(io.write_bytes / (1024**2), 1) if io else 0,
-        'read_count': io.read_count if io else 0,
-        'write_count': io.write_count if io else 0,
-    }
-    
+    try:
+        io = psutil.disk_io_counters()
+        io_data = {
+            'read_mb': round(io.read_bytes / (1024**2), 1) if io else 0,
+            'write_mb': round(io.write_bytes / (1024**2), 1) if io else 0,
+            'read_count': io.read_count if io else 0,
+            'write_count': io.write_count if io else 0,
+        }
+    except:
+        io_data = {'read_mb': 0, 'write_mb': 0, 'read_count': 0, 'write_count': 0}
+        
     return jsonify({'partitions': partitions, 'io': io_data})
+
+# --- MERGE STORAGE HELPERS & CONFIG ---
+MERGE_STORAGE_CONFIG = os.path.join(DATA_DIR, 'merge_storage.json')
+MERGERFS_INSTALLING = False
+MERGERFS_INSTALL_LOG = ""
+
+def check_mergerfs_installed():
+    if platform.system() != "Linux":
+        return False
+    import shutil
+    return shutil.which('mergerfs') is not None
+
+def load_merge_pools():
+    if not os.path.exists(MERGE_STORAGE_CONFIG):
+        return []
+    try:
+        with open(MERGE_STORAGE_CONFIG, 'r') as f:
+            data = json.load(f)
+            return data.get('pools', [])
+    except Exception as e:
+        print(f"Error loading merge pools: {e}")
+        return []
+
+def save_merge_pools(pools):
+    try:
+        with open(MERGE_STORAGE_CONFIG, 'w') as f:
+            json.dump({'pools': pools}, f, indent=2)
+    except Exception as e:
+        print(f"Error saving merge pools: {e}")
+
+def update_fstab(pools):
+    if platform.system() != "Linux":
+        return
+    
+    fstab_path = '/etc/fstab'
+    if not os.path.exists(fstab_path):
+        return
+        
+    try:
+        with open(fstab_path, 'r') as f:
+            content = f.read()
+            
+        start_marker = "# MASANDIGITAL-MERGE-START"
+        end_marker = "# MASANDIGITAL-MERGE-END"
+        
+        fstab_lines = []
+        for pool in pools:
+            if not pool.get('mounted', True):
+                continue
+            sources_str = ":".join(pool['sources'])
+            mount_point = pool['mount_point']
+            policy = pool.get('policy', 'mfs')
+            name = pool['name']
+            
+            line = f"{sources_str} {mount_point} mergerfs defaults,allow_other,use_ino,category.create={policy},moveonenospc=true,minfreespace=20G,fsname={name},nofail 0 0"
+            fstab_lines.append(line)
+            
+        new_block = f"{start_marker}\n" + "\n".join(fstab_lines) + (f"\n{end_marker}" if fstab_lines else f"\n{end_marker}")
+        if not fstab_lines:
+            new_block = ""
+            
+        if start_marker in content and end_marker in content:
+            parts = content.split(start_marker)
+            before = parts[0]
+            after = parts[1].split(end_marker)[1]
+            new_content = before.rstrip() + "\n\n" + new_block.strip() + "\n\n" + after.lstrip()
+        else:
+            new_content = content.rstrip() + "\n\n" + new_block.strip() + "\n"
+            
+        tmp_fstab = '/tmp/fstab.tmp'
+        with open(tmp_fstab, 'w') as f:
+            f.write(new_content)
+            
+        subprocess.run(['sudo', 'cp', tmp_fstab, fstab_path], check=True)
+        os.remove(tmp_fstab)
+    except Exception as e:
+        print(f"Error updating fstab: {e}")
+
+def mount_all_merge_pools():
+    pools = load_merge_pools()
+    if not pools:
+        return
+        
+    print(f"Auto-mounting {len(pools)} Merge Storage pools...")
+    for pool in pools:
+        if pool.get('mounted', True):
+            mount_point = pool['mount_point']
+            if not os.path.exists(mount_point):
+                try:
+                    os.makedirs(mount_point)
+                except Exception as e:
+                    print(f"Failed to create mount point {mount_point}: {e}")
+                    continue
+            
+            if platform.system() == "Linux":
+                if not os.path.ismount(mount_point):
+                    print(f"Mounting mergerfs pool {pool['name']} to {mount_point}...")
+                    subprocess.run(['sudo', 'mount', mount_point])
+            else:
+                print(f"Windows simulated mount of mergerfs pool {pool['name']} to {mount_point}...")
+
+def run_mergerfs_install():
+    global MERGERFS_INSTALLING, MERGERFS_INSTALL_LOG
+    MERGERFS_INSTALLING = True
+    MERGERFS_INSTALL_LOG = "Starting mergerfs installation...\n"
+    try:
+        process = subprocess.Popen(
+            ['sudo', 'apt-get', 'update'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
+        if process.stdout:
+            for line in process.stdout:
+                MERGERFS_INSTALL_LOG += line
+        process.wait()
+        
+        process = subprocess.Popen(
+            ['sudo', 'apt-get', 'install', '-y', 'mergerfs'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
+        if process.stdout:
+            for line in process.stdout:
+                MERGERFS_INSTALL_LOG += line
+        process.wait()
+        
+        if check_mergerfs_installed():
+            MERGERFS_INSTALL_LOG += "\nInstallation completed successfully!"
+            audit_log('MERGERFS_INSTALL_SUCCESS', 'mergerfs installed successfully', 'system')
+        else:
+            MERGERFS_INSTALL_LOG += f"\nInstallation failed with exit code: {process.returncode}"
+            audit_log('MERGERFS_INSTALL_FAILED', 'mergerfs installation failed', 'system')
+    except Exception as e:
+        MERGERFS_INSTALL_LOG += f"\nError: {str(e)}"
+        audit_log('MERGERFS_INSTALL_ERROR', str(e), 'system')
+    finally:
+        MERGERFS_INSTALLING = False
+
+# --- MERGE STORAGE API ROUTES ---
+@app.route('/api/storage/merge/status')
+@login_required
+def merge_status():
+    pools = load_merge_pools()
+    # Check actual mount status
+    for pool in pools:
+        mount_point = pool['mount_point']
+        if platform.system() == "Linux":
+            pool['mounted'] = os.path.ismount(mount_point)
+        else:
+            pool['mounted'] = os.path.exists(mount_point) # Dev simulation
+            
+    return jsonify({
+        'installed': check_mergerfs_installed(),
+        'installing': MERGERFS_INSTALLING,
+        'log': MERGERFS_INSTALL_LOG,
+        'pools': pools,
+        'os': platform.system()
+    })
+
+@app.route('/api/storage/merge/install', methods=['POST'])
+@login_required
+@admin_required
+def merge_install():
+    global MERGERFS_INSTALLING
+    if MERGERFS_INSTALLING:
+        return jsonify({'success': False, 'error': 'Installation is already in progress'})
+    
+    t = threading.Thread(target=run_mergerfs_install, daemon=True)
+    t.start()
+    return jsonify({'success': True, 'message': 'Installation started in background'})
+
+@app.route('/api/storage/merge/pools', methods=['POST'])
+@login_required
+@admin_required
+def create_merge_pool():
+    data = request.json
+    name = data.get('name')
+    mount_point = data.get('mount_point')
+    sources = data.get('sources', [])
+    policy = data.get('policy', 'mfs')
+    
+    if not name or not mount_point or not sources:
+        return jsonify({'success': False, 'error': 'Name, mount point, and sources are required'}), 400
+        
+    import re
+    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+        return jsonify({'success': False, 'error': 'Invalid pool name. Only alphanumeric, underscores, and dashes allowed'}), 400
+        
+    # Check if pool name or mount point already exists
+    pools = load_merge_pools()
+    for pool in pools:
+        if pool['name'] == name:
+            return jsonify({'success': False, 'error': 'Pool name already exists'}), 400
+        if pool['mount_point'] == mount_point:
+            return jsonify({'success': False, 'error': 'Mount point already in use'}), 400
+            
+    # Validate mount_point and sources
+    if not os.path.exists(mount_point):
+        try:
+            os.makedirs(mount_point)
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Failed to create mount point directory: {str(e)}'}), 500
+            
+    for src in sources:
+        if not os.path.exists(src):
+            try:
+                os.makedirs(src) # Automatically create on simulation/dev
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Source directory {src} does not exist and cannot be created: {str(e)}'}), 400
+                
+    # If Linux, attempt to mount
+    mounted = True
+    if platform.system() == "Linux":
+        if not check_mergerfs_installed():
+            return jsonify({'success': False, 'error': 'mergerfs is not installed on this system'}), 400
+            
+        sources_str = ":".join(sources)
+        cmd = ['sudo', 'mergerfs', '-o', f'defaults,allow_other,use_ino,category.create={policy},moveonenospc=true,minfreespace=20G,fsname={name},nofail', sources_str, mount_point]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            return jsonify({'success': False, 'error': f'mergerfs mount failed: {res.stderr}'}), 500
+            
+    # Save pool configuration
+    new_pool = {
+        'id': name,
+        'name': name,
+        'mount_point': mount_point,
+        'sources': sources,
+        'policy': policy,
+        'mounted': mounted
+    }
+    pools.append(new_pool)
+    save_merge_pools(pools)
+    update_fstab(pools)
+    
+    audit_log('MERGE_POOL_CREATE', f"Created pool {name} at {mount_point} merging {len(sources)} sources", session.get('username'))
+    return jsonify({'success': True, 'pool': new_pool})
+
+@app.route('/api/storage/merge/pools/<pool_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_merge_pool(pool_id):
+    pools = load_merge_pools()
+    target_pool = None
+    for pool in pools:
+        if pool['id'] == pool_id:
+            target_pool = pool
+            break
+            
+    if not target_pool:
+        return jsonify({'success': False, 'error': 'Pool not found'}), 404
+        
+    mount_point = target_pool['mount_point']
+    
+    # If Linux, unmount
+    if platform.system() == "Linux":
+        res = subprocess.run(['sudo', 'umount', '-l', mount_point], capture_output=True, text=True)
+        
+    pools = [p for p in pools if p['id'] != pool_id]
+    save_merge_pools(pools)
+    update_fstab(pools)
+    
+    try:
+        if os.path.exists(mount_point) and not os.listdir(mount_point):
+            os.rmdir(mount_point)
+    except:
+        pass
+        
+    audit_log('MERGE_POOL_DELETE', f"Deleted pool {pool_id}", session.get('username'))
+    return jsonify({'success': True})
+
+@app.route('/api/storage/merge/pools/<pool_id>/mount', methods=['POST'])
+@login_required
+@admin_required
+def mount_merge_pool(pool_id):
+    pools = load_merge_pools()
+    target_pool = None
+    for pool in pools:
+        if pool['id'] == pool_id:
+            target_pool = pool
+            break
+            
+    if not target_pool:
+        return jsonify({'success': False, 'error': 'Pool not found'}), 404
+        
+    mount_point = target_pool['mount_point']
+    sources = target_pool['sources']
+    policy = target_pool.get('policy', 'mfs')
+    name = target_pool['name']
+    
+    if platform.system() == "Linux":
+        if not os.path.exists(mount_point):
+            os.makedirs(mount_point, exist_ok=True)
+            
+        res = subprocess.run(['sudo', 'mount', mount_point], capture_output=True, text=True)
+        if res.returncode != 0:
+            sources_str = ":".join(sources)
+            cmd = ['sudo', 'mergerfs', '-o', f'defaults,allow_other,use_ino,category.create={policy},moveonenospc=true,minfreespace=20G,fsname={name},nofail', sources_str, mount_point]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode != 0:
+                return jsonify({'success': False, 'error': f'Mount failed: {res.stderr}'}), 500
+                
+    audit_log('MERGE_POOL_MOUNT', f"Mounted pool {pool_id}", session.get('username'))
+    return jsonify({'success': True})
+
+@app.route('/api/storage/merge/pools/<pool_id>/unmount', methods=['POST'])
+@login_required
+@admin_required
+def unmount_merge_pool(pool_id):
+    pools = load_merge_pools()
+    target_pool = None
+    for pool in pools:
+        if pool['id'] == pool_id:
+            target_pool = pool
+            break
+            
+    if not target_pool:
+        return jsonify({'success': False, 'error': 'Pool not found'}), 404
+        
+    mount_point = target_pool['mount_point']
+    
+    if platform.system() == "Linux":
+        res = subprocess.run(['sudo', 'umount', '-l', mount_point], capture_output=True, text=True)
+        if res.returncode != 0:
+            return jsonify({'success': False, 'error': f'Unmount failed: {res.stderr}'}), 500
+            
+    audit_log('MERGE_POOL_UNMOUNT', f"Unmounted pool {pool_id}", session.get('username'))
+    return jsonify({'success': True})
 
 @app.route('/panel_docker')
 @login_required
@@ -7218,6 +7568,10 @@ def run_scheduled_backup(cfg):
 # Start Scheduler Thread
 t_backup = threading.Thread(target=backup_scheduler_loop, daemon=True)
 t_backup.start()
+
+# Start Merge Storage Auto-mounting
+t_merge = threading.Thread(target=mount_all_merge_pools, daemon=True)
+t_merge.start()
 
 
 if __name__ == '__main__':

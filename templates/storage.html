@@ -100,6 +100,311 @@
         .prog-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem; }
         .loading { text-align: center; padding: 4rem; color: var(--text-muted); }
         @media(max-width:768px){ .page-wrap{ padding: 1rem; } .partition-stats{ gap: 0.8rem; } }
+
+        /* Tab Nav */
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .tab-btn.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Merge storage elements */
+        .pool-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1.2rem;
+            transition: all 0.3s;
+        }
+        .pool-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            transform: translateY(-2px);
+        }
+        .pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .pool-name-area {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .pool-status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 99px;
+            font-weight: 600;
+        }
+        .status-mounted {
+            background: rgba(78, 205, 196, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+        .status-unmounted {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        .pool-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .pool-meta-item {
+            font-size: 0.85rem;
+        }
+        .pool-meta-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.2rem;
+        }
+        .pool-meta-value {
+            font-family: monospace;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        .pool-actions {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: flex-end;
+        }
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+        .btn-danger {
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #ff8b8b;
+        }
+        .btn-danger:hover {
+            background: rgba(255, 107, 107, 0.35);
+            color: white;
+        }
+        .btn-primary {
+            background: rgba(78, 205, 196, 0.15);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            color: #76fff5;
+        }
+        .btn-primary:hover {
+            background: rgba(78, 205, 196, 0.35);
+            color: white;
+        }
+
+        /* Modal styling */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal-content {
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .modal-close:hover { color: white; }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--text-muted);
+        }
+        .form-input, .form-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: white;
+            padding: 0.6rem 0.8rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .form-input:focus, .form-select:focus {
+            border-color: rgba(255,255,255,0.25);
+            outline: none;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .source-path-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .source-checkbox-group {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            cursor: pointer;
+        }
+        .checkbox-item:last-child {
+            margin-bottom: 0;
+        }
+        .checkbox-item input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--success);
+        }
+
+        /* Warning/Status Cards */
+        .warning-card {
+            background: rgba(255, 107, 107, 0.08);
+            border: 1px solid rgba(255, 107, 107, 0.18);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .warning-icon {
+            font-size: 2.2rem;
+            color: var(--danger);
+        }
+        .warning-content h4 {
+            margin-bottom: 0.3rem;
+            font-weight: 700;
+        }
+        .warning-content p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+            line-height: 1.4;
+        }
+        .install-log-box {
+            background: #000;
+            font-family: monospace;
+            font-size: 0.8rem;
+            padding: 1rem;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #00ff00;
+            margin-top: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -144,18 +449,132 @@
         </div>
     </div>
 
-    <!-- Partitions -->
-    <div class="glass card">
-        <div class="section-title">
-            <i class="fa-solid fa-layer-group" style="color:#4ecdc4"></i> Disk Partitions
+    <!-- Tab Nav -->
+    <div class="tab-nav">
+        <button class="tab-btn active" id="tab-btn-partitions" onclick="switchTab('partitions')">
+            <i class="fa-solid fa-layer-group"></i> Disk Partitions
+        </button>
+        <button class="tab-btn" id="tab-btn-merge" onclick="switchTab('merge')">
+            <i class="fa-solid fa-code-merge"></i> Merge Storage
+        </button>
+    </div>
+
+    <!-- Partitions Tab -->
+    <div id="tab-content-partitions" class="tab-content active">
+        <div class="glass card">
+            <div class="section-title">
+                <i class="fa-solid fa-layer-group" style="color:#4ecdc4"></i> Disk Partitions
+            </div>
+            <div id="partitions-container">
+                <div class="loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Loading storage data...</div>
+            </div>
         </div>
-        <div id="partitions-container">
-            <div class="loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Loading storage data...</div>
+    </div>
+
+    <!-- Merge Storage Tab -->
+    <div id="tab-content-merge" class="tab-content">
+        <div id="mergerfs-alert" style="display:none; margin-bottom: 1.5rem;"></div>
+
+        <div class="glass card">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; border:none; padding:0; margin-bottom:1.5rem;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-code-merge" style="color:#ffe66d"></i> Merge Storage Pools
+                </div>
+                <button class="action-btn btn-small" id="create-pool-btn" onclick="openCreatePoolModal()" style="background:rgba(255, 230, 109, 0.2); border-color:rgba(255, 230, 109, 0.4); color:#ffe66d; font-weight:600;">
+                    <i class="fa-solid fa-plus"></i> Create Pool
+                </button>
+            </div>
+            <div id="pools-container">
+                <div class="loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Loading pools...</div>
+            </div>
         </div>
     </div>
 
 </div>
+
+<!-- Create Pool Modal -->
+<div class="modal" id="create-pool-modal">
+    <div class="glass card modal-content" style="margin: 2rem auto;">
+        <div class="modal-header">
+            <h3 style="font-weight:700;"><i class="fa-solid fa-code-merge" style="color:#ffe66d; margin-right:0.5rem;"></i>Create Storage Pool</h3>
+            <button class="modal-close" onclick="closeCreatePoolModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <form id="create-pool-form" onsubmit="handleCreatePool(event)">
+            <div class="form-group">
+                <label class="form-label" for="pool-name">Pool Name</label>
+                <input class="form-input" type="text" id="pool-name" placeholder="e.g. storage_pool" required pattern="^[a-zA-Z0-9_-]+$">
+                <span style="font-size:0.75rem; color:var(--text-muted);">Alphanumeric, underscores, and dashes only.</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pool-mount">Virtual Mount Path (Destination)</label>
+                <input class="form-input" type="text" id="pool-mount" placeholder="e.g. /mnt/storage_pool" required>
+                <span style="font-size:0.75rem; color:var(--text-muted);">The folder where the combined storage will be accessed.</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Select Drives/Folders to Merge (Sources)</label>
+                <div id="sources-checkbox-list" class="source-checkbox-group">
+                    <!-- Populated dynamically -->
+                </div>
+                
+                <label class="form-label" style="margin-top:0.8rem;">Add Custom Folders (Optional)</label>
+                <div id="custom-sources-container">
+                    <!-- Dynamic inputs for custom sources -->
+                </div>
+                <button type="button" class="action-btn btn-small" onclick="addCustomSourceField()" style="margin-top:0.5rem;">
+                    <i class="fa-solid fa-plus"></i> Add Folder Path
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pool-policy">Write Policy</label>
+                <select class="form-select" id="pool-policy">
+                    <option value="mfs" selected>Most Free Space (mfs) - Recommend</option>
+                    <option value="epmfs">Existing Path Most Free Space (epmfs)</option>
+                    <option value="lfs">Least Free Space (lfs)</option>
+                    <option value="ff">First Found (ff)</option>
+                </select>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Determines how files are distributed when written to the pool.</span>
+            </div>
+            
+            <div class="pool-actions" style="margin-top:2rem;">
+                <button type="button" class="action-btn btn-small btn-cancel" onclick="closeCreatePoolModal()" style="border:1px solid rgba(255,255,255,0.1); background:transparent;">Cancel</button>
+                <button type="submit" class="action-btn btn-small" style="background:rgba(78, 205, 196, 0.2); border-color:rgba(78, 205, 196, 0.4); color:#76fff5; font-weight:600;">Create & Mount</button>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
+let currentTab = 'partitions';
+let storageInterval = null;
+let installPollInterval = null;
+let currentPartitions = [];
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    if (tab === 'partitions') {
+        document.getElementById('tab-btn-partitions').classList.add('active');
+        document.getElementById('tab-content-partitions').classList.add('active');
+        fetchStorage();
+        if (!storageInterval) {
+            storageInterval = setInterval(fetchStorage, 15000);
+        }
+    } else if (tab === 'merge') {
+        document.getElementById('tab-btn-merge').classList.add('active');
+        document.getElementById('tab-content-merge').classList.add('active');
+        if (storageInterval) {
+            clearInterval(storageInterval);
+            storageInterval = null;
+        }
+        fetchMergeStatus();
+    }
+}
+
 async function fetchStorage() {
     try {
         const res = await fetch('/api/storage/info');
@@ -167,7 +586,9 @@ async function fetchStorage() {
         document.getElementById('io-writes').textContent = data.io.write_count.toLocaleString();
 
         let html = '';
-        data.partitions.forEach(p => {
+        currentPartitions = data.partitions || [];
+        
+        currentPartitions.forEach(p => {
             const pct = p.percent;
             let fillColor = '#4ecdc4';
             let pctColor = '#4ecdc4';
@@ -215,8 +636,327 @@ async function fetchStorage() {
         document.getElementById('partitions-container').innerHTML = '<div class="loading" style="color:#ff6b6b;"><i class="fa-solid fa-circle-exclamation" style="margin-right:0.5rem;"></i>Failed to load storage data</div>';
     }
 }
+
+// --- MERGE STORAGE FUNCTIONS ---
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function fetchMergeStatus() {
+    try {
+        const res = await fetch('/api/storage/merge/status');
+        const data = await res.json();
+        
+        const alertEl = document.getElementById('mergerfs-alert');
+        const createBtn = document.getElementById('create-pool-btn');
+        
+        if (!data.installed) {
+            if (data.installing) {
+                alertEl.style.display = 'block';
+                alertEl.innerHTML = `
+                    <div class="warning-card" style="background:rgba(255, 230, 109, 0.1); border-color:rgba(255, 230, 109, 0.2); display:block;">
+                        <div style="display:flex; align-items:center; gap:1.2rem; margin-bottom:1rem;">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size:2.2rem; color:#ffe66d;"></i>
+                            <div class="warning-content">
+                                <h4 style="color:#ffe66d;">Installing mergerfs...</h4>
+                                <p style="margin:0; font-size:0.85rem;">The system is installing the union filesystem. This may take up to a minute.</p>
+                            </div>
+                        </div>
+                        <div class="install-log-box" id="install-log">${escapeHtml(data.log)}</div>
+                    </div>
+                `;
+                if (!installPollInterval) {
+                    installPollInterval = setInterval(fetchMergeStatus, 2000);
+                }
+                setTimeout(() => {
+                    const logBox = document.getElementById('install-log');
+                    if (logBox) logBox.scrollTop = logBox.scrollHeight;
+                }, 100);
+            } else {
+                alertEl.style.display = 'block';
+                alertEl.innerHTML = `
+                    <div class="warning-card">
+                        <i class="fa-solid fa-triangle-exclamation warning-icon"></i>
+                        <div class="warning-content" style="flex:1;">
+                            <h4>mergerfs is not installed</h4>
+                            <p>To merge multiple folders or hard drives, mergerfs needs to be installed on your system. This utility combines multiple directories into a single virtual pool.</p>
+                            <button class="action-btn btn-small" onclick="startMergerfsInstall()" style="background:#ff6b6b; border-color:#ff6b6b; font-weight:600;">
+                                <i class="fa-solid fa-download"></i> Install mergerfs
+                            </button>
+                        </div>
+                    </div>
+                `;
+                if (installPollInterval) {
+                    clearInterval(installPollInterval);
+                    installPollInterval = null;
+                }
+            }
+            createBtn.disabled = true;
+            createBtn.style.opacity = 0.5;
+            createBtn.style.cursor = 'not-allowed';
+        } else {
+            if (installPollInterval) {
+                clearInterval(installPollInterval);
+                installPollInterval = null;
+                alertEl.style.display = 'block';
+                alertEl.innerHTML = `
+                    <div class="warning-card" style="background:rgba(78, 205, 196, 0.1); border-color:rgba(78, 205, 196, 0.2);">
+                        <i class="fa-solid fa-circle-check warning-icon" style="color:var(--success);"></i>
+                        <div class="warning-content" style="flex:1;">
+                            <h4 style="color:var(--success);">mergerfs is installed!</h4>
+                            <p style="margin:0;">Union filesystem tool is fully configured and ready to merge your storage drives.</p>
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => { alertEl.style.display = 'none'; }, 5000);
+            } else {
+                alertEl.style.display = 'none';
+            }
+            createBtn.disabled = false;
+            createBtn.style.opacity = 1;
+            createBtn.style.cursor = 'pointer';
+        }
+        
+        renderPools(data.pools);
+    } catch (e) {
+        document.getElementById('pools-container').innerHTML = '<div class="loading" style="color:#ff6b6b;"><i class="fa-solid fa-circle-exclamation" style="margin-right:0.5rem;"></i>Failed to fetch Merge Storage status</div>';
+    }
+}
+
+async function startMergerfsInstall() {
+    try {
+        const res = await fetch('/api/storage/merge/install', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            fetchMergeStatus();
+        } else {
+            alert(data.error || 'Failed to start installation');
+        }
+    } catch (e) {
+        alert('Request failed');
+    }
+}
+
+function renderPools(pools) {
+    if (pools.length === 0) {
+        document.getElementById('pools-container').innerHTML = `
+            <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                <i class="fa-solid fa-code-merge" style="font-size:3rem; margin-bottom:1rem; opacity:0.3; color:#ffe66d;"></i>
+                <p>No Merge Storage pools created yet.</p>
+                <button class="action-btn btn-small" onclick="openCreatePoolModal()" style="margin: 1.5rem auto 0 auto; background:rgba(255, 230, 109, 0.2); border-color:rgba(255, 230, 109, 0.4); color:#ffe66d; font-weight:600;">
+                    <i class="fa-solid fa-plus"></i> Create Your First Pool
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    pools.forEach(pool => {
+        const statusClass = pool.mounted ? 'status-mounted' : 'status-unmounted';
+        const statusText = pool.mounted ? 'Mounted' : 'Unmounted';
+        
+        const mountAction = pool.mounted 
+            ? `<button class="action-btn btn-small" onclick="unmountPool('${pool.id}')" style="border:1px solid rgba(255,255,255,0.1); background:transparent;"><i class="fa-solid fa-link-slash"></i> Unmount</button>`
+            : `<button class="action-btn btn-small btn-primary" onclick="mountPool('${pool.id}')"><i class="fa-solid fa-link"></i> Mount</button>`;
+            
+        html += `
+            <div class="pool-card">
+                <div class="pool-header">
+                    <div class="pool-name-area">
+                        <i class="fa-solid fa-code-merge" style="color:#ffe66d; font-size:1.5rem;"></i>
+                        <div>
+                            <span style="font-weight:700; font-size:1.1rem; font-family:monospace;">${pool.name}</span>
+                            <span class="pool-status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                    <div class="pool-actions">
+                        ${mountAction}
+                        <button class="action-btn btn-small btn-danger" onclick="deletePool('${pool.id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
+                </div>
+                
+                <div class="pool-meta-grid">
+                    <div class="pool-meta-item">
+                        <div class="pool-meta-label">Exposed Mount Point</div>
+                        <div class="pool-meta-value" style="color:#76fff5;">${pool.mount_point}</div>
+                    </div>
+                    <div class="pool-meta-item">
+                        <div class="pool-meta-label">Write Policy</div>
+                        <div class="pool-meta-value" style="text-transform:uppercase;">${pool.policy}</div>
+                    </div>
+                    <div class="pool-meta-item" style="grid-column: 1 / -1;">
+                        <div class="pool-meta-label">Sources Merged (${pool.sources.length})</div>
+                        <div class="pool-meta-value" style="color:var(--text-muted); font-size:0.85rem; line-height:1.5; margin-top:0.4rem;">
+                            ${pool.sources.map(src => `<div style="display:flex; align-items:center; gap:0.4rem; margin-top:4px;"><i class="fa-solid fa-folder" style="color:#ffd200;"></i> ${src}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('pools-container').innerHTML = html;
+}
+
+// Modal actions
+async function openCreatePoolModal() {
+    document.getElementById('create-pool-form').reset();
+    document.getElementById('custom-sources-container').innerHTML = '';
+    document.getElementById('create-pool-modal').classList.add('active');
+    
+    // Populate checkboxes
+    document.getElementById('sources-checkbox-list').innerHTML = '<div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Reading drives...</div>';
+    await populateSources();
+}
+
+function closeCreatePoolModal() {
+    document.getElementById('create-pool-modal').classList.remove('active');
+}
+
+async function populateSources() {
+    try {
+        const res = await fetch('/api/storage/info');
+        const data = await res.json();
+        currentPartitions = data.partitions || [];
+        
+        let html = '';
+        if (currentPartitions.length === 0) {
+            html = '<div style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">No active drives detected. Please enter paths manually.</div>';
+        } else {
+            currentPartitions.forEach((p, idx) => {
+                html += `
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="source_drives" value="${p.mountpoint}">
+                        <div>
+                            <span style="font-weight:600; font-family:monospace;">${p.mountpoint}</span>
+                            <span style="color:var(--text-muted); font-size:0.75rem;">(${p.device} • ${p.total} GB)</span>
+                        </div>
+                    </label>
+                `;
+            });
+        }
+        document.getElementById('sources-checkbox-list').innerHTML = html;
+    } catch (e) {
+        document.getElementById('sources-checkbox-list').innerHTML = '<div style="color:#ff6b6b; font-size:0.85rem;">Failed to fetch active drives.</div>';
+    }
+}
+
+function addCustomSourceField(val = '') {
+    const container = document.getElementById('custom-sources-container');
+    const div = document.createElement('div');
+    div.className = 'source-path-row';
+    div.innerHTML = `
+        <input class="form-input" type="text" placeholder="e.g. /mnt/custom_folder" value="${val}" required>
+        <button type="button" class="btn-icon" style="color:#ff6b6b; border-color:rgba(255,107,107,0.2);" onclick="removeCustomSourceField(this)">
+            <i class="fa-solid fa-trash"></i>
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+function removeCustomSourceField(button) {
+    button.parentElement.remove();
+}
+
+async function handleCreatePool(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('pool-name').value;
+    const mount_point = document.getElementById('pool-mount').value;
+    const policy = document.getElementById('pool-policy').value;
+    
+    // Collect sources
+    const sources = [];
+    
+    // Checked drives
+    const checkedDrives = document.querySelectorAll('input[name="source_drives"]:checked');
+    checkedDrives.forEach(cb => sources.push(cb.value));
+    
+    // Custom paths
+    const customRows = document.querySelectorAll('#custom-sources-container .source-path-row input');
+    customRows.forEach(input => {
+        if (input.value.trim()) {
+            sources.push(input.value.trim());
+        }
+    });
+    
+    if (sources.length === 0) {
+        alert('Please select or add at least one source directory.');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/storage/merge/pools', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, mount_point, sources, policy })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            closeCreatePoolModal();
+            fetchMergeStatus();
+        } else {
+            alert(data.error || 'Failed to create storage pool');
+        }
+    } catch (err) {
+        alert('Failed to send request');
+    }
+}
+
+async function mountPool(id) {
+    try {
+        const res = await fetch(`/api/storage/merge/pools/${id}/mount`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            fetchMergeStatus();
+        } else {
+            alert(data.error || 'Failed to mount pool');
+        }
+    } catch (e) {
+        alert('Request failed');
+    }
+}
+
+async function unmountPool(id) {
+    try {
+        const res = await fetch(`/api/storage/merge/pools/${id}/unmount`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            fetchMergeStatus();
+        } else {
+            alert(data.error || 'Failed to unmount pool');
+        }
+    } catch (e) {
+        alert('Request failed');
+    }
+}
+
+async function deletePool(id) {
+    if (!confirm(`Are you sure you want to delete the storage pool "${id}"? This will unmount the pool. No data will be deleted from your source drives.`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/storage/merge/pools/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            fetchMergeStatus();
+        } else {
+            alert(data.error || 'Failed to delete pool');
+        }
+    } catch (e) {
+        alert('Request failed');
+    }
+}
+
+// Initial setup
 fetchStorage();
-setInterval(fetchStorage, 15000);
+storageInterval = setInterval(fetchStorage, 15000);
 </script>
 </body>
 </html>
