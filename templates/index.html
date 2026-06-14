@@ -267,18 +267,21 @@
                         </div>
                         <h3>CPU</h3>
                     </div>
-                    <div class="widget-body">
+                    <div class="widget-body" style="display:flex; flex-direction:column; align-items:center; width:100%">
                         <div class="progress-circle" id="cpu-circle" style="--p:0">
                             <span id="cpu-text">0%</span>
                         </div>
                         <div class="widget-meta"
-                            style="display:flex; flex-direction:column; align-items:center; gap:0.2rem">
+                            style="display:flex; flex-direction:column; align-items:center; gap:0.2rem; width:100%">
                             <span id="cpu-model">Core Usage</span>
                             <span id="cpu-temp"
                                 style="font-weight:bold; color:var(--cpu-color); font-size:1.1rem">--°C</span>
                             <div style="font-size:0.8rem; margin-top:5px; color:#aaa">
                                 Load: <span id="cpu-load">--</span> | Cores: <span id="cpu-cores">--</span>
                             </div>
+                            <button id="btn-cpu-optimize" onclick="optimizeCPU(event)" style="margin-top:10px; width:100%; max-width:140px; padding:0.4rem; font-size:0.8rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f0f6fc; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s">
+                                <i class="fa-solid fa-gauge-high"></i> Optimize CPU
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -291,12 +294,15 @@
                         </div>
                         <h3>RAM</h3>
                     </div>
-                    <div class="widget-body">
+                    <div class="widget-body" style="display:flex; flex-direction:column; align-items:center; width:100%">
                         <div class="progress-circle" id="ram-circle" style="--p:0">
                             <span id="ram-text">0%</span>
                         </div>
-                        <div class="widget-meta">
+                        <div class="widget-meta" style="display:flex; flex-direction:column; align-items:center; width:100%">
                             <span id="ram-detail">0GB / 0GB</span>
+                            <button id="btn-ram-optimize" onclick="optimizeRAM(event)" style="margin-top:10px; width:100%; max-width:140px; padding:0.4rem; font-size:0.8rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f0f6fc; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s">
+                                <i class="fa-solid fa-broom"></i> Clean RAM
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -480,6 +486,79 @@
             setTimeout(() => {
                 showAdModal(feature);
             }, 100);
+        }
+
+        function optimizeRAM(event) {
+            if (event) event.stopPropagation();
+            if (window.userRole !== 'owner' && window.userRole !== 'admin') {
+                showAdModal('System Optimization');
+                return;
+            }
+            const btn = document.getElementById('btn-ram-optimize');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cleaning...';
+            
+            fetch('/api/system/optimize/ram', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.innerHTML = '<i class="fa-solid fa-check" style="color:#2ea043"></i> Done';
+                        if (data.memory) {
+                            document.getElementById('ram-text').textContent = data.memory.percent + '%';
+                            document.getElementById('ram-circle').style.setProperty('--p', data.memory.percent);
+                            document.getElementById('ram-detail').textContent = data.memory.used + ' / ' + data.memory.total;
+                        }
+                    } else {
+                        btn.innerHTML = '<i class="fa-solid fa-xmark" style="color:#ff6b6b"></i> Failed';
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }, 3000);
+                })
+                .catch(err => {
+                    btn.innerHTML = '<i class="fa-solid fa-xmark" style="color:#ff6b6b"></i> Error';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }, 3000);
+                });
+        }
+
+        function optimizeCPU(event) {
+            if (event) event.stopPropagation();
+            if (window.userRole !== 'owner' && window.userRole !== 'admin') {
+                showAdModal('System Optimization');
+                return;
+            }
+            const btn = document.getElementById('btn-cpu-optimize');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tuning...';
+            
+            fetch('/api/system/optimize/cpu', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.innerHTML = '<i class="fa-solid fa-check" style="color:#2ea043"></i> Tuned';
+                    } else {
+                        btn.innerHTML = '<i class="fa-solid fa-xmark" style="color:#ff6b6b"></i> Failed';
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }, 3000);
+                })
+                .catch(err => {
+                    btn.innerHTML = '<i class="fa-solid fa-xmark" style="color:#ff6b6b"></i> Error';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }, 3000);
+                });
         }
     </script>
     <script src="{{ url_for('static', filename='script.js') }}?v=10"></script>

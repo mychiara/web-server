@@ -1858,7 +1858,7 @@ def reset_settings():
     return jsonify({'success': True})
 
 # --- CASAOS ROUTES ---
-CASAOS_URL = 'http://host.docker.internal:9999'
+CASAOS_URL = 'http://host.docker.internal:82'
 CASAOS_ALLOWED_IPS = {}  # {ip: expiry_time}
 
 
@@ -1908,17 +1908,66 @@ def casaos_access():
     CASAOS_ALLOWED_IPS[ip] = time.time() + 3600
     audit_log('CASAOS_ACCESS', f"Granted CasaOS access for IP {ip}", session.get('username'))
     
-    # For now, we need to unblock port 80 for this IP via iptables
+    # For now, we need to unblock port 82 for this IP via iptables
     try:
-        subprocess.run(['iptables', '-I', 'INPUT', '1', '-p', 'tcp', '--dport', '80', '-s', ip, '-j', 'ACCEPT'], check=True)
+        subprocess.run(['iptables', '-I', 'INPUT', '1', '-p', 'tcp', '--dport', '82', '-s', ip, '-j', 'ACCEPT'], check=True)
     except:
         pass
     
     return jsonify({
         'success': True, 
-        'url': f'http://{request.host.split(":")[0]}:9999',
+        'url': f'http://{request.host.split(":")[0]}:82',
         'expires_in': 3600
     })
+
+# --- SYSTEM OPTIMIZATION ROUTES ---
+@app.route('/api/system/optimize/ram', methods=['POST'])
+@requires_permission('dashboard', 'full')
+def optimize_ram_api():
+    """Clear RAM cache on host machine"""
+    try:
+        # Run sync to commit dirty buffers
+        run_host_command(['sync'])
+        # Drop pagecache, dentries and inodes
+        run_host_command(['sysctl', '-w', 'vm.drop_caches=3'])
+        
+        # Check memory after drop
+        svmem = psutil.virtual_memory()
+        
+        audit_log('SYSTEM_RAM_OPTIMIZE', 'Cleared system cache and freed memory', session.get('username'))
+        return jsonify({
+            'success': True,
+            'message': 'RAM caches cleared successfully',
+            'memory': {
+                'percent': svmem.percent,
+                'used': get_size(svmem.used),
+                'total': get_size(svmem.total)
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/system/optimize/cpu', methods=['POST'])
+@requires_permission('dashboard', 'full')
+def optimize_cpu_api():
+    """Optimize CPU swapiness and run filesystem trim to reduce load and keep SSD healthy"""
+    try:
+        # Set swappiness to 10 on the host to reduce swap frequency (makes CPU cooler, keeps app in RAM)
+        run_host_command(['sysctl', '-w', 'vm.swappiness=10'])
+        
+        # Prune unused docker containers / networks / images to free up docker engine resource load
+        run_host_command(['docker', 'system', 'prune', '-f'])
+        
+        # Trim SSD to maintain max speed and minimize CPU wait times (I/O wait)
+        run_host_command(['fstrim', '-av'])
+        
+        audit_log('SYSTEM_CPU_OPTIMIZE', 'Reduced system swappiness to 10 and ran SSD trim', session.get('username'))
+        return jsonify({
+            'success': True,
+            'message': 'CPU & Disk I/O optimized successfully'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # --- SERVICE MANAGEMENT ROUTES ---
 # --- SERVICE MANAGEMENT ROUTES ---
