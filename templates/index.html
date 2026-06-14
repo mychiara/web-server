@@ -219,6 +219,39 @@
             transform: translateY(-3px);
             box-shadow: 0 12px 24px rgba(239, 68, 68, 0.35);
         }
+
+        /* Quick Access Links styling */
+        .quick-link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 0.65rem 1rem;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-decoration: none !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .quick-link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+            filter: brightness(1.05);
+        }
+
+        .quick-link-btn:active {
+            transform: translateY(0);
+        }
+
+        .quick-link-btn i {
+            font-size: 1.15rem;
+            width: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -279,7 +312,7 @@
                             <div style="font-size:0.8rem; margin-top:5px; color:#aaa">
                                 Load: <span id="cpu-load">--</span> | Cores: <span id="cpu-cores">--</span>
                             </div>
-                            <button id="btn-cpu-optimize" onclick="optimizeCPU(event)" style="margin-top:10px; width:100%; max-width:140px; padding:0.4rem; font-size:0.8rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f0f6fc; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s">
+                            <button id="btn-cpu-optimize" onclick="optimizeCPU(event)" style="margin-top:10px; width:100%; max-width:140px; padding:0.45rem; font-size:0.82rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:8px; color:#ef4444; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s">
                                 <i class="fa-solid fa-gauge-high"></i> Optimize CPU
                             </button>
                         </div>
@@ -300,7 +333,7 @@
                         </div>
                         <div class="widget-meta" style="display:flex; flex-direction:column; align-items:center; width:100%">
                             <span id="ram-detail">0GB / 0GB</span>
-                            <button id="btn-ram-optimize" onclick="optimizeRAM(event)" style="margin-top:10px; width:100%; max-width:140px; padding:0.4rem; font-size:0.8rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f0f6fc; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s">
+                            <button id="btn-ram-optimize" onclick="optimizeRAM(event)" style="margin-top:10px; width:100%; max-width:140px; padding:0.45rem; font-size:0.82rem; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:8px; color:#10b981; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s">
                                 <i class="fa-solid fa-broom"></i> Clean RAM
                             </button>
                         </div>
@@ -405,6 +438,27 @@
                                 <span>IPs: <strong id="web-ips" style="color:#14b8a6;">...</strong></span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Ports Widget -->
+                <div class="widget-card glass">
+                    <div class="widget-header">
+                        <div class="icon-box" style="background:#8b5cf6; box-shadow:0 0 10px rgba(139, 92, 246, 0.3)">
+                            <i class="fa-solid fa-rocket" style="color:white"></i>
+                        </div>
+                        <h3>Akses Cepat Portal</h3>
+                    </div>
+                    <div class="widget-body" style="display:flex; flex-direction:column; gap:0.65rem; align-items:stretch; width:100%; justify-content:flex-start">
+                        <a href="http://{{ request.host.split(':')[0] }}:82" target="_blank" class="quick-link-btn" style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.2); color:#1d4ed8">
+                            <i class="fa-solid fa-cubes"></i> CasaOS (Port 82)
+                        </a>
+                        <a href="http://{{ request.host.split(':')[0] }}:81" target="_blank" class="quick-link-btn" style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.2); color:#047857">
+                            <i class="fa-solid fa-cloud"></i> Nextcloud (Port 81)
+                        </a>
+                        <a href="http://{{ request.host.split(':')[0] }}:8082" target="_blank" class="quick-link-btn" style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.2); color:#b45309">
+                            <i class="fa-solid fa-globe"></i> Nginx Web (Port 8082)
+                        </a>
                     </div>
                 </div>
             </div>
