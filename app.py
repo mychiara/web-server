@@ -8010,6 +8010,9 @@ def get_gallery_photos():
                             })
                         except Exception:
                             pass
+        return jsonify({'success': True, 'photos': photos})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
                             
 # ==================== NEW PREMIUM FEATURES ====================
 
