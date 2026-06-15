@@ -4841,6 +4841,7 @@ SYSTEM_APPS = [
     {"id": "vpn", "name": "VPN", "icon": "fa-solid fa-shield-halved", "color": "linear-gradient(135deg, #ff9a9e, #fecfef)", "url": "/vpn"},
     {"id": "store", "name": "App Store", "icon": "fa-solid fa-store", "color": "linear-gradient(135deg, #FF6B6B, #556270)", "url": "/store"},
     {"id": "mobile-backup", "name": "Mobile Sync", "icon": "fa-solid fa-mobile-screen", "color": "linear-gradient(135deg, #00c6ff, #0072ff)", "url": "/mobile-backup"},
+    {"id": "gallery", "name": "Photo Gallery", "icon": "fa-solid fa-images", "color": "linear-gradient(135deg, #FF416C, #FF4B2B)", "url": "/gallery"},
     {"id": "settings", "name": "Settings", "icon": "fa-solid fa-gear", "color": "linear-gradient(135deg, #36D1DC, #5B86E5)", "url": "/settings"},
     {"id": "lxd", "name": "LXD Manager", "icon": "fa-brands fa-linux", "color": "linear-gradient(135deg, #e66465, #9198e5)", "url": "/lxd"},
     {"id": "speedtest", "name": "Speedtest", "icon": "fa-solid fa-gauge-high", "color": "linear-gradient(135deg, #e17055, #d63031)", "url": "/speedtest"},
@@ -7854,6 +7855,93 @@ def php_sites_upload(site_name):
     return jsonify({'success': True, 'count': count})
 
 # ============== END PHP SITES MANAGER ==============
+
+# ==================== PHOTO GALLERY ====================
+@app.route('/gallery')
+@login_required
+@requires_permission('files', 'read')
+def gallery_page():
+    """Tampilan Halaman Galeri Foto"""
+    return render_template('gallery.html')
+
+@app.route('/api/gallery/photos', methods=['GET'])
+@login_required
+@requires_permission('files', 'read')
+def get_gallery_photos():
+    """Mengambil semua file foto dalam folder tertentu"""
+    try:
+        from datetime import datetime
+        path = request.args.get('path', '')
+        recursive = request.args.get('recursive', 'false').lower() == 'true'
+        
+        if not path:
+            return jsonify({'error': 'Path direktori harus ditentukan'}), 400
+            
+        real_path = path
+        if os.path.exists('/host/root'):
+            if path.startswith('/') and not path.startswith('/host/root'):
+                real_path = os.path.join('/host/root', path.lstrip('/'))
+        
+        if not os.path.exists(real_path):
+            return jsonify({'error': f'Direktori tidak ditemukan: {path}'}), 404
+            
+        if not os.path.isdir(real_path):
+            return jsonify({'error': f'Path bukan direktori: {path}'}), 400
+            
+        valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'}
+        photos = []
+        
+        if recursive:
+            for root, dirs, files in os.walk(real_path):
+                for file in files:
+                    ext = os.path.splitext(file)[1].lower()
+                    if ext in valid_extensions:
+                        full_path = os.path.join(root, file)
+                        try:
+                            stat = os.stat(full_path)
+                            display_path = full_path
+                            if full_path.startswith('/host/root'):
+                                display_path = full_path.replace('/host/root', '', 1)
+                                if not display_path.startswith('/'):
+                                    display_path = '/' + display_path
+                            
+                            photos.append({
+                                'name': file,
+                                'path': full_path,
+                                'display_path': display_path,
+                                'size': round(stat.st_size / (1024 * 1024), 2), # MB
+                                'mtime': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                            })
+                        except Exception:
+                            pass
+        else:
+            for file in os.listdir(real_path):
+                full_path = os.path.join(real_path, file)
+                if os.path.isfile(full_path):
+                    ext = os.path.splitext(file)[1].lower()
+                    if ext in valid_extensions:
+                        try:
+                            stat = os.stat(full_path)
+                            display_path = full_path
+                            if full_path.startswith('/host/root'):
+                                display_path = full_path.replace('/host/root', '', 1)
+                                if not display_path.startswith('/'):
+                                    display_path = '/' + display_path
+                                    
+                            photos.append({
+                                'name': file,
+                                'path': full_path,
+                                'display_path': display_path,
+                                'size': round(stat.st_size / (1024 * 1024), 2), # MB
+                                'mtime': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                            })
+                        except Exception:
+                            pass
+                            
+        photos.sort(key=lambda x: x['mtime'], reverse=True)
+        return jsonify({'photos': photos, 'count': len(photos)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Development Server on http://localhost:5000")
