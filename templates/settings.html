@@ -1066,15 +1066,25 @@
                     if (data.update_available) {
                         // Ada update!
                         if(bannerEl) bannerEl.style.display = 'block';
-                        document.getElementById('update-info').textContent =
-                            `Versi ${data.latest_version} tersedia (Anda: ${data.current_version})`;
+                        
+                        let infoText = "";
+                        if (data.commit_mismatch && data.local_commit && data.remote_commit) {
+                            infoText = `Perubahan kode baru terdeteksi di GitHub (Komit: ${data.local_commit} ➔ ${data.remote_commit})`;
+                        } else {
+                            infoText = `Versi ${data.latest_version} tersedia (Anda: ${data.current_version})`;
+                        }
+                        
+                        document.getElementById('update-info').textContent = infoText;
                         document.getElementById('update-download-link').href = data.download_url || '#';
 
                         if(statusEl) statusEl.innerHTML = '';
                         if(statusTopEl) statusTopEl.innerHTML = '';
                     } else {
                         // Sudah versi terbaru
-                        const successHtml = `<span style="color:#3fb950"><i class="fa-solid fa-check-circle"></i> Anda sudah menggunakan versi terbaru!</span>`;
+                        let successHtml = `<span style="color:#3fb950"><i class="fa-solid fa-check-circle"></i> Anda sudah menggunakan versi terbaru!</span>`;
+                        if (data.local_commit) {
+                            successHtml = `<span style="color:#3fb950"><i class="fa-solid fa-check-circle"></i> Anda sudah menggunakan versi terbaru! (Komit: ${data.local_commit})</span>`;
+                        }
                         if(statusEl) statusEl.innerHTML = successHtml;
                         if(statusTopEl) statusTopEl.innerHTML = successHtml;
                     }

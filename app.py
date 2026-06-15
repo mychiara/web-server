@@ -2885,51 +2885,96 @@ def get_version():
         'build_date': '2026-01-11'
     })
 
+def get_local_git_commit():
+    """Membaca commit hash lokal langsung dari folder .git tanpa CLI git"""
+    try:
+        # Cari folder .git di working directory
+        git_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.git')
+        if not os.path.exists(git_dir):
+            return None
+            
+        head_file = os.path.join(git_dir, 'HEAD')
+        if not os.path.exists(head_file):
+            return None
+            
+        with open(head_file, 'r') as f:
+            head_content = f.read().strip()
+            
+        if head_content.startswith('ref:'):
+            ref_path = head_content.split('ref:')[1].strip()
+            ref_file = os.path.join(git_dir, ref_path)
+            if os.path.exists(ref_file):
+                with open(ref_file, 'r') as rf:
+                    return rf.read().strip()
+        else:
+            return head_content
+    except Exception:
+        return None
+
 @app.route('/api/check-update')
 @login_required
 def check_update_layout():
-    """Cek apakah ada versi baru tersedia (Standardized)"""
+    """Cek apakah ada versi baru atau commit baru tersedia di GitHub"""
     try:
-        # Coba ambil info versi dari GitHub
         headers = {'User-Agent': 'MasandigitalDashboard/1.0'}
-        response = requests.get(UPDATE_CHECK_URL, headers=headers, timeout=10)
         
-        if response.status_code == 200:
-            remote_info = response.json()
-            remote_version = remote_info.get('version', '0.0.0')
-            
-            # Bandingkan versi (Semantic Versioning)
-            def parse_version(v):
-                return [int(x) for x in v.split('.')] if v else [0,0,0]
+        # 1. Cek file version.json dari GitHub
+        remote_version = APP_VERSION
+        remote_info = {}
+        try:
+            response = requests.get(UPDATE_CHECK_URL, headers=headers, timeout=8)
+            if response.status_code == 200:
+                remote_info = response.json()
+                remote_version = remote_info.get('version', APP_VERSION)
+        except Exception:
+            pass
 
-            current_parts = parse_version(APP_VERSION)
-            remote_parts = parse_version(remote_version)
+        # 2. Cek commit hash lokal vs remote di GitHub
+        local_commit = get_local_git_commit()
+        remote_commit = None
+        commit_mismatch = False
+        
+        try:
+            # Query GitHub API untuk commit terakhir di branch main
+            res = requests.get('https://api.github.com/repos/mychiara/web-server/commits/main', headers=headers, timeout=8)
+            if res.status_code == 200:
+                remote_commit = res.json().get('sha')
+        except Exception:
+            pass
+
+        # Bandingkan versi
+        def parse_version(v):
+            return [int(x) for x in v.split('.')] if v else [0,0,0]
+
+        current_parts = parse_version(APP_VERSION)
+        remote_parts = parse_version(remote_version)
+        
+        version_update = remote_parts > current_parts
+        
+        # Bandingkan commit jika keduanya terdeteksi
+        if local_commit and remote_commit:
+            # Bandingkan 8 karakter pertama untuk kepraktisan
+            commit_mismatch = local_commit[:12] != remote_commit[:12]
             
-            update_available = remote_parts > current_parts
-            
-            return jsonify({
-                'current_version': APP_VERSION,
-                'latest_version': remote_version,
-                'update_available': update_available,
-                'changelog': remote_info.get('changelog', ''),
-                'download_url': remote_info.get('download_url', ''),
-                'release_date': remote_info.get('release_date', ''),
-                'success': True
-            })
-        else:
-            return jsonify({
-                'current_version': APP_VERSION,
-                'error': f'Server update merespon dengan kode: {response.status_code}',
-                'update_available': False,
-                'success': False
-            })
-    except requests.exceptions.Timeout:
+        update_available = version_update or commit_mismatch
+        
+        changelog = remote_info.get('changelog', '')
+        if commit_mismatch and not version_update:
+            changelog = "Pembaruan kode/perbaikan bug terbaru tersedia di GitHub."
+
         return jsonify({
             'current_version': APP_VERSION,
-            'error': 'Timeout saat menghubungi server update',
-            'update_available': False,
-            'success': False
+            'latest_version': remote_version,
+            'local_commit': local_commit[:8] if local_commit else None,
+            'remote_commit': remote_commit[:8] if remote_commit else None,
+            'commit_mismatch': commit_mismatch,
+            'update_available': update_available,
+            'changelog': changelog,
+            'download_url': remote_info.get('download_url', 'https://github.com/mychiara/web-server/archive/refs/heads/main.zip'),
+            'release_date': remote_info.get('release_date', ''),
+            'success': True
         })
+        
     except Exception as e:
         return jsonify({
             'current_version': APP_VERSION,
