@@ -1271,40 +1271,36 @@ def handle_start_terminal(data):
 
 def read_terminal_output(session_id, fd):
     import eventlet
-    import fcntl
-    import errno
+    import select
     
     _os = eventlet.patcher.original('os')
     
-    # Set the PTY master file descriptor to non-blocking
-    try:
-        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, flags | _os.O_NONBLOCK)
-        print(f"[TERMINAL] Set fd {fd} to non-blocking for session {session_id}", flush=True)
-    except Exception as e:
-        print(f"[TERMINAL] Error setting non-blocking: {e}", flush=True)
+    # We do not make the fd non-blocking to prevent busy spinning,
+    # select.select will yield control to eventlet and tell us when data is ready.
+    print(f"[TERMINAL] Started reading thread for session {session_id}", flush=True)
     
     while session_id in terminal_sessions:
-        # PENTING: Berikan waktu untuk greenlet lain berjalan sebelum mencoba membaca lagi
-        eventlet.sleep(0.01)
         try:
-            data = _os.read(fd, 4096)
-            if data:
-                socketio.emit('terminal_output', {
-                    'session_id': session_id,
-                    'data': data.decode('utf-8', errors='replace')
-                })
-            else:
-                # EOF - process exited
-                print(f"[TERMINAL] EOF detected on fd {fd} for session {session_id}", flush=True)
-                break
+            # select.select is green-patched by eventlet, so this yields to other tasks
+            r, w, x = select.select([fd], [], [], 0.05)
+            if fd in r:
+                data = _os.read(fd, 4096)
+                if data:
+                    socketio.emit('terminal_output', {
+                        'session_id': session_id,
+                        'data': data.decode('utf-8', errors='replace')
+                    })
+                else:
+                    # True EOF - shell exited
+                    print(f"[TERMINAL] Shell process exited on fd {fd} for session {session_id}", flush=True)
+                    break
         except (IOError, OSError) as e:
-            # EAGAIN / EWOULDBLOCK berarti belum ada data baru, aman untuk dicoba lagi nanti
-            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+            # Ignore transient read block/interruption errors
+            import errno
+            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINTR):
                 continue
-            else:
-                print(f"[TERMINAL] OSError on fd {fd} for session {session_id}: {e}", flush=True)
-                break
+            print(f"[TERMINAL] OSError on fd {fd} for session {session_id}: {e}", flush=True)
+            break
         except Exception as e:
             print(f"[TERMINAL] Read error on fd {fd} for session {session_id}: {e}", flush=True)
             break
