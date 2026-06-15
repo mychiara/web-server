@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPnP Port Forwarding - Server Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <style>
+        .upnp-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            align-items: start;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 992px) {
+            .upnp-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-badge.inactive {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .port-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        .port-table th, .port-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .port-table th {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .port-table td {
+            font-size: 0.88rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:1.25rem">
+                <button class="btn" onclick="window.location.href='/dashboard'" title="Kembali ke Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="clock-widget" style="margin-left:0.5rem">
+                    <h2 style="font-weight:600; font-size:1.4rem; display:flex; align-items:center; gap:0.8rem">
+                        <i class="fa-solid fa-route" style="color:var(--cpu-color)"></i> UPnP Port Forwarding
+                    </h2>
+                </div>
+            </div>
+            <div class="system-status">
+                <button class="btn primary" onclick="checkStatus()" id="refresh-btn">
+                    <i class="fa-solid fa-arrows-rotate"></i> Pindai Router
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="upnp-layout">
+            <!-- Left Card: Port Map & Status -->
+            <div class="widget-card glass" style="padding: 2rem; justify-content: flex-start; align-items: stretch;">
+                <div class="widget-header" style="justify-content: space-between;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div class="icon-box" style="box-shadow: 0 0 10px rgba(59, 130, 246, 0.2)">
+                            <i class="fa-solid fa-network-wired" style="color:var(--cpu-color)"></i>
+                        </div>
+                        <div>
+                            <h3>Status Dukungan UPnP Router</h3>
+                            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.1rem" id="router-ip-display">Mendeteksi router...</p>
+                        </div>
+                    </div>
+                    <div>
+                        <span id="upnp-status-badge" class="status-badge inactive">
+                            <i class="fa-solid fa-circle-exclamation"></i> Tidak Aktif
+                        </span>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto; width: 100%; margin-top: 1rem;">
+                    <div class="alert alert-info" style="font-size: 0.85rem; line-height: 1.4; display: flex; gap: 10px; align-items: flex-start;">
+                        <i class="fa-solid fa-circle-info" style="font-size: 1.1rem; color: #58a6ff; margin-top: 2px;"></i>
+                        <div>
+                            <b>Info:</b> UPnP (Universal Plug and Play) mempermudah Anda membuka akses server keluar internet (Port Forwarding) secara otomatis dari dashboard tanpa menyentuh pengaturan modem/router Anda. Pastikan fitur UPnP telah diaktifkan di admin panel modem IndiHome/ISP Anda.
+                        </div>
+                    </div>
+
+                    <table class="port-table">
+                        <thead>
+                            <tr>
+                                <th>Port Luar (WAN)</th>
+                                <th>Port Dalam (LAN)</th>
+                                <th>Protokol</th>
+                                <th>Deskripsi</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mapping-list">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                                    <i class="fa-solid fa-route" style="font-size: 2.2rem; margin-bottom: 0.8rem; color: var(--text-muted)"></i>
+                                    <div>Tambahkan pemetaan port baru di sebelah kanan untuk memulai.</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Card: Add Port Mapping Form -->
+            <div class="widget-card glass" style="padding: 1.5rem; justify-content: flex-start; align-items: stretch;">
+                <div class="widget-header" style="margin-bottom: 1.5rem;">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.2)">
+                        <i class="fa-solid fa-plus" style="color:#10b981"></i>
+                    </div>
+                    <h3>Buat Mapping Baru</h3>
+                </div>
+
+                <form id="add-mapping-form" onsubmit="addMapping(event)" style="width: 100%">
+                    <!-- External Port -->
+                    <div class="form-group">
+                        <label for="ext-port">Port Luar (WAN)</label>
+                        <input type="number" id="ext-port" placeholder="Contoh: 8080" min="1" max="65535" required>
+                    </div>
+
+                    <!-- Internal Port -->
+                    <div class="form-group">
+                        <label for="int-port">Port Dalam (LAN)</label>
+                        <input type="number" id="int-port" placeholder="Contoh: 80" min="1" max="65535" required>
+                    </div>
+
+                    <!-- Protocol -->
+                    <div class="form-group">
+                        <label for="protocol">Protokol</label>
+                        <select id="protocol" style="background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid var(--glass-border); padding: 0.6rem; border-radius: 6px; width: 100%;">
+                            <option value="TCP">TCP</option>
+                            <option value="UDP">UDP</option>
+                        </select>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label for="desc">Deskripsi Pemetaan</label>
+                        <input type="text" id="desc" placeholder="Contoh: Akses Dashboard Luar" required>
+                    </div>
+
+                    <button type="submit" class="btn success" id="submit-btn" style="width: 100%; margin-top: 1rem; padding: 0.75rem;" disabled>
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Buka Akses Port
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mappings = [];
+
+        // Check status of router and UPnP support
+        async function checkStatus() {
+            const badge = document.getElementById('upnp-status-badge');
+            const display = document.getElementById('router-ip-display');
+            const submitBtn = document.getElementById('submit-btn');
+            const refreshBtn = document.getElementById('refresh-btn');
+
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mendeteksi...';
+
+            try {
+                const res = await fetch('/api/upnp/status');
+                const data = await res.json();
+
+                if (data.success && data.enabled) {
+                    badge.className = 'status-badge active';
+                    badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Router UPnP Aktif';
+                    display.innerText = `Kontrol SOAP: ${data.router_url}`;
+                    submitBtn.disabled = false;
+                } else {
+                    badge.className = 'status-badge inactive';
+                    badge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Router Tidak Terdeteksi';
+                    display.innerText = 'Router UPnP tidak ditemukan/dinonaktifkan.';
+                    submitBtn.disabled = true;
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Pindai Router';
+            }
+        }
+
+        // Add mapping
+        async function addMapping(e) {
+            e.preventDefault();
+
+            const extPort = parseInt(document.getElementById('ext-port').value);
+            const intPort = parseInt(document.getElementById('int-port').value);
+            const protocol = document.getElementById('protocol').value;
+            const description = document.getElementById('desc').value;
+            const submitBtn = document.getElementById('submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memetakan Port...';
+
+            try {
+                const res = await fetch('/api/upnp/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ external_port: extPort, internal_port: intPort, protocol, description })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    // Add mapping locally to table
+                    mappings.push({
+                        ext: extPort,
+                        int: intPort,
+                        proto: protocol,
+                        desc: description
+                    });
+                    renderMappings();
+                    document.getElementById('add-mapping-form').reset();
+                } else {
+                    alert('Gagal: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Gagal mengirim data.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Buka Akses Port';
+            }
+        }
+
+        // Delete mapping
+        async function deleteMapping(extPort, protocol) {
+            if (!confirm(`Hapus pemetaan port ${extPort} (${protocol})?`)) return;
+
+            try {
+                const res = await fetch('/api/upnp/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ external_port: extPort, protocol })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    mappings = mappings.filter(m => !(m.ext === extPort && m.proto === protocol));
+                    renderMappings();
+                } else {
+                    alert('Gagal: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Render mappings
+        function renderMappings() {
+            const listBody = document.getElementById('mapping-list');
+
+            if (mappings.length === 0) {
+                listBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            <i class="fa-solid fa-route" style="font-size: 2.2rem; margin-bottom: 0.8rem; color: var(--text-muted)"></i>
+                            <div>Tambahkan pemetaan port baru di sebelah kanan untuk memulai.</div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                listBody.innerHTML = mappings.map(m => `
+                    <tr>
+                        <td><b>${m.ext}</b></td>
+                        <td>${m.int}</td>
+                        <td><span style="color:#58a6ff; font-weight:600">${m.proto}</span></td>
+                        <td>${m.desc}</td>
+                        <td>
+                            <button class="btn danger" onclick="deleteMapping(${m.ext}, '${m.proto}')">
+                                <i class="fa-solid fa-trash-can"></i> Hapus
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            checkStatus();
+        });
+    </script>
+</body>
+
+</html>

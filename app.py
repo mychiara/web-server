@@ -922,6 +922,26 @@ def processes():
     procs.sort(key=lambda x: x['cpu'], reverse=True)
     return jsonify(procs[:50]) # Return top 50 to avoid overhead
 
+@app.route('/api/process/kill', methods=['POST'])
+@app.route('/api/processes/kill', methods=['POST'])
+@requires_permission('terminal')
+def kill_process():
+    try:
+        pid = int(request.json.get('pid'))
+        # Try to kill on host first via nsenter
+        cmd = f'nsenter -t 1 -m -u -i -n -p kill -9 {pid}'
+        res = subprocess.run(cmd, shell=True)
+        if res.returncode == 0:
+            audit_log('PROCESS_KILL', f'Killed process PID {pid} on host', session.get('username'))
+            return jsonify({'success': True, 'message': f'Proses PID {pid} berhasil dihentikan di Host.'})
+        else:
+            # Fallback to local container process kill
+            os.kill(pid, 9)
+            audit_log('PROCESS_KILL', f'Killed process PID {pid} locally', session.get('username'))
+            return jsonify({'success': True, 'message': f'Proses lokal PID {pid} berhasil dihentikan.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/disk-analysis')
 def disk_analysis():
     def get_du(path):
@@ -1223,6 +1243,14 @@ def handle_start_terminal(data):
     
     print(f"[TERMINAL] Starting session: {session_id}, path: {start_path}, lxd: {lxd_target}")
     
+    if pty is None:
+        emit('terminal_output', {
+            'session_id': session_id,
+            'data': "\r\n\r\n\x1b[1;31m[SYSTEM] Terminal PTY tidak didukung di sistem operasi Windows (Hanya didukung penuh di Linux/Unix Server).\x1b[0m\r\n\r\n"
+        })
+        emit('terminal_started', {'session_id': session_id})
+        return
+
     # Create PTY
     master_fd, slave_fd = pty.openpty()
     
@@ -1240,9 +1268,6 @@ def handle_start_terminal(data):
         os.environ['TERM'] = 'xterm-256color'
         os.environ['SHELL'] = '/bin/bash'
         
-        # PENTING: Kembalikan ke perintah nsenter asli dengan -m dan -c karena pemblokiran input 
-        # sebenarnya disebabkan oleh select.select eventlet yang membekukan thread Python, bukan nsenter.
-        # Kita menggunakan command chain agar jika nsenter gagal, ia otomatis fallback ke bash container.
         fallback_shell = (
             'nsenter -t 1 -m -u -n -i bash --login -c "clear && (neofetch || true) && exec bash -i" || '
             'nsenter -t 1 -m -u -n -i sh -c "exec sh" || '
@@ -1271,33 +1296,33 @@ def handle_start_terminal(data):
 
 def read_terminal_output(session_id, fd):
     import eventlet
-    import select
-    
     _os = eventlet.patcher.original('os')
     
-    # We do not make the fd non-blocking to prevent busy spinning,
-    # select.select will yield control to eventlet and tell us when data is ready.
-    print(f"[TERMINAL] Started reading thread for session {session_id}", flush=True)
+    # Set the master file descriptor to non-blocking
+    try:
+        import fcntl
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+    except Exception as e:
+        print(f"[TERMINAL] Failed to set non-blocking on fd {fd}: {e}", flush=True)
+
+    print(f"[TERMINAL] Started non-blocking reading loop for session {session_id}", flush=True)
     
     while session_id in terminal_sessions:
         try:
-            # select.select is green-patched by eventlet, so this yields to other tasks
-            r, w, x = select.select([fd], [], [], 0.05)
-            if fd in r:
-                data = _os.read(fd, 4096)
-                if data:
-                    socketio.emit('terminal_output', {
-                        'session_id': session_id,
-                        'data': data.decode('utf-8', errors='replace')
-                    })
-                else:
-                    # True EOF - shell exited
-                    print(f"[TERMINAL] Shell process exited on fd {fd} for session {session_id}", flush=True)
-                    break
+            data = _os.read(fd, 4096)
+            if data:
+                socketio.emit('terminal_output', {
+                    'session_id': session_id,
+                    'data': data.decode('utf-8', errors='replace')
+                })
+            else:
+                print(f"[TERMINAL] EOF (empty read) on fd {fd} for session {session_id}", flush=True)
+                break
         except (IOError, OSError) as e:
-            # Ignore transient read block/interruption errors
             import errno
             if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINTR):
+                eventlet.sleep(0.02) # Yield control to the eventlet hub
                 continue
             print(f"[TERMINAL] OSError on fd {fd} for session {session_id}: {e}", flush=True)
             break
@@ -1310,9 +1335,8 @@ def read_terminal_output(session_id, fd):
         try:
             pid = terminal_sessions[session_id]['pid']
             _os.close(fd)
-            # Try to clean up process
             import signal
-            _os.kill(pid, signal.SIGTERM)
+            os.kill(pid, signal.SIGTERM)
         except Exception:
             pass
         terminal_sessions.pop(session_id, None)
@@ -4887,6 +4911,10 @@ SYSTEM_APPS = [
     {"id": "hardware", "name": "SoC Optimizer", "icon": "fa-solid fa-microchip", "color": "linear-gradient(135deg, #11998e, #38ef7d)", "url": "/hardware"},
     {"id": "cron", "name": "Task Scheduler", "icon": "fa-solid fa-clock", "color": "linear-gradient(135deg, #f7971e, #ffd200)", "url": "/cron"},
     {"id": "logs", "name": "Log Center", "icon": "fa-solid fa-file-lines", "color": "linear-gradient(135deg, #2d3436, #636e72)", "url": "/logs"},
+    {"id": "pkg-manager", "name": "System Updates", "icon": "fa-solid fa-box", "color": "linear-gradient(135deg, #a18cd1, #fbc2eb)", "url": "/pkg-manager"},
+    {"id": "wol", "name": "Wake-on-LAN", "icon": "fa-solid fa-laptop-medical", "color": "linear-gradient(135deg, #6c5ce7, #a29bfe)", "url": "/wol"},
+    {"id": "upnp", "name": "Port Forwarding", "icon": "fa-solid fa-route", "color": "linear-gradient(135deg, #36D1DC, #5B86E5)", "url": "/upnp"},
+    {"id": "geoip-map", "name": "Visitor Map", "icon": "fa-solid fa-map-location-dot", "color": "linear-gradient(135deg, #FF416C, #FF4B2B)", "url": "/geoip-map"},
     {"id": "settings", "name": "Settings", "icon": "fa-solid fa-gear", "color": "linear-gradient(135deg, #36D1DC, #5B86E5)", "url": "/settings"},
     {"id": "lxd", "name": "LXD Manager", "icon": "fa-brands fa-linux", "color": "linear-gradient(135deg, #e66465, #9198e5)", "url": "/lxd"},
     {"id": "speedtest", "name": "Speedtest", "icon": "fa-solid fa-gauge-high", "color": "linear-gradient(135deg, #e17055, #d63031)", "url": "/speedtest"},
@@ -8356,6 +8384,408 @@ def handle_disconnect_socket():
     sid = request.sid
     if sid in active_log_threads:
         del active_log_threads[sid]
+
+# --- PREMIUM APP: WEB PACKAGE MANAGER ---
+@app.route('/pkg-manager')
+@requires_permission('terminal')
+def pkg_manager_page():
+    return render_template('pkg_manager.html')
+
+@app.route('/api/packages/updates')
+@requires_permission('terminal')
+def get_package_updates():
+    try:
+        cmd = 'nsenter -t 1 -m -u -i -n -p sh -c "apt-get update -y && apt list --upgradable 2>/dev/null"'
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        lines = res.stdout.split('\n')
+        updates = []
+        for line in lines:
+            if '/' in line and '[' in line:
+                parts = line.split('/')
+                pkg_name = parts[0].strip()
+                rest = parts[1].split(' ')
+                if len(rest) > 1:
+                    version = rest[1].strip()
+                else:
+                    version = "unknown"
+                from_version = ""
+                if "upgradable from:" in line:
+                    from_version = line.split("upgradable from:")[1].replace("]", "").strip()
+                updates.append({
+                    'name': pkg_name,
+                    'version': version,
+                    'from_version': from_version
+                })
+        return jsonify({'success': True, 'updates': updates})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+upgrading_active = False
+
+def run_package_upgrade():
+    global upgrading_active
+    upgrading_active = True
+    try:
+        cmd = 'nsenter -t 1 -m -u -i -n -p apt-get upgrade -y'
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        for line in p.stdout:
+            socketio.emit('pkg_upgrade_log', {'line': line.strip()})
+        p.wait()
+        socketio.emit('pkg_upgrade_log', {'line': f'[SYSTEM] Upgrade selesai dengan exit code: {p.returncode}'})
+    except Exception as e:
+        socketio.emit('pkg_upgrade_log', {'line': f'[SYSTEM ERROR] Gagal melakukan upgrade: {str(e)}'})
+    finally:
+        upgrading_active = False
+
+@app.route('/api/packages/upgrade', methods=['POST'])
+@requires_permission('terminal')
+def upgrade_packages():
+    global upgrading_active
+    if upgrading_active:
+        return jsonify({'success': False, 'error': 'Proses upgrade sedang berjalan.'})
+    
+    import eventlet
+    eventlet.spawn(run_package_upgrade)
+    audit_log('SYS_UPGRADE_START', 'System package upgrade started', session.get('username'))
+    return jsonify({'success': True, 'message': 'Upgrade sistem berhasil dimulai di latar belakang.'})
+
+
+# --- PREMIUM APP: WAKE ON LAN (WOL) ---
+WOL_FILE = os.path.join(DATA_DIR, 'wol_devices.json')
+
+def load_wol_devices():
+    if os.path.exists(WOL_FILE):
+        try:
+            with open(WOL_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
+def save_wol_devices(devices):
+    with open(WOL_FILE, 'w') as f:
+        json.dump(devices, f)
+
+@app.route('/wol')
+@requires_permission('network')
+def wol_page():
+    return render_template('wol.html')
+
+@app.route('/api/wol/devices')
+@requires_permission('network')
+def get_wol_devices():
+    return jsonify({'success': True, 'devices': load_wol_devices()})
+
+@app.route('/api/wol/devices/add', methods=['POST'])
+@requires_permission('network')
+def add_wol_device():
+    name = request.json.get('name')
+    mac = request.json.get('mac')
+    ip = request.json.get('ip', '')
+    
+    if not name or not mac:
+        return jsonify({'success': False, 'error': 'Nama dan MAC Address wajib diisi.'})
+        
+    devices = load_wol_devices()
+    devices.append({
+        'id': str(int(time.time())),
+        'name': name,
+        'mac': mac,
+        'ip': ip
+    })
+    save_wol_devices(devices)
+    audit_log('WOL_DEVICE_ADDED', f'Added WOL device: {name} ({mac})', session.get('username'))
+    return jsonify({'success': True, 'message': 'Perangkat berhasil ditambahkan.'})
+
+@app.route('/api/wol/devices/remove', methods=['POST'])
+@requires_permission('network')
+def remove_wol_device():
+    device_id = request.json.get('id')
+    devices = load_wol_devices()
+    devices = [d for d in devices if d['id'] != device_id]
+    save_wol_devices(devices)
+    audit_log('WOL_DEVICE_REMOVED', f'Removed WOL device ID {device_id}', session.get('username'))
+    return jsonify({'success': True, 'message': 'Perangkat berhasil dihapus.'})
+
+@app.route('/api/wol/send', methods=['POST'])
+@requires_permission('network')
+def send_wol_packet():
+    mac = request.json.get('mac')
+    if not mac:
+        return jsonify({'success': False, 'error': 'MAC Address wajib diisi.'})
+    try:
+        hex_mac = mac.replace(':', '').replace('-', '')
+        if len(hex_mac) != 12:
+            return jsonify({'success': False, 'error': 'Format MAC Address tidak valid.'})
+            
+        packet = bytes.fromhex('F' * 12 + hex_mac * 16)
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.sendto(packet, ('255.255.255.255', 9))
+        s.sendto(packet, ('255.255.255.255', 7))
+        s.close()
+        
+        audit_log('WOL_SENT', f'Sent WOL packet to {mac}', session.get('username'))
+        return jsonify({'success': True, 'message': f'Paket Wake-on-LAN berhasil dikirim ke {mac}.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# --- PREMIUM APP: UPnP PORT MAPPER ---
+def discover_upnp_gateway():
+    ssdp_request = (
+        'M-SEARCH * HTTP/1.1\r\n'
+        'HOST: 239.255.255.250:1900\r\n'
+        'MAN: "ssdp:discover"\r\n'
+        'MX: 2\r\n'
+        'ST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n'
+        '\r\n'
+    )
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(1.5)
+    try:
+        s.sendto(ssdp_request.encode(), ('239.255.255.250', 1900))
+        data, addr = s.recvfrom(4096)
+        lines = data.decode('utf-8', errors='ignore').split('\r\n')
+        location = ""
+        for line in lines:
+            if line.lower().startswith('location:'):
+                location = line.split(':', 1)[1].strip()
+                break
+        return location
+    except Exception as e:
+        print(f"[UPNP] Discovery failed: {e}", flush=True)
+        return None
+    finally:
+        s.close()
+
+def get_upnp_control_url():
+    desc_url = discover_upnp_gateway()
+    if not desc_url:
+        return None
+    try:
+        res = requests.get(desc_url, timeout=3.0)
+        if res.status_code == 200:
+            content = res.text
+            service_idx = content.find("urn:schemas-upnp-org:service:WANIPConnection:1")
+            if service_idx == -1:
+                service_idx = content.find("urn:schemas-upnp-org:service:WANPPPConnection:1")
+            if service_idx != -1:
+                control_start = content.find("<controlURL>", service_idx)
+                if control_start != -1:
+                    control_end = content.find("</controlURL>", control_start)
+                    control_url_part = content[control_start + 12:control_end].strip()
+                    from urllib.parse import urljoin
+                    return urljoin(desc_url, control_url_part)
+    except Exception as e:
+        print(f"[UPNP] Failed to parse control URL: {e}", flush=True)
+    return None
+
+def upnp_add_port_mapping(control_url, external_port, internal_port, protocol, internal_client, description="Masandigital Dashboard"):
+    soap_body = f"""<?xml version="1.0"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body>
+<u:AddPortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
+<NewRemoteHost></NewRemoteHost>
+<NewExternalPort>{external_port}</NewExternalPort>
+<NewProtocol>{protocol}</NewProtocol>
+<NewInternalPort>{internal_port}</NewInternalPort>
+<NewInternalClient>{internal_client}</NewInternalClient>
+<NewEnabled>1</NewEnabled>
+<NewPortMappingDescription>{description}</NewPortMappingDescription>
+<NewLeaseDuration>0</NewLeaseDuration>
+</u:AddPortMapping>
+</s:Body>
+</s:Envelope>"""
+    headers = {
+        'Content-Type': 'text/xml; charset="utf-8"',
+        'SOAPAction': '"urn:schemas-upnp-org:service:WANIPConnection:1#AddPortMapping"'
+    }
+    try:
+        res = requests.post(control_url, data=soap_body, headers=headers, timeout=5.0)
+        return res.status_code == 200
+    except:
+        return False
+
+def upnp_delete_port_mapping(control_url, external_port, protocol):
+    soap_body = f"""<?xml version="1.0"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body>
+<u:DeletePortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
+<NewRemoteHost></NewRemoteHost>
+<NewExternalPort>{external_port}</NewExternalPort>
+<NewProtocol>{protocol}</NewProtocol>
+</u:DeletePortMapping>
+</s:Body>
+</s:Envelope>"""
+    headers = {
+        'Content-Type': 'text/xml; charset="utf-8"',
+        'SOAPAction': '"urn:schemas-upnp-org:service:WANIPConnection:1#DeletePortMapping"'
+    }
+    try:
+        res = requests.post(control_url, data=soap_body, headers=headers, timeout=5.0)
+        return res.status_code == 200
+    except:
+        return False
+
+@app.route('/upnp')
+@requires_permission('network')
+def upnp_page():
+    return render_template('upnp.html')
+
+@app.route('/api/upnp/status')
+@requires_permission('network')
+def get_upnp_status():
+    url = get_upnp_control_url()
+    return jsonify({
+        'success': True,
+        'enabled': url is not None,
+        'router_url': url or 'Tidak terdeteksi'
+    })
+
+@app.route('/api/upnp/add', methods=['POST'])
+@requires_permission('network')
+def add_upnp_mapping():
+    ext_port = request.json.get('external_port')
+    int_port = request.json.get('internal_port')
+    protocol = request.json.get('protocol', 'TCP').upper()
+    description = request.json.get('description', 'Masandigital Mapping')
+    
+    if not ext_port or not int_port:
+        return jsonify({'success': False, 'error': 'Port luar dan Port dalam wajib diisi.'})
+        
+    control_url = get_upnp_control_url()
+    if not control_url:
+        return jsonify({'success': False, 'error': 'Tidak menemukan router dengan dukungan UPnP.'})
+        
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        local_ip = s.getsockname()[0]
+    except:
+        local_ip = '127.0.0.1'
+    finally:
+        s.close()
+        
+    success = upnp_add_port_mapping(control_url, ext_port, int_port, protocol, local_ip, description)
+    if success:
+        audit_log('UPNP_ADD', f'Mapped port {ext_port}->{int_port} ({protocol})', session.get('username'))
+        return jsonify({'success': True, 'message': f'Port {ext_port} berhasil diarahkan ke IP {local_ip}:{int_port}'})
+    else:
+        return jsonify({'success': False, 'error': 'Gagal melakukan pemetaan port pada router.'})
+
+@app.route('/api/upnp/delete', methods=['POST'])
+@requires_permission('network')
+def delete_upnp_mapping():
+    ext_port = request.json.get('external_port')
+    protocol = request.json.get('protocol', 'TCP').upper()
+    
+    control_url = get_upnp_control_url()
+    if not control_url:
+        return jsonify({'success': False, 'error': 'Tidak menemukan router dengan dukungan UPnP.'})
+        
+    success = upnp_delete_port_mapping(control_url, ext_port, protocol)
+    if success:
+        audit_log('UPNP_DELETE', f'Deleted port mapping on port {ext_port} ({protocol})', session.get('username'))
+        return jsonify({'success': True, 'message': f'Pemetaan port {ext_port} berhasil dihapus.'})
+    else:
+        return jsonify({'success': False, 'error': 'Gagal menghapus pemetaan port pada router.'})
+
+
+# --- PREMIUM APP: GEOIP VISITOR MAP ---
+GEOIP_CACHE_FILE = os.path.join(DATA_DIR, 'geoip_cache.json')
+
+def load_geoip_cache():
+    if os.path.exists(GEOIP_CACHE_FILE):
+        try:
+            with open(GEOIP_CACHE_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_geoip_cache(cache):
+    with open(GEOIP_CACHE_FILE, 'w') as f:
+        json.dump(cache, f)
+
+def lookup_geoip(ip, cache):
+    if ip.startswith('127.') or ip.startswith('192.168.') or ip.startswith('10.') or ip.startswith('172.16.') or ip.startswith('::1'):
+        return {'city': 'Lokal', 'country': 'Intranet', 'lat': -6.2, 'lon': 106.81} # Default center in Jakarta for local connections
+    if ip in cache:
+        return cache[ip]
+    try:
+        res = requests.get(f'http://ip-api.com/json/{ip}', timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            if data.get('status') == 'success':
+                result = {
+                    'city': data.get('city', 'Unknown'),
+                    'country': data.get('country', 'Unknown'),
+                    'lat': data.get('lat', -6.2),
+                    'lon': data.get('lon', 106.81)
+                }
+                cache[ip] = result
+                save_geoip_cache(cache)
+                return result
+    except:
+        pass
+    return {'city': 'Unknown', 'country': 'Unknown', 'lat': -6.2, 'lon': 106.81}
+
+@app.route('/geoip-map')
+@requires_permission('security')
+def geoip_map_page():
+    return render_template('geoip_map.html')
+
+@app.route('/api/geoip/visitors')
+@requires_permission('security')
+def get_geoip_visitors():
+    cache = load_geoip_cache()
+    visitors = {}
+    
+    cmd = 'nsenter -t 1 -m -u -i -n -p tail -n 250 /var/log/nginx/access.log 2>/dev/null'
+    res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    log_content = res.stdout
+    
+    if not log_content.strip():
+        try:
+            if os.path.exists('/var/log/nginx/access.log'):
+                with open('/var/log/nginx/access.log', 'r') as f:
+                    log_content = "".join(f.readlines()[-250:])
+        except:
+            pass
+            
+    import re
+    ip_pattern = re.compile(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    
+    for line in log_content.split('\n'):
+        match = ip_pattern.match(line)
+        if match:
+            ip = match.group(1)
+            time_match = re.search(r'\[([^\]]+)\]', line)
+            timestamp = time_match.group(1) if time_match else ""
+            
+            status_match = re.search(r'"\s+(\d{3})\s+', line)
+            status = status_match.group(1) if status_match else "200"
+            
+            if ip not in visitors:
+                visitors[ip] = {
+                    'ip': ip,
+                    'hits': 0,
+                    'last_access': timestamp,
+                    'status': status
+                }
+            visitors[ip]['hits'] += 1
+            if timestamp:
+                visitors[ip]['last_access'] = timestamp
+                
+    unique_visitors = []
+    for ip, info in list(visitors.items())[:50]:
+        geo = lookup_geoip(ip, cache)
+        info.update(geo)
+        unique_visitors.append(info)
+        
+    return jsonify({'success': True, 'visitors': unique_visitors})
 
 # ==============================================================
 

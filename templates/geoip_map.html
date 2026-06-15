@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Map - Server Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet.js CSS (Interactive Maps) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <style>
+        .map-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            align-items: start;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 992px) {
+            .map-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sleek Map Container */
+        #map {
+            width: 100%;
+            height: 480px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+
+        .visitor-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .visitor-table th, .visitor-table td {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+        }
+
+        .visitor-table th {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .visitor-ip {
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .visitor-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:1.25rem">
+                <button class="btn" onclick="window.location.href='/dashboard'" title="Kembali ke Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="clock-widget" style="margin-left:0.5rem">
+                    <h2 style="font-weight:600; font-size:1.4rem; display:flex; align-items:center; gap:0.8rem">
+                        <i class="fa-solid fa-map-location-dot" style="color:var(--cpu-color)"></i> Visitor GeoIP Map
+                    </h2>
+                </div>
+            </div>
+            <div class="system-status">
+                <button class="btn primary" onclick="loadVisitors()" id="refresh-btn">
+                    <i class="fa-solid fa-arrows-rotate"></i> Refresh Peta
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="map-layout">
+            <!-- Left Card: Interactive Map -->
+            <div class="widget-card glass" style="padding: 1.5rem; justify-content: flex-start; align-items: stretch;">
+                <div class="widget-header" style="margin-bottom: 1.25rem;">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(239, 68, 68, 0.2)">
+                        <i class="fa-solid fa-globe" style="color:#ef4444"></i>
+                    </div>
+                    <h3>Peta Geografis Pengunjung</h3>
+                </div>
+
+                <div id="map"></div>
+            </div>
+
+            <!-- Right Card: Live Visitors Table -->
+            <div class="widget-card glass" style="padding: 1.5rem; justify-content: flex-start; align-items: stretch; max-height: 540px; overflow-y: auto;">
+                <div class="widget-header" style="margin-bottom: 1.25rem;">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(59, 130, 246, 0.2)">
+                        <i class="fa-solid fa-clock-rotate-left" style="color:#58a6ff"></i>
+                    </div>
+                    <h3>Pengunjung Terkini (Access Log)</h3>
+                </div>
+
+                <div style="width: 100%;">
+                    <table class="visitor-table">
+                        <thead>
+                            <tr>
+                                <th>Negara/Kota</th>
+                                <th>IP Address</th>
+                                <th>Hits</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitor-list">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                                    <div>Menganalisis log nginx...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        let map;
+        let markersGroup;
+
+        // Initialize Leaflet Map
+        function initMap() {
+            // Dark Mode Map Tile Template (CartoDB Dark Matter)
+            map = L.map('map').setView([-2.5, 118], 5); // Center on Indonesia default
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            markersGroup = L.layerGroup().addTo(map);
+        }
+
+        // Load Visitors from Nginx logs
+        async function loadVisitors() {
+            const listBody = document.getElementById('visitor-list');
+            const refreshBtn = document.getElementById('refresh-btn');
+
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat Data...';
+
+            try {
+                const res = await fetch('/api/geoip/visitors');
+                const data = await res.json();
+
+                if (data.success) {
+                    markersGroup.clearLayers();
+                    listBody.innerHTML = '';
+
+                    if (data.visitors.length === 0) {
+                        listBody.innerHTML = `
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                    Tidak ada data kunjungan luar (WAN) yang terdeteksi.
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    data.visitors.forEach(vis => {
+                        // Table row
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <b>${vis.country}</b><br>
+                                <span style="font-size:0.75rem; color:var(--text-muted)">${vis.city}</span>
+                            </td>
+                            <td>
+                                <span class="visitor-ip">${vis.ip}</span><br>
+                                <span style="font-size:0.7rem; color:var(--text-muted)">${vis.last_access}</span>
+                            </td>
+                            <td><span class="visitor-badge">${vis.hits}x</span></td>
+                        `;
+                        listBody.appendChild(tr);
+
+                        // Map marker
+                        if (vis.lat !== 0 && vis.lon !== 0) {
+                            const marker = L.circleMarker([vis.lat, vis.lon], {
+                                color: '#ef4444',
+                                fillColor: '#f87171',
+                                fillOpacity: 0.5,
+                                radius: Math.min(15, 6 + vis.hits)
+                            });
+
+                            marker.bindPopup(`
+                                <div style="color:#0f172a; font-family:'Inter',sans-serif; font-size:0.8rem">
+                                    <h4 style="margin:0 0 5px 0; font-weight:700">${vis.ip}</h4>
+                                    <div><b>Lokasi:</b> ${vis.city}, ${vis.country}</div>
+                                    <div><b>Jumlah Hits:</b> ${vis.hits} kali</div>
+                                    <div><b>Akses Terakhir:</b> ${vis.last_access}</div>
+                                </div>
+                            `);
+                            markersGroup.addLayer(marker);
+                        }
+                    });
+
+                } else {
+                    listBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #f85149; padding: 2rem;">
+                                Gagal menganalisis log: ${data.error}
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+                listBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: #f85149; padding: 2rem;">
+                            Kesalahan koneksi ke server.
+                        </td>
+                    </tr>
+                `;
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Refresh Peta';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            loadVisitors();
+        });
+    </script>
+</body>
+
+</html>
