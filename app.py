@@ -4833,6 +4833,7 @@ SYSTEM_APPS = [
     {"id": "network", "name": "Network", "icon": "fa-solid fa-network-wired", "color": "linear-gradient(135deg, #11998e, #38ef7d)", "url": "/network"},
     {"id": "storage", "name": "Storage", "icon": "fa-solid fa-hard-drive", "color": "linear-gradient(135deg, #667eea, #764ba2)", "url": "/storage"},
     {"id": "websites", "name": "Websites", "icon": "fa-solid fa-globe", "color": "linear-gradient(135deg, #23a6d5, #23d5ab)", "url": "/websites"},
+    {"id": "php-sites", "name": "PHP Sites", "icon": "fa-brands fa-php", "color": "linear-gradient(135deg, #777BB4, #4F5B93)", "url": "/php-sites"},
     {"id": "cloudflare", "name": "Cloudflare Tunnel", "icon": "fa-brands fa-cloudflare", "color": "linear-gradient(135deg, #f38020, #faad3f)", "url": "/cloudflare"},
     {"id": "ssl", "name": "SSL Let's Encrypt", "icon": "fa-solid fa-lock", "color": "linear-gradient(135deg, #02b3e4, #02ccfe)", "url": "/ssl"},
     {"id": "backup", "name": "Backup", "icon": "fa-solid fa-box-archive", "color": "linear-gradient(135deg, #f093fb, #f5576c)", "url": "/backup"},
@@ -7622,6 +7623,237 @@ t_backup.start()
 t_merge = threading.Thread(target=mount_all_merge_pools, daemon=True)
 t_merge.start()
 
+
+
+# ============== PHP SITES MANAGER ==============
+PHP_SITES_DIR = '/host/root/var/www'  # Host path via Docker volume mount
+
+@app.route('/php-sites')
+@login_required
+def php_sites_page():
+    return render_template('php_sites.html')
+
+@app.route('/api/php-sites', methods=['GET'])
+@login_required
+def php_sites_list():
+    """List all PHP site containers"""
+    sites = []
+    try:
+        client = docker.from_env()
+        containers = client.containers.list(all=True)
+        for c in containers:
+            img = c.attrs['Config']['Image']
+            if 'php-nginx' in img or 'php-apache' in img or 'php-fpm' in img:
+                # Get port mapping
+                ports = c.attrs['NetworkSettings']['Ports'] or {}
+                host_port = None
+                for p_internal, p_bindings in ports.items():
+                    if p_bindings:
+                        host_port = p_bindings[0]['HostPort']
+                        break
+                
+                # Get volume mount (document root)
+                mounts = c.attrs.get('Mounts', [])
+                doc_root = ''
+                for m in mounts:
+                    if '/var/www/html' in m.get('Destination', ''):
+                        doc_root = m.get('Source', '')
+                        break
+                
+                # Get PHP version from image tag
+                php_ver = img.split(':')[-1] if ':' in img else 'latest'
+                
+                sites.append({
+                    'id': c.id[:12],
+                    'name': c.name,
+                    'image': img,
+                    'php_version': php_ver,
+                    'status': c.status,
+                    'port': host_port,
+                    'doc_root': doc_root,
+                    'created': c.attrs['Created'][:19].replace('T', ' ')
+                })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    return jsonify({'sites': sites})
+
+@app.route('/api/php-sites/create', methods=['POST'])
+@login_required
+@admin_required
+def php_sites_create():
+    """Create and deploy a new PHP website container"""
+    data = request.json
+    site_name = data.get('name', '').strip().lower()
+    php_version = data.get('php_version', '8.2')
+    port = data.get('port', '')
+    
+    # Validate
+    import re as re_mod
+    if not site_name or not re_mod.match(r'^[a-z0-9][a-z0-9\-]{1,30}$', site_name):
+        return jsonify({'error': 'Nama tidak valid. Gunakan huruf kecil, angka, dan dash (2-31 karakter)'}), 400
+    
+    if not port or not str(port).isdigit() or int(port) < 1024 or int(port) > 65535:
+        return jsonify({'error': 'Port harus angka antara 1024-65535'}), 400
+    port = str(port)
+    
+    allowed_versions = ['7.4', '8.0', '8.1', '8.2', '8.3']
+    if php_version not in allowed_versions:
+        return jsonify({'error': f'PHP version harus salah satu dari: {", ".join(allowed_versions)}'}), 400
+    
+    try:
+        client = docker.from_env()
+        
+        # Check container name conflict
+        try:
+            existing = client.containers.get(site_name)
+            return jsonify({'error': f'Container dengan nama "{site_name}" sudah ada'}), 409
+        except docker.errors.NotFound:
+            pass
+        
+        # Check port conflict
+        for c in client.containers.list():
+            c_ports = c.attrs['NetworkSettings']['Ports'] or {}
+            for _, bindings in c_ports.items():
+                if bindings:
+                    for b in bindings:
+                        if b.get('HostPort') == port:
+                            return jsonify({'error': f'Port {port} sudah dipakai oleh container "{c.name}"'}), 409
+        
+        # Create host directory for website files
+        host_www = os.path.join(PHP_SITES_DIR, site_name)
+        os.makedirs(host_www, exist_ok=True)
+        
+        # Create default index.php
+        index_path = os.path.join(host_www, 'index.php')
+        if not os.path.exists(index_path):
+            with open(index_path, 'w') as f:
+                f.write(f'''<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{site_name} — PHP Website</title>
+    <style>
+        * {{ margin:0; padding:0; box-sizing:border-box; }}
+        body {{ font-family:'Segoe UI',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center;
+               background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }}
+        .card {{ background:rgba(255,255,255,0.1); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.2);
+                 border-radius:24px; padding:3rem; text-align:center; max-width:500px; }}
+        h1 {{ font-size:2.5rem; margin-bottom:1rem; }}
+        .info {{ background:rgba(0,0,0,0.2); border-radius:12px; padding:1rem; margin-top:1.5rem; text-align:left; font-size:0.9rem; }}
+        .info div {{ padding:0.3rem 0; border-bottom:1px solid rgba(255,255,255,0.1); }}
+        .badge {{ display:inline-block; background:#4ecdc4; color:#000; padding:4px 12px; border-radius:20px; font-weight:600; font-size:0.8rem; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚀 {site_name}</h1>
+        <p>Website PHP kamu berhasil di-deploy!</p>
+        <p style="margin-top:0.5rem"><span class="badge">PHP <?= phpversion() ?></span></p>
+        <div class="info">
+            <div><strong>Server:</strong> <?= $_SERVER["SERVER_SOFTWARE"] ?? "N/A" ?></div>
+            <div><strong>Document Root:</strong> <?= $_SERVER["DOCUMENT_ROOT"] ?></div>
+            <div><strong>Time:</strong> <?= date("Y-m-d H:i:s") ?></div>
+            <div><strong>IP Client:</strong> <?= $_SERVER["REMOTE_ADDR"] ?></div>
+        </div>
+        <p style="margin-top:1.5rem; font-size:0.85rem; opacity:0.7;">
+            Edit file di: <code>/var/www/{site_name}/</code> via File Manager Dashboard
+        </p>
+    </div>
+</body>
+</html>
+''')
+        
+        image = 'webdevops/php-nginx:' + php_version
+        
+        # The actual host path (not /host/root prefixed) for Docker volume binding
+        actual_host_path = '/var/www/' + site_name
+        
+        # Pull image
+        client.images.pull(image)
+        
+        # Run container
+        container = client.containers.run(
+            image,
+            name=site_name,
+            ports={'80/tcp': int(port)},
+            volumes={actual_host_path: {'bind': '/var/www/html', 'mode': 'rw'}},
+            restart_policy={"Name": "unless-stopped"},
+            detach=True
+        )
+        
+        audit_log('PHP_SITE_CREATED', f'Created PHP site "{site_name}" on port {port} (PHP {php_version})', session.get('username'))
+        
+        host_ip = request.host.split(':')[0]
+        return jsonify({
+            'success': True,
+            'message': f'Website "{site_name}" berhasil di-deploy!',
+            'url': f'http://{host_ip}:{port}',
+            'container_id': container.id[:12]
+        })
+        
+    except docker.errors.ImageNotFound:
+        return jsonify({'error': 'Docker image ' + image + ' tidak ditemukan'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/php-sites/<site_name>/action', methods=['POST'])
+@login_required
+@admin_required
+def php_sites_action(site_name):
+    """Start/Stop/Restart/Delete a PHP site container"""
+    action = request.json.get('action', '')
+    try:
+        client = docker.from_env()
+        container = client.containers.get(site_name)
+        
+        if action == 'start':
+            container.start()
+        elif action == 'stop':
+            container.stop()
+        elif action == 'restart':
+            container.restart()
+        elif action == 'delete':
+            container.remove(force=True)
+            # Optionally delete files
+            if request.json.get('delete_files'):
+                import shutil
+                host_www = os.path.join(PHP_SITES_DIR, site_name)
+                if os.path.exists(host_www):
+                    shutil.rmtree(host_www, ignore_errors=True)
+        else:
+            return jsonify({'error': 'Invalid action'}), 400
+        
+        audit_log('PHP_SITE_ACTION', f'{action} PHP site "{site_name}"', session.get('username'))
+        return jsonify({'success': True})
+    except docker.errors.NotFound:
+        return jsonify({'error': 'Container not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/php-sites/<site_name>/upload', methods=['POST'])
+@login_required
+@admin_required
+def php_sites_upload(site_name):
+    """Upload files to a PHP site"""
+    host_www = os.path.join(PHP_SITES_DIR, site_name)
+    if not os.path.exists(host_www):
+        return jsonify({'error': 'Site directory not found'}), 404
+    
+    uploaded = request.files.getlist('files')
+    if not uploaded:
+        return jsonify({'error': 'No files uploaded'}), 400
+    
+    count = 0
+    for f in uploaded:
+        if f.filename:
+            safe_name = f.filename.replace('..', '').replace('/', '_').replace('\\', '_')
+            f.save(os.path.join(host_www, safe_name))
+            count += 1
+    
+    return jsonify({'success': True, 'count': count})
+
+# ============== END PHP SITES MANAGER ==============
 
 if __name__ == '__main__':
     print("Starting Development Server on http://localhost:5000")

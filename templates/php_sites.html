@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP Sites Manager — Masandigital Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --glass-bg: rgba(30, 30, 40, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #a0a0b0;
+            --php-color: #777BB4;
+            --success: #4ecdc4;
+            --danger: #ff6b6b;
+            --warning: #ffe66d;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .wallpaper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(-45deg, #4F5B93, #777BB4, #23a6d5, #4ecdc4);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            z-index: -1; filter: brightness(0.4);
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .page-wrap { padding: 2rem 3rem; max-width: 1400px; margin: 0 auto; }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border-radius: var(--radius-lg);
+        }
+        .card { padding: 1.5rem; margin-bottom: 1.5rem; }
+
+        /* Header */
+        .page-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: none; color: var(--text-muted);
+            padding: 0.4rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;
+            margin-bottom: 0.5rem; font-family: inherit;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+        .page-title { font-size: 2rem; font-weight: 700; display: flex; align-items: center; gap: 0.8rem; }
+        .page-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card {
+            background: var(--glass-bg); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius-md);
+            padding: 1.2rem; text-align: center;
+        }
+        .stat-val { font-size: 2rem; font-weight: 700; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.3rem; }
+
+        /* Create Form */
+        .create-section { margin-bottom: 1.5rem; }
+        .form-grid {
+            display: grid; grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 1rem; align-items: end;
+        }
+        .form-group label {
+            display: block; font-size: 0.75rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; font-weight: 600;
+        }
+        .form-group input, .form-group select {
+            width: 100%; background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15); color: white;
+            padding: 0.7rem 1rem; border-radius: 12px; font-family: inherit;
+            font-size: 0.9rem; outline: none; transition: border 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--php-color);
+        }
+        .form-group select option { background: #1e1e28; }
+        .deploy-btn {
+            background: linear-gradient(135deg, #777BB4, #4F5B93);
+            border: none; color: white; padding: 0.7rem 1.5rem; border-radius: 12px;
+            cursor: pointer; font-family: inherit; font-size: 0.9rem; font-weight: 600;
+            display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;
+            white-space: nowrap; height: fit-content;
+        }
+        .deploy-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(119,123,180,0.4); }
+        .deploy-btn:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+
+        /* Sites Table */
+        .section-title {
+            font-size: 1rem; font-weight: 600; margin-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { padding: 0.8rem 1rem; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; text-align: left; }
+        td { padding: 0.9rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 99px;
+        }
+        .badge-running { background: rgba(78,205,196,0.15); color: var(--success); border: 1px solid rgba(78,205,196,0.3); }
+        .badge-stopped { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .badge-php { background: rgba(119,123,180,0.15); color: var(--php-color); border: 1px solid rgba(119,123,180,0.3); }
+        .pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s ease infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .action-btn-sm {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 0.3rem 0.7rem; border-radius: 8px;
+            font-size: 0.72rem; cursor: pointer; font-family: inherit;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .action-btn-sm:hover { background: rgba(255,255,255,0.18); }
+        .action-btn-sm.danger { color: #ff6b6b; border-color: rgba(255,107,107,0.3); }
+        .action-btn-sm.danger:hover { background: rgba(255,107,107,0.15); }
+        .action-btn-sm.success { color: #4ecdc4; border-color: rgba(78,205,196,0.3); }
+        .open-link {
+            color: var(--php-color); text-decoration: none; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            transition: color 0.2s;
+        }
+        .open-link:hover { color: white; }
+
+        .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+        .empty-state i { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block; }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 2rem; right: 2rem;
+            background: rgba(30,30,40,0.9); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); color: white;
+            padding: 0.8rem 1.4rem; border-radius: 12px;
+            font-size: 0.85rem; display: none;
+            align-items: center; gap: 0.6rem; z-index: 999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+            z-index: 1000; display: none; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: rgba(30,30,40,0.95); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg); padding: 2rem; width: 90%; max-width: 440px;
+            text-align: center;
+        }
+        .modal-card h3 { margin-bottom: 0.5rem; }
+        .modal-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .modal-actions { display: flex; gap: 1rem; justify-content: center; }
+        .modal-actions button {
+            padding: 0.6rem 1.5rem; border-radius: 10px; border: none;
+            font-family: inherit; font-size: 0.9rem; cursor: pointer; font-weight: 600;
+        }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: white; }
+        .btn-danger { background: #ff6b6b; color: white; }
+        .btn-danger:hover { background: #ff5252; }
+
+        /* Loading */
+        .loading-bar {
+            display: none; background: rgba(119,123,180,0.2); border-radius: 8px;
+            height: 4px; margin-top: 1rem; overflow: hidden;
+        }
+        .loading-bar.active { display: block; }
+        .loading-bar-fill {
+            height: 100%; background: linear-gradient(90deg, #777BB4, #4ecdc4, #777BB4);
+            background-size: 200%; border-radius: 8px;
+            animation: loadingSlide 1.5s ease infinite;
+        }
+        @keyframes loadingSlide { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+        @media(max-width:768px) {
+            .page-wrap { padding: 1rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+<div class="wallpaper"></div>
+<div class="page-wrap">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <button class="back-btn" onclick="window.location.href='/dashboard'">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <div class="page-title"><i class="fa-brands fa-php" style="color:#777BB4"></i> PHP Sites Manager</div>
+            <div class="page-subtitle">Deploy & kelola website PHP langsung dari dashboard — tanpa terminal</div>
+        </div>
+        <button class="action-btn-sm" onclick="loadSites()" style="padding:0.5rem 1rem; font-size:0.85rem;">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-val" style="color:#777BB4" id="stat-total">—</div>
+            <div class="stat-label">Total Sites</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" style="color:#4ecdc4" id="stat-running">—</div>
+            <div class="stat-label">Running</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" style="color:#ff6b6b" id="stat-stopped">—</div>
+            <div class="stat-label">Stopped</div>
+        </div>
+    </div>
+
+    <!-- Create New Site -->
+    <div class="glass card create-section">
+        <div class="section-title">
+            <i class="fa-solid fa-plus-circle" style="color:#4ecdc4"></i> Deploy Website PHP Baru
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Nama Website</label>
+                <input type="text" id="site-name" placeholder="contoh: toko-online" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>PHP Version</label>
+                <select id="php-version">
+                    <option value="8.3">PHP 8.3</option>
+                    <option value="8.2" selected>PHP 8.2</option>
+                    <option value="8.1">PHP 8.1</option>
+                    <option value="8.0">PHP 8.0</option>
+                    <option value="7.4">PHP 7.4</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Port</label>
+                <input type="number" id="site-port" placeholder="8080" value="8080" min="1024" max="65535">
+            </div>
+            <button class="deploy-btn" id="btn-deploy" onclick="deploySite()">
+                <i class="fa-solid fa-rocket"></i> Deploy
+            </button>
+        </div>
+        <div class="loading-bar" id="deploy-loading"><div class="loading-bar-fill"></div></div>
+    </div>
+
+    <!-- Sites List -->
+    <div class="glass card">
+        <div class="section-title">
+            <i class="fa-brands fa-php" style="color:#777BB4"></i> Website PHP Aktif
+        </div>
+        <div id="sites-container">
+            <div class="empty-state">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <p>Memuat daftar website...</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+    <div class="modal-card">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:2.5rem; color:#ff6b6b; margin-bottom:1rem;"></i>
+        <h3>Hapus Website?</h3>
+        <p id="delete-msg">Apakah kamu yakin ingin menghapus website ini?</p>
+        <label style="display:flex; align-items:center; gap:0.5rem; justify-content:center; margin-bottom:1rem; font-size:0.85rem; color:var(--text-muted); cursor:pointer;">
+            <input type="checkbox" id="delete-files-check"> Hapus juga semua file website
+        </label>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Batal</button>
+            <button class="btn-danger" id="btn-confirm-delete" onclick="confirmDelete()">
+                <i class="fa-solid fa-trash"></i> Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let allSites = [];
+let deleteTarget = null;
+
+function showToast(msg, type='info') {
+    const colors = { success:'#4ecdc4', error:'#ff6b6b', info:'#777BB4', warn:'#ffe66d' };
+    const icons = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info', warn:'fa-triangle-exclamation' };
+    const t = document.getElementById('toast');
+    t.innerHTML = `<i class="fa-solid ${icons[type]||icons.info}" style="color:${colors[type]||colors.info}"></i> ${msg}`;
+    t.style.display = 'flex';
+    setTimeout(() => t.style.display = 'none', 4000);
+}
+
+async function loadSites() {
+    try {
+        const res = await fetch('/api/php-sites');
+        const data = await res.json();
+        if (data.error) { showToast(data.error, 'error'); return; }
+        allSites = data.sites || [];
+        renderSites();
+        updateStats();
+    } catch(e) {
+        showToast('Gagal memuat data', 'error');
+    }
+}
+
+function updateStats() {
+    const total = allSites.length;
+    const running = allSites.filter(s => s.status === 'running').length;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-running').textContent = running;
+    document.getElementById('stat-stopped').textContent = total - running;
+}
+
+function renderSites() {
+    const container = document.getElementById('sites-container');
+    if (allSites.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-brands fa-php" style="opacity:0.5; color:#777BB4;"></i>
+                <p style="font-size:1.1rem; margin-bottom:0.3rem;">Belum ada website PHP</p>
+                <p style="font-size:0.85rem;">Buat website pertamamu dengan mengisi form di atas lalu klik Deploy</p>
+            </div>`;
+        return;
+    }
+
+    let html = `<div style="overflow-x:auto;"><table>
+        <thead><tr>
+            <th>Website</th>
+            <th>PHP</th>
+            <th>Port</th>
+            <th>Status</th>
+            <th>Document Root</th>
+            <th>Aksi</th>
+        </tr></thead><tbody>`;
+
+    allSites.forEach(s => {
+        const isRunning = s.status === 'running';
+        const statusBadge = isRunning
+            ? '<span class="badge badge-running"><span class="pulse"></span> Running</span>'
+            : '<span class="badge badge-stopped">Stopped</span>';
+        const host = window.location.hostname;
+        const openUrl = s.port ? `http://${host}:${s.port}` : '#';
+
+        html += `<tr>
+            <td>
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <i class="fa-brands fa-php" style="color:#777BB4; font-size:1.3rem;"></i>
+                    <div>
+                        <div style="font-weight:600;">${s.name}</div>
+                        <div style="font-size:0.72rem; color:var(--text-muted);">${s.image}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge badge-php">${s.php_version}</span></td>
+            <td><span style="font-family:monospace; background:rgba(119,123,180,0.15); color:#777BB4; border:1px solid rgba(119,123,180,0.3); padding:2px 10px; border-radius:6px; font-size:0.8rem;">:${s.port || '—'}</span></td>
+            <td>${statusBadge}</td>
+            <td style="font-family:monospace; font-size:0.8rem; color:var(--text-muted); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${s.doc_root}">${s.doc_root || '—'}</td>
+            <td>
+                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                    ${isRunning ? `
+                        <a href="${openUrl}" target="_blank" class="action-btn-sm success"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka</a>
+                        <button class="action-btn-sm" onclick="siteAction('${s.name}','restart')"><i class="fa-solid fa-rotate"></i></button>
+                        <button class="action-btn-sm" onclick="siteAction('${s.name}','stop')"><i class="fa-solid fa-stop"></i></button>
+                    ` : `
+                        <button class="action-btn-sm success" onclick="siteAction('${s.name}','start')"><i class="fa-solid fa-play"></i> Start</button>
+                    `}
+                    <button class="action-btn-sm danger" onclick="openDeleteModal('${s.name}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+async function deploySite() {
+    const name = document.getElementById('site-name').value.trim();
+    const phpVer = document.getElementById('php-version').value;
+    const port = document.getElementById('site-port').value.trim();
+    const btn = document.getElementById('btn-deploy');
+    const loading = document.getElementById('deploy-loading');
+
+    if (!name) { showToast('Masukkan nama website', 'warn'); return; }
+    if (!port) { showToast('Masukkan port', 'warn'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deploying...';
+    loading.classList.add('active');
+
+    try {
+        const res = await fetch('/api/php-sites/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, php_version: phpVer, port })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            document.getElementById('site-name').value = '';
+            // Auto-increment port
+            document.getElementById('site-port').value = parseInt(port) + 1;
+            loadSites();
+            // Open the new site after a short delay
+            if (data.url) {
+                setTimeout(() => window.open(data.url, '_blank'), 2000);
+            }
+        } else {
+            showToast(data.error || 'Deploy gagal', 'error');
+        }
+    } catch(e) {
+        showToast('Request gagal: ' + e.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Deploy';
+    loading.classList.remove('active');
+}
+
+async function siteAction(name, action) {
+    try {
+        const res = await fetch(`/api/php-sites/${name}/action`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`${action} "${name}" berhasil`, 'success');
+            setTimeout(loadSites, 1000);
+        } else {
+            showToast(data.error || 'Aksi gagal', 'error');
+        }
+    } catch(e) {
+        showToast('Request gagal', 'error');
+    }
+}
+
+function openDeleteModal(name) {
+    deleteTarget = name;
+    document.getElementById('delete-msg').textContent = `Apakah kamu yakin ingin menghapus website "${name}"?`;
+    document.getElementById('delete-files-check').checked = false;
+    document.getElementById('delete-modal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('active');
+    deleteTarget = null;
+}
+
+async function confirmDelete() {
+    if (!deleteTarget) return;
+    const deleteFiles = document.getElementById('delete-files-check').checked;
+    
+    try {
+        const res = await fetch(`/api/php-sites/${deleteTarget}/action`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: 'delete', delete_files: deleteFiles })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`"${deleteTarget}" berhasil dihapus`, 'success');
+            loadSites();
+        } else {
+            showToast(data.error || 'Hapus gagal', 'error');
+        }
+    } catch(e) {
+        showToast('Request gagal', 'error');
+    }
+    closeDeleteModal();
+}
+
+// Init
+loadSites();
+setInterval(loadSites, 15000);
+</script>
+</body>
+</html>
