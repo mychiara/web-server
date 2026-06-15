@@ -20,16 +20,23 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-INSTALL_DIR="/root/masandigital_dashboard"
+# Dapatkan direktori tempat script ini berada
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Cek apakah folder instalasi ada
-if [ ! -d "$INSTALL_DIR" ]; then
-    # Jika folder saat ini adalah repository-nya, gunakan folder saat ini
-    if [ -f "docker-compose.yml" ] && [ -f "app.py" ]; then
-        INSTALL_DIR=$(pwd)
-    else
-        echo -e "${RED}[ERROR] Folder instalasi dashboard tidak ditemukan!${NC}"
-        echo -e "Silakan jalankan script ini di dalam folder dashboard utama (misal: /root/masandigital_dashboard)."
+# Tentukan folder instalasi
+if [ -d "$SCRIPT_DIR/.git" ]; then
+    INSTALL_DIR="$SCRIPT_DIR"
+elif [ -d "$(pwd)/.git" ]; then
+    INSTALL_DIR="$(pwd)"
+elif [ -d "/root/masandigital_dashboard/.git" ]; then
+    INSTALL_DIR="/root/masandigital_dashboard"
+elif [ -d "/home/masandigital/masandigital_dashboard/.git" ]; then
+    INSTALL_DIR="/home/masandigital/masandigital_dashboard"
+else
+    # Fallback terakhir
+    INSTALL_DIR="/root/masandigital_dashboard"
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo -e "${RED}[ERROR] Folder instalasi dashboard dengan git tidak ditemukan!${NC}"
         exit 1
     fi
 fi
