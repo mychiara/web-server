@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoC Optimizer & Monitor - Server Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <style>
+        .hw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .hw-card {
+            padding: 1.5rem;
+            min-height: auto;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #11998e, #38ef7d);
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+
+        /* CPU cores display */
+        .core-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .core-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 0.75rem;
+        }
+
+        .core-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+
+        /* Action buttons card */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            gap: 1rem;
+        }
+
+        .control-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+        }
+
+        .control-info p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:1.25rem">
+                <button class="btn" onclick="window.location.href='/dashboard'" title="Kembali ke Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="clock-widget" style="margin-left:0.5rem">
+                    <h2 style="font-weight:600; font-size:1.4rem; display:flex; align-items:center; gap:0.8rem">
+                        <i class="fa-solid fa-microchip" style="color:var(--cpu-color)"></i> SoC Optimizer & Monitor
+                    </h2>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-item">
+                    <i class="fa-solid fa-sync fa-spin"></i>
+                    <span>Real-time Monitoring</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main stats grid -->
+        <div class="hw-grid">
+            <!-- CPU Card -->
+            <div class="widget-card glass hw-card">
+                <div class="metric-header">
+                    <div style="display:flex; align-items:center; gap:0.8rem">
+                        <div class="icon-box" style="box-shadow: 0 0 10px rgba(59, 130, 246, 0.2)">
+                            <i class="fa-solid fa-microchip" style="color:var(--cpu-color)"></i>
+                        </div>
+                        <span style="font-weight:600; font-size:0.9rem">CPU Core Usage</span>
+                    </div>
+                    <span id="cpu-percent-label" style="font-weight:700; font-size:0.9rem">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="cpu-progress" style="width: 0%"></div>
+                </div>
+                <!-- Core load grid -->
+                <div class="core-grid" id="cpu-cores-container">
+                    <!-- Dynamic Core list -->
+                </div>
+            </div>
+
+            <!-- Temperature & Load Card -->
+            <div class="widget-card glass hw-card">
+                <div style="width: 100%">
+                    <div class="metric-header">
+                        <div style="display:flex; align-items:center; gap:0.8rem">
+                            <div class="icon-box" style="box-shadow: 0 0 10px rgba(239, 68, 68, 0.2)">
+                                <i class="fa-solid fa-temperature-half" style="color:#ef4444"></i>
+                            </div>
+                            <span style="font-weight:600; font-size:0.9rem">Temperatur SoC</span>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="cpu-temp-label">--°C</div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:0.25rem">Suhu aman optimal perangkat di bawah 75°C.</span>
+                    
+                    <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:1.5rem; padding-top:1rem">
+                        <span style="font-weight:600; font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.75rem">Load Average (Beban Kerja)</span>
+                        <div style="display:flex; justify-content:space-between; text-align:center">
+                            <div style="background:rgba(255,255,255,0.02); padding:0.5rem; border-radius:6px; flex:1; margin-right:0.5rem; border:1px solid var(--glass-border)">
+                                <span style="font-size:0.75rem; color:var(--text-muted); display:block">1 Menit</span>
+                                <span style="font-weight:700" id="load-1">--</span>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.02); padding:0.5rem; border-radius:6px; flex:1; margin-right:0.5rem; border:1px solid var(--glass-border)">
+                                <span style="font-size:0.75rem; color:var(--text-muted); display:block">5 Menit</span>
+                                <span style="font-weight:700" id="load-5">--</span>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.02); padding:0.5rem; border-radius:6px; flex:1; border:1px solid var(--glass-border)">
+                                <span style="font-size:0.75rem; color:var(--text-muted); display:block">15 Menit</span>
+                                <span style="font-weight:700" id="load-15">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Card -->
+            <div class="widget-card glass hw-card">
+                <div class="metric-header">
+                    <div style="display:flex; align-items:center; gap:0.8rem">
+                        <div class="icon-box" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.2)">
+                            <i class="fa-solid fa-memory" style="color:var(--ram-color)"></i>
+                        </div>
+                        <span style="font-weight:600; font-size:0.9rem">Memori RAM</span>
+                    </div>
+                    <span id="ram-percent-label" style="font-weight:700; font-size:0.9rem">0%</span>
+                </div>
+                <div class="progress-bar-container" style="margin-bottom: 1rem">
+                    <div class="progress-bar-fill" id="ram-progress" style="width: 0%; background: linear-gradient(90deg, #a18cd1, #fbc2eb);"></div>
+                </div>
+                <div style="width:100%; display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem">
+                    <div style="display:flex; justify-content:space-between">
+                        <span style="color:var(--text-muted)">RAM Terpakai:</span>
+                        <span style="font-weight:600" id="ram-used">0 GB</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between">
+                        <span style="color:var(--text-muted)">RAM Tersedia:</span>
+                        <span style="font-weight:600" id="ram-free">0 GB</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between">
+                        <span style="color:var(--text-muted)">RAM Total:</span>
+                        <span style="font-weight:600" id="ram-total">0 GB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Center Section -->
+        <div class="widget-card glass hw-card" style="margin-top: 1.5rem; justify-content: flex-start;">
+            <div class="widget-header">
+                <div class="icon-box" style="box-shadow: 0 0 10px rgba(247, 151, 30, 0.2)">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:#f7971e"></i>
+                </div>
+                <h3>Pusat Optimalisasi Sistem</h3>
+            </div>
+
+            <div class="control-group">
+                <!-- Drop RAM Caches -->
+                <div class="control-row">
+                    <div class="control-info">
+                        <h4>Bersihkan Cache RAM & Buffer</h4>
+                        <p>Mengosongkan ruang memori RAM yang tersimpan di cache OS Linux. Aman digunakan kapan saja.</p>
+                    </div>
+                    <button class="btn" onclick="clearRamCache()" id="btn-clear-ram" style="background:#3fb950; color:white; border:none; padding:0.6rem 1.2rem; flex-shrink:0">
+                        <i class="fa-solid fa-broom"></i> Bersihkan RAM
+                    </button>
+                </div>
+
+                <!-- CPU Governor Config -->
+                <div class="control-row">
+                    <div class="control-info">
+                        <h4>Atur Mode Performa CPU (Governor)</h4>
+                        <p>Atur kecepatan kerja prosesor SoC. Gunakan <strong>performance</strong> untuk respons cepat, atau <strong>powersave</strong> agar suhu dingin.</p>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; align-items:center; flex-shrink:0">
+                        <select id="governor-select" style="min-width: 140px; padding:0.5rem">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button class="btn primary" onclick="setCpuGovernor()" id="btn-set-gov" style="padding:0.6rem 1.2rem">
+                            <i class="fa-solid fa-check"></i> Terapkan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch hardware status
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/hardware/status');
+                const data = await res.json();
+
+                if (!data.success) return;
+
+                // Update CPU Main
+                document.getElementById('cpu-percent-label').innerText = `${data.cpu_usage}%`;
+                document.getElementById('cpu-progress').style.width = `${data.cpu_usage}%`;
+
+                // Render cores
+                const coresContainer = document.getElementById('cpu-cores-container');
+                coresContainer.innerHTML = (data.cpu_cores || []).map((val, index) => `
+                    <div class="core-item">
+                        <div class="core-header">
+                            <span>Core ${index}</span>
+                            <span>${val}%</span>
+                        </div>
+                        <div class="progress-bar-container" style="height: 5px; margin-top: 0">
+                            <div class="progress-bar-fill" style="width: ${val}%; background: linear-gradient(90deg, #3498db, #2ecc71)"></div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Temperature
+                const tempLabel = document.getElementById('cpu-temp-label');
+                if (data.temp !== null) {
+                    tempLabel.innerText = `${data.temp.toFixed(1)}°C`;
+                    if (data.temp > 75) {
+                        tempLabel.style.color = '#ef4444'; // Red hot
+                    } else if (data.temp > 60) {
+                        tempLabel.style.color = '#f59e0b'; // Amber warm
+                    } else {
+                        tempLabel.style.color = '#10b981'; // Green cool
+                    }
+                } else {
+                    tempLabel.innerText = 'N/A';
+                    tempLabel.style.color = 'var(--text-muted)';
+                }
+
+                // Load averages
+                document.getElementById('load-1').innerText = data.load_avg[0].toFixed(2);
+                document.getElementById('load-5').innerText = data.load_avg[1].toFixed(2);
+                document.getElementById('load-15').innerText = data.load_avg[2].toFixed(2);
+
+                // RAM Memory
+                document.getElementById('ram-percent-label').innerText = `${data.ram_percent}%`;
+                document.getElementById('ram-progress').style.width = `${data.ram_percent}%`;
+                document.getElementById('ram-used').innerText = `${data.ram_used} GB`;
+                document.getElementById('ram-free').innerText = `${data.ram_free} GB`;
+                document.getElementById('ram-total').innerText = `${data.ram_total} GB`;
+
+                // Update Governor Select Options if not yet loaded
+                const select = document.getElementById('governor-select');
+                if (select.children.length === 0 && data.available_governors && data.available_governors.length > 0) {
+                    select.innerHTML = data.available_governors.map(gov => `
+                        <option value="${gov}" ${gov === data.governor ? 'selected' : ''}>${gov}</option>
+                    `).join('');
+                }
+
+            } catch (err) {
+                console.error('Error fetching hardware metrics:', err);
+            }
+        }
+
+        // Action: drop RAM cache
+        async function clearRamCache() {
+            const btn = document.getElementById('btn-clear-ram');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membersihkan...';
+
+            try {
+                const res = await fetch('/api/hardware/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'clear_ram' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    fetchStatus(); // refresh metrics
+                } else {
+                    alert('Gagal membersihkan RAM: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Gagal membersihkan cache RAM.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-broom"></i> Bersihkan RAM';
+            }
+        }
+
+        // Action: Set CPU Governor
+        async function setCpuGovernor() {
+            const btn = document.getElementById('btn-set-gov');
+            const gov = document.getElementById('governor-select').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                const res = await fetch('/api/hardware/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'set_governor', governor: gov })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    fetchStatus();
+                } else {
+                    alert('Gagal menerapkan governor: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Gagal mengubah governor.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Terapkan';
+            }
+        }
+
+        // Auto polling every 2 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStatus();
+            setInterval(fetchStatus, 2000);
+        });
+    </script>
+</body>
+
+</html>

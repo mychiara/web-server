@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler (Cron Jobs) - Server Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <style>
+        .cron-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            align-items: start;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 992px) {
+            .cron-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .cron-card {
+            padding: 2rem;
+            min-height: auto;
+            align-items: stretch;
+            justify-content: flex-start;
+        }
+
+        .cron-textarea {
+            width: 100%;
+            height: 380px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: #adbac7;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            padding: 1.25rem;
+            line-height: 1.6;
+            resize: vertical;
+            margin-top: 1rem;
+        }
+
+        .cron-textarea:focus {
+            outline: none;
+            border-color: var(--cpu-color);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+        }
+
+        .template-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .template-item h4 {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .template-item p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .template-code {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #58a6ff;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            display: block;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:1.25rem">
+                <button class="btn" onclick="window.location.href='/dashboard'" title="Kembali ke Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="clock-widget" style="margin-left:0.5rem">
+                    <h2 style="font-weight:600; font-size:1.4rem; display:flex; align-items:center; gap:0.8rem">
+                        <i class="fa-solid fa-clock" style="color:var(--cpu-color)"></i> Penjadwal Tugas (Cron Jobs)
+                    </h2>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-item">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Crontab Editor</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Cron Layout Split -->
+        <div class="cron-layout">
+            <!-- Left Card: Editor -->
+            <div class="widget-card glass cron-card">
+                <div class="widget-header" style="width: 100%; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                        <div style="display:flex; align-items:center; gap:0.8rem">
+                            <div class="icon-box" style="box-shadow: 0 0 10px rgba(59, 130, 246, 0.2)">
+                                <i class="fa-solid fa-code" style="color:var(--cpu-color)"></i>
+                            </div>
+                            <div>
+                                <h3>Editor Crontab</h3>
+                                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.1rem">Format: [Menit] [Jam] [Hari] [Bulan] [Hari-Minggu] [Perintah]</p>
+                            </div>
+                        </div>
+                        <button class="btn primary" id="save-btn" onclick="saveCron()" style="padding: 0.6rem 1.5rem">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Penjadwal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Textarea Editor -->
+                <textarea id="cron-content" class="cron-textarea" placeholder="# Masukkan jadwal tugas di sini (misal: 0 0 * * * my_backup_script.sh)"></textarea>
+            </div>
+
+            <!-- Right Card: Templates & Helpers -->
+            <div class="widget-card glass cron-card" style="padding: 1.5rem;">
+                <div class="widget-header" style="margin-bottom: 1.5rem;">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.2)">
+                        <i class="fa-solid fa-circle-question" style="color:#10b981"></i>
+                    </div>
+                    <h3>Template Praktis</h3>
+                </div>
+
+                <div style="width: 100%">
+                    <!-- Template 1 -->
+                    <div class="template-item" onclick="insertTemplate('0 */6 * * * sync; echo 3 > /proc/sys/vm/drop_caches')">
+                        <h4><i class="fa-solid fa-broom"></i> Auto Clean RAM</h4>
+                        <p>Membersihkan cache memori RAM server secara otomatis setiap 6 jam.</p>
+                        <span class="template-code">0 */6 * * * sync; echo 3 > /proc/sys/vm/drop_caches</span>
+                    </div>
+
+                    <!-- Template 2 -->
+                    <div class="template-item" onclick="insertTemplate('0 0 * * * docker exec masandigital_db mysqldump -u root -pPasswordDb123 --all-databases > /root/backup_db.sql')">
+                        <h4><i class="fa-solid fa-database"></i> Backup DB Docker</h4>
+                        <p>Membuat file backup database MySQL/MariaDB dari container docker setiap jam 12 malam.</p>
+                        <span class="template-code">0 0 * * * docker exec ...</span>
+                    </div>
+
+                    <!-- Template 3 -->
+                    <div class="template-item" onclick="insertTemplate('0 2 * * 0 find /root/masandigital_dashboard -name \'*.log\' -type f -mtime +7 -delete')">
+                        <h4><i class="fa-solid fa-trash-can"></i> Bersihkan Log Lama</h4>
+                        <p>Mencari dan menghapus file log yang usianya di atas 7 hari setiap hari Minggu jam 2 pagi.</p>
+                        <span class="template-code">0 2 * * 0 find ... -delete</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load existing cron jobs
+        async function loadCron() {
+            try {
+                const res = await fetch('/api/cron/list');
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('cron-content').value = data.raw || '';
+                } else {
+                    alert('Gagal memuat cron: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Gagal mengambil jadwal tugas.');
+            }
+        }
+
+        // Save cron back to host
+        async function saveCron() {
+            const saveBtn = document.getElementById('save-btn');
+            const raw_cron = document.getElementById('cron-content').value;
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+            try {
+                const res = await fetch('/api/cron/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_cron })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    loadCron();
+                } else {
+                    alert('Gagal menyimpan: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menyimpan data.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Penjadwal';
+            }
+        }
+
+        // Insert template code into textarea
+        function insertTemplate(code) {
+            const textarea = document.getElementById('cron-content');
+            const currentContent = textarea.value.trim();
+            
+            // Append with new line if already has content
+            if (currentContent.length > 0) {
+                textarea.value = currentContent + '\n' + code;
+            } else {
+                textarea.value = code;
+            }
+            
+            textarea.focus();
+            // Scroll to bottom
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', loadCron);
+    </script>
+</body>
+
+</html>

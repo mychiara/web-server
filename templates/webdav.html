@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Sync (WebDAV) - Server Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <style>
+        .split-layout {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 2rem;
+            align-items: start;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 992px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .config-card {
+            padding: 2rem;
+            min-height: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #3fb950;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Guide steps styling */
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 1.25rem;
+            align-items: flex-start;
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+        }
+
+        .step-badge {
+            background: var(--cpu-color);
+            color: white;
+            font-weight: 700;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--text-main);
+        }
+
+        .step-content p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .code-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 0.5rem 0.8rem;
+            font-family: monospace;
+            font-size: 0.88rem;
+            margin-top: 0.5rem;
+            display: inline-flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            color: #58a6ff;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:1.25rem">
+                <button class="btn" onclick="window.location.href='/dashboard'" title="Kembali ke Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="clock-widget" style="margin-left:0.5rem">
+                    <h2 style="font-weight:600; font-size:1.4rem; display:flex; align-items:center; gap:0.8rem">
+                        <i class="fa-solid fa-mobile-screen-button" style="color:var(--cpu-color)"></i> iOS Sync (WebDAV)
+                    </h2>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-item">
+                    <i class="fa-solid fa-server"></i>
+                    <span id="webdav-status-label">Memuat Status...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main split layout -->
+        <div class="split-layout">
+            <!-- Left card: Configuration -->
+            <div class="widget-card glass config-card">
+                <div class="widget-header">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(59, 130, 246, 0.2)">
+                        <i class="fa-solid fa-gear" style="color:var(--net-color)"></i>
+                    </div>
+                    <h3>Pengaturan WebDAV</h3>
+                </div>
+
+                <div class="widget-body" style="align-items:stretch; justify-content:flex-start; margin-top:1.5rem; width:100%">
+                    <!-- Toggle Switch -->
+                    <div class="form-group" style="flex-direction:row; justify-content:space-between; align-items:center; margin-bottom:1.5rem; background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; border:1px solid var(--glass-border)">
+                        <div>
+                            <span style="font-weight:600; display:block; font-size:0.95rem">Aktifkan WebDAV Server</span>
+                            <span style="font-size:0.78rem; color:var(--text-muted)">Gunakan port ini untuk sinkronisasi HP</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="webdav-enabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Port Input -->
+                    <div class="form-group">
+                        <label for="webdav-port">Port Server WebDAV</label>
+                        <input type="number" id="webdav-port" placeholder="Default: 5005" value="5005" min="1025" max="65535">
+                    </div>
+
+                    <!-- Username -->
+                    <div class="form-group">
+                        <label for="webdav-user">Username</label>
+                        <input type="text" id="webdav-user" placeholder="masandigital" value="masandigital">
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="webdav-pass">Password</label>
+                        <input type="password" id="webdav-pass" placeholder="password123" value="password123">
+                    </div>
+
+                    <!-- Shared Path -->
+                    <div class="form-group">
+                        <label for="webdav-path">Folder Penyimpanan (Path Host OS)</label>
+                        <input type="text" id="webdav-path" placeholder="/mnt/data/MobileBackup" value="/host/root/root/masandigital_dashboard/data">
+                        <span style="font-size:0.75rem; color:var(--text-muted)">Default: Folder data dashboard</span>
+                    </div>
+
+                    <button class="btn primary" id="save-btn" onclick="saveConfig()" style="width:100%; padding:0.8rem; margin-top:1rem">
+                        <i class="fa-solid fa-save"></i> Simpan & Terapkan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right card: Guide -->
+            <div class="widget-card glass config-card" style="justify-content: flex-start;">
+                <div class="widget-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; width:100%">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(16, 185, 129, 0.2)">
+                        <i class="fa-solid fa-circle-info" style="color:#10b981"></i>
+                    </div>
+                    <div>
+                        <h3>Cara Menghubungkan iPhone (iOS)</h3>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem">Akses file dan backup foto Anda langsung dari aplikasi File iPhone bawaan.</p>
+                    </div>
+                </div>
+
+                <div class="step-container" style="width: 100%">
+                    <!-- Step 1 -->
+                    <div class="step-item">
+                        <div class="step-badge">1</div>
+                        <div class="step-content" style="width:100%">
+                            <h4>Buka Aplikasi File (Files)</h4>
+                            <p>Aplikasi ini adalah bawaan dari Apple di iPhone Anda. Pastikan iPhone terhubung ke jaringan Wi-Fi lokal yang sama dengan server.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="step-item">
+                        <div class="step-badge">2</div>
+                        <div class="step-content" style="width:100%">
+                            <h4>Pilih Hubungkan ke Server (Connect to Server)</h4>
+                            <p>Buka tab <strong>"Telusuri" (Browse)</strong>, lalu ketuk ikon tiga titik <strong>(...)</strong> di sudut kanan atas layar iPhone Anda, dan pilih <strong>"Hubungkan ke Server" (Connect to Server)</strong>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="step-item">
+                        <div class="step-badge">3</div>
+                        <div class="step-content" style="width:100%">
+                            <h4>Masukkan Alamat Server WebDAV</h4>
+                            <p>Masukkan alamat berikut ke dalam kolom server lalu ketuk Hubungkan:</p>
+                            <div class="code-box">
+                                <span id="webdav-url">http://[IP_SERVER]:5005</span>
+                                <i class="fa-solid fa-copy" style="cursor:pointer" onclick="copyText('webdav-url')"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="step-item">
+                        <div class="step-badge">4</div>
+                        <div class="step-content" style="width:100%">
+                            <h4>Pilih User Terdaftar & Masuk</h4>
+                            <p>Pilih mode <strong>"Pengguna Terdaftar" (Registered User)</strong>, masukkan Username dan Password yang telah Anda konfigurasikan di panel sebelah kiri, lalu selesaikan koneksi.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Copy text helper
+        function copyText(id) {
+            const el = document.getElementById(id);
+            navigator.clipboard.writeText(el.innerText);
+            alert('Teks disalin ke clipboard!');
+        }
+
+        // Load config from API
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/webdav/config');
+                const data = await res.json();
+                
+                document.getElementById('webdav-enabled').checked = data.enabled || false;
+                document.getElementById('webdav-port').value = data.port || 5005;
+                document.getElementById('webdav-user').value = data.username || 'masandigital';
+                document.getElementById('webdav-pass').value = data.password || 'password123';
+                document.getElementById('webdav-path').value = data.root_path || '';
+
+                // Update status label
+                const statusLabel = document.getElementById('webdav-status-label');
+                if (data.enabled) {
+                    statusLabel.innerHTML = `<span style="color:#3fb950"><i class="fa-solid fa-circle-check"></i> Aktif (Port ${data.port})</span>`;
+                } else {
+                    statusLabel.innerHTML = `<span style="color:var(--text-muted)"><i class="fa-solid fa-circle-minus"></i> Nonaktif</span>`;
+                }
+
+                // Update server url guide
+                const hostname = window.location.hostname;
+                document.getElementById('webdav-url').innerText = `http://${hostname}:${data.port || 5005}`;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('webdav-status-label').innerText = 'Gagal memuat status';
+            }
+        }
+
+        // Save config
+        async function saveConfig() {
+            const saveBtn = document.getElementById('save-btn');
+            const enabled = document.getElementById('webdav-enabled').checked;
+            const port = document.getElementById('webdav-port').value;
+            const username = document.getElementById('webdav-user').value.trim();
+            const password = document.getElementById('webdav-pass').value.trim();
+            const root_path = document.getElementById('webdav-path').value.trim();
+
+            if (!port || !username || !password || !root_path) {
+                alert('Tolong lengkapi semua isian konfigurasi!');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+            try {
+                const res = await fetch('/api/webdav/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled, port, username, password, root_path })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('Konfigurasi WebDAV berhasil disimpan!');
+                    loadConfig();
+                } else {
+                    alert('Gagal menyimpan: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Gagal menyimpan data.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan & Terapkan';
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+</body>
+
+</html>

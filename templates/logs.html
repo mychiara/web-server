@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Center - Server Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <!-- SocketIO Client Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .logs-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 992px) {
+            .logs-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-card {
+            padding: 1.5rem;
+            min-height: auto;
+        }
+
+        .log-terminal {
+            background: #0f1419;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            height: 520px;
+            padding: 1.25rem;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.88rem;
+            color: #adbac7;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            box-shadow: inset 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .log-line {
+            white-space: pre-wrap;
+            word-break: break-all;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            padding-bottom: 0.2rem;
+        }
+
+        .log-line.error { color: #f85149; }
+        .log-line.warn { color: #f59e0b; }
+        .log-line.info { color: #58a6ff; }
+        .log-line.system { color: #8b949e; font-style: italic; }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallpaper"></div>
+
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:1.25rem">
+                <button class="btn" onclick="window.location.href='/dashboard'" title="Kembali ke Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="clock-widget" style="margin-left:0.5rem">
+                    <h2 style="font-weight:600; font-size:1.4rem; display:flex; align-items:center; gap:0.8rem">
+                        <i class="fa-solid fa-file-lines" style="color:var(--cpu-color)"></i> Log Center
+                    </h2>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-item">
+                    <i class="fa-solid fa-circle" id="stream-indicator" style="color:var(--text-muted); font-size:0.6rem"></i>
+                    <span id="stream-status">Terputus</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main logs layout split -->
+        <div class="logs-layout">
+            <!-- Left panel: source controls -->
+            <div class="widget-card glass control-card">
+                <div class="widget-header">
+                    <div class="icon-box" style="box-shadow: 0 0 10px rgba(59, 130, 246, 0.2)">
+                        <i class="fa-solid fa-sliders" style="color:var(--net-color)"></i>
+                    </div>
+                    <h3>Sumber Log</h3>
+                </div>
+
+                <div class="widget-body" style="align-items:stretch; justify-content:flex-start; margin-top:1.5rem; width:100%">
+                    <!-- Source Selection -->
+                    <div class="form-group">
+                        <label for="log-source">Tipe Sumber</label>
+                        <select id="log-source" onchange="handleSourceChange(this.value)">
+                            <option value="app">Dashboard Application</option>
+                            <option value="syslog">Host OS Syslog</option>
+                            <option value="docker">Docker Container</option>
+                        </select>
+                    </div>
+
+                    <!-- Container Selection (only visible if docker source is selected) -->
+                    <div class="form-group" id="container-group" style="display: none">
+                        <label for="docker-containers">Pilih Container</label>
+                        <select id="docker-containers" onchange="startStreaming()">
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+
+                    <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:1.5rem 0">
+
+                    <!-- Actions -->
+                    <div style="display:flex; flex-direction:column; gap:0.75rem">
+                        <button class="btn" onclick="clearLogs()" style="width: 100%">
+                            <i class="fa-solid fa-trash-can"></i> Hapus Layar
+                        </button>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:6px; border:1px solid var(--glass-border)">
+                            <span style="font-size:0.82rem; font-weight:600">Auto-Scroll</span>
+                            <input type="checkbox" id="auto-scroll-check" checked style="width: 18px; height: 18px">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right panel: streaming window -->
+            <div class="widget-card glass control-card" style="justify-content: flex-start; padding: 2rem">
+                <!-- Log View header controls -->
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1rem">
+                    <h3 id="terminal-title">Streaming: Dashboard Application</h3>
+                    <!-- Filter Input -->
+                    <div style="display:flex; gap:0.5rem; align-items:center">
+                        <i class="fa-solid fa-filter" style="color:var(--text-muted); font-size:0.85rem"></i>
+                        <input type="text" id="log-filter" placeholder="Filter hasil log..." oninput="applyFilter()" style="max-width: 200px; padding:0.4rem 0.8rem; font-size:0.8rem">
+                    </div>
+                </div>
+
+                <!-- Log Stream Window -->
+                <div id="log-terminal" class="log-terminal" style="width: 100%">
+                    <!-- Log lines dynamic -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let containersList = [];
+        let currentFilter = '';
+
+        // Handle socket.io connection
+        function initSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                document.getElementById('stream-indicator').style.color = '#3fb950'; // green connected
+                document.getElementById('stream-status').innerText = 'Tersambung';
+                startStreaming();
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('stream-indicator').style.color = '#f85149'; // red disconnected
+                document.getElementById('stream-status').innerText = 'Terputus';
+            });
+
+            socket.on('log_line', (data) => {
+                appendLogLine(data.line);
+            });
+        }
+
+        // Change source selection
+        function handleSourceChange(val) {
+            const containerGroup = document.getElementById('container-group');
+            const title = document.getElementById('terminal-title');
+
+            if (val === 'docker') {
+                containerGroup.style.display = 'flex';
+                loadContainers();
+            } else {
+                containerGroup.style.display = 'none';
+                title.innerText = `Streaming: ${val === 'app' ? 'Dashboard Application' : 'Host OS Syslog'}`;
+                startStreaming();
+            }
+        }
+
+        // Load running docker containers
+        async function loadContainers() {
+            try {
+                const res = await fetch('/api/logs/containers');
+                const data = await res.json();
+                
+                if (data.success) {
+                    containersList = data.containers || [];
+                    const select = document.getElementById('docker-containers');
+                    select.innerHTML = containersList.map(c => `
+                        <option value="${c.id}">${c.name} (${c.status})</option>
+                    `).join('');
+                    
+                    if (containersList.length > 0) {
+                        const selectedName = select.options[select.selectedIndex].text;
+                        document.getElementById('terminal-title').innerText = `Streaming Container: ${selectedName}`;
+                        startStreaming();
+                    } else {
+                        document.getElementById('terminal-title').innerText = 'Tidak ada container terdeteksi';
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Emit start streaming log to server
+        function startStreaming() {
+            if (!socket || !socket.connected) return;
+
+            const source = document.getElementById('log-source').value;
+            let container_id = null;
+
+            if (source === 'docker') {
+                container_id = document.getElementById('docker-containers').value;
+                const select = document.getElementById('docker-containers');
+                if (select.selectedIndex >= 0) {
+                    const selectedName = select.options[select.selectedIndex].text;
+                    document.getElementById('terminal-title').innerText = `Streaming Container: ${selectedName}`;
+                }
+            }
+
+            clearLogs();
+            appendLogLine(`[SYSTEM] Memulai pemantauan aliran log dari sumber "${source}"...`, 'system');
+            
+            socket.emit('start_log_stream', { source, container_id });
+        }
+
+        // Append log line into terminal container
+        function appendLogLine(line, customClass = '') {
+            const terminal = document.getElementById('log-terminal');
+            const row = document.createElement('div');
+            row.classList.add('log-line');
+
+            if (customClass) {
+                row.classList.add(customClass);
+            } else {
+                // Heuristic styling for error / warn / info levels
+                const lineLower = line.toLowerCase();
+                if (lineLower.includes('error') || lineLower.includes('failed') || lineLower.includes('crit')) {
+                    row.classList.add('error');
+                } else if (lineLower.includes('warn') || lineLower.includes('warning')) {
+                    row.classList.add('warn');
+                } else if (lineLower.includes('info') || lineLower.includes('success')) {
+                    row.classList.add('info');
+                }
+            }
+
+            row.innerText = line;
+
+            // Apply local text filter
+            if (currentFilter && !line.toLowerCase().includes(currentFilter.toLowerCase())) {
+                row.style.display = 'none';
+            }
+
+            terminal.appendChild(row);
+
+            // Cap logs count at 1000 lines
+            if (terminal.childElementCount > 1000) {
+                terminal.removeChild(terminal.firstChild);
+            }
+
+            // Auto-scroll logic
+            const autoScroll = document.getElementById('auto-scroll-check').checked;
+            if (autoScroll) {
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        }
+
+        // Filter lines locally
+        function applyFilter() {
+            currentFilter = document.getElementById('log-filter').value.trim();
+            const terminal = document.getElementById('log-terminal');
+            const lines = terminal.querySelectorAll('.log-line');
+
+            lines.forEach(line => {
+                if (!currentFilter || line.innerText.toLowerCase().includes(currentFilter.toLowerCase())) {
+                    line.style.display = '';
+                } else {
+                    line.style.display = 'none';
+                }
+            });
+        }
+
+        // Clear logs window
+        function clearLogs() {
+            document.getElementById('log-terminal').innerHTML = '';
+        }
+
+        // Initialize connection
+        document.addEventListener('DOMContentLoaded', initSocket);
+    </script>
+</body>
+
+</html>

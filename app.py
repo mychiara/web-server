@@ -4887,6 +4887,10 @@ SYSTEM_APPS = [
     {"id": "store", "name": "App Store", "icon": "fa-solid fa-store", "color": "linear-gradient(135deg, #FF6B6B, #556270)", "url": "/store"},
     {"id": "mobile-backup", "name": "Mobile Sync", "icon": "fa-solid fa-mobile-screen", "color": "linear-gradient(135deg, #00c6ff, #0072ff)", "url": "/mobile-backup"},
     {"id": "gallery", "name": "Photo Gallery", "icon": "fa-solid fa-images", "color": "linear-gradient(135deg, #FF416C, #FF4B2B)", "url": "/gallery"},
+    {"id": "webdav", "name": "iOS Sync", "icon": "fa-solid fa-mobile-screen-button", "color": "linear-gradient(135deg, #FF9966, #FF5E62)", "url": "/webdav"},
+    {"id": "hardware", "name": "SoC Optimizer", "icon": "fa-solid fa-microchip", "color": "linear-gradient(135deg, #11998e, #38ef7d)", "url": "/hardware"},
+    {"id": "cron", "name": "Task Scheduler", "icon": "fa-solid fa-clock", "color": "linear-gradient(135deg, #f7971e, #ffd200)", "url": "/cron"},
+    {"id": "logs", "name": "Log Center", "icon": "fa-solid fa-file-lines", "color": "linear-gradient(135deg, #2d3436, #636e72)", "url": "/logs"},
     {"id": "settings", "name": "Settings", "icon": "fa-solid fa-gear", "color": "linear-gradient(135deg, #36D1DC, #5B86E5)", "url": "/settings"},
     {"id": "lxd", "name": "LXD Manager", "icon": "fa-brands fa-linux", "color": "linear-gradient(135deg, #e66465, #9198e5)", "url": "/lxd"},
     {"id": "speedtest", "name": "Speedtest", "icon": "fa-solid fa-gauge-high", "color": "linear-gradient(135deg, #e17055, #d63031)", "url": "/speedtest"},
@@ -7983,10 +7987,381 @@ def get_gallery_photos():
                         except Exception:
                             pass
                             
-        photos.sort(key=lambda x: x['mtime'], reverse=True)
-        return jsonify({'photos': photos, 'count': len(photos)})
+# ==================== NEW PREMIUM FEATURES ====================
+
+WEBDAV_CONFIG_FILE = os.path.join(DATA_DIR, 'webdav_config.json')
+
+def load_webdav_config():
+    if os.path.exists(WEBDAV_CONFIG_FILE):
+        try:
+            with open(WEBDAV_CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        'enabled': False,
+        'port': 5005,
+        'username': 'masandigital',
+        'password': 'password123',
+        'root_path': '/host/root/root/masandigital_dashboard/data'
+    }
+
+webdav_server_instance = None
+webdav_thread = None
+
+def start_webdav_thread():
+    global webdav_server_instance, webdav_thread
+    config = load_webdav_config()
+    if not config.get('enabled', False):
+        return
+        
+    try:
+        from wsgidav.wsgidav_app import WsgiDAVApp
+        from cheroot import wsgi
+        import threading
+        
+        share_path = config.get('root_path', '/host/root/root/masandigital_dashboard/data')
+        
+        # Buat folder share jika belum ada
+        if not os.path.exists(share_path):
+            os.makedirs(share_path, exist_ok=True)
+            
+        wsgidav_config = {
+            "host": "0.0.0.0",
+            "port": int(config.get('port', 5005)),
+            "provider_mapping": {
+                "/": share_path
+            },
+            "simple_dc": {
+                "user_mapping": {
+                    "*": {
+                        config.get('username', 'masandigital'): {
+                            "password": config.get('password', 'password123'),
+                            "roles": ["editor"]
+                        }
+                    }
+                }
+            },
+            "verbose": 1,
+        }
+        
+        app_webdav = WsgiDAVApp(wsgidav_config)
+        server = wsgi.Server(("0.0.0.0", int(config.get('port', 5005))), app_webdav)
+        webdav_server_instance = server
+        
+        def run_server():
+            try:
+                server.start()
+            except Exception:
+                pass
+                
+        webdav_thread = threading.Thread(target=run_server, daemon=True)
+        webdav_thread.start()
+        print(f"WebDAV Server started on port {config.get('port')} sharing {share_path}")
+    except Exception as e:
+        print("Gagal memulai WebDAV server:", e)
+        
+def stop_webdav_server():
+    global webdav_server_instance, webdav_thread
+    if webdav_server_instance:
+        try:
+            webdav_server_instance.stop()
+        except Exception:
+            pass
+        webdav_server_instance = None
+    webdav_thread = None
+    print("WebDAV Server stopped")
+
+# Jalankan WebDAV secara otomatis di background saat modul app di-load
+try:
+    start_webdav_thread()
+except Exception as e:
+    print("Error on WebDAV startup initialization:", e)
+
+# 1. WebDAV / iOS Sync Routes
+@app.route('/webdav')
+@login_required
+def webdav_page():
+    """Tampilan Halaman Konfigurasi WebDAV / iOS Sync"""
+    return render_template('webdav.html')
+
+@app.route('/api/webdav/config', methods=['GET', 'POST'])
+@login_required
+def manage_webdav_config():
+    if request.method == 'GET':
+        return jsonify(load_webdav_config())
+        
+    if session.get('role') not in ['owner', 'admin']:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    try:
+        data = request.json
+        config = {
+            'enabled': bool(data.get('enabled', False)),
+            'port': int(data.get('port', 5005)),
+            'username': str(data.get('username', 'masandigital')),
+            'password': str(data.get('password', 'password123')),
+            'root_path': str(data.get('root_path', '/host/root/root/masandigital_dashboard/data'))
+        }
+        with open(WEBDAV_CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=4)
+        
+        stop_webdav_server()
+        if config['enabled']:
+            start_webdav_thread()
+            
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# 2. SoC Optimizer / Monitor Routes
+@app.route('/hardware')
+@login_required
+def hardware_page():
+    """Tampilan Halaman SoC Hardware Optimizer & Monitor"""
+    return render_template('hardware.html')
+
+@app.route('/api/hardware/status', methods=['GET'])
+@login_required
+def get_hardware_status():
+    import psutil
+    temp = None
+    try:
+        # Coba baca suhu SoC Amlogic / SBC Linux
+        if os.path.exists('/sys/class/thermal/thermal_zone0/temp'):
+            with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
+                temp = float(f.read().strip()) / 1000.0
+    except:
+        pass
+        
+    governor = "N/A"
+    available_governors = []
+    try:
+        if os.path.exists('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'):
+            with open('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor', 'r') as f:
+                governor = f.read().strip()
+        if os.path.exists('/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors'):
+            with open('/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors', 'r') as f:
+                available_governors = f.read().strip().split()
+    except:
+        pass
+        
+    mem = psutil.virtual_memory()
+    cpu_cores = psutil.cpu_percent(percpu=True)
+    load_avg = os.getloadavg() if hasattr(os, 'getloadavg') else (0.0, 0.0, 0.0)
+    
+    return jsonify({
+        'temp': temp,
+        'governor': governor,
+        'available_governors': available_governors,
+        'cpu_usage': psutil.cpu_percent(),
+        'cpu_cores': cpu_cores,
+        'ram_total': round(mem.total / (1024**3), 2),
+        'ram_used': round(mem.used / (1024**3), 2),
+        'ram_free': round(mem.available / (1024**3), 2),
+        'ram_percent': mem.percent,
+        'load_avg': load_avg,
+        'success': True
+    })
+
+@app.route('/api/hardware/optimize', methods=['POST'])
+@login_required
+def optimize_hardware():
+    if session.get('role') not in ['owner', 'admin']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    try:
+        action = request.json.get('action')
+        if action == 'clear_ram':
+            # Bersihkan cache memory RAM pada host OS
+            cmd = 'nsenter -m -u -i -n -p -t 1 sh -c "sync; echo 3 > /proc/sys/vm/drop_caches"'
+            subprocess.run(cmd, shell=True)
+            audit_log('SYS_MANAGE', "Membersihkan cache memory RAM pada host", session.get('username'))
+            return jsonify({'success': True, 'message': 'RAM Cache berhasil dibersihkan!'})
+            
+        elif action == 'set_governor':
+            gov = request.json.get('governor')
+            valid_govs = ['performance', 'powersave', 'ondemand', 'userspace', 'conservative', 'schedutil']
+            if not gov or gov not in valid_govs:
+                return jsonify({'error': 'Governor tidak valid'}), 400
+                
+            cmd = f'nsenter -m -u -i -n -p -t 1 sh -c "for cpu in /sys/devices/system/cpu/cpu[0-9]*; do echo {gov} > \$cpu/cpufreq/scaling_governor; done"'
+            subprocess.run(cmd, shell=True)
+            audit_log('SYS_MANAGE', f"Mengubah CPU Governor ke {gov}", session.get('username'))
+            return jsonify({'success': True, 'message': f'CPU Governor berhasil diubah ke {gov}!'})
+            
+        return jsonify({'error': 'Aksi tidak dikenal'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 3. Task Scheduler (Cron Job) Routes
+@app.route('/cron')
+@login_required
+def cron_page():
+    """Tampilan Halaman Penjadwal Tugas (Cron Jobs)"""
+    return render_template('cron.html')
+
+@app.route('/api/cron/list', methods=['GET'])
+@login_required
+def get_cron_list():
+    try:
+        cmd = 'nsenter -m -u -i -n -p -t 1 sh -c "crontab -l"'
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        cron_jobs = []
+        
+        if res.returncode == 0:
+            lines = res.stdout.split('\n')
+            for i, line in enumerate(lines):
+                cleaned = line.strip()
+                if not cleaned:
+                    continue
+                if cleaned.startswith('#'):
+                    cron_jobs.append({'type': 'comment', 'content': cleaned, 'index': i})
+                else:
+                    cron_jobs.append({'type': 'job', 'content': cleaned, 'index': i})
+        
+        return jsonify({
+            'cron_jobs': cron_jobs,
+            'raw': res.stdout if res.returncode == 0 else '',
+            'success': True
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cron/save', methods=['POST'])
+@login_required
+def save_cron_jobs():
+    if session.get('role') not in ['owner', 'admin']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    try:
+        import tempfile
+        import base64
+        raw_cron = request.json.get('raw_cron', '')
+        
+        # Pengecekan dasar format crontab
+        # Simpan menggunakan base64 agar aman dari shell injection
+        encoded_cron = base64.b64encode((raw_cron.strip() + '\n').encode('utf-8')).decode('utf-8')
+        host_temp = "/tmp/cron_temp"
+        
+        apply_cmd = f'nsenter -m -u -i -n -p -t 1 sh -c "echo {encoded_cron} | base64 -d > {host_temp} && crontab {host_temp} && rm -f {host_temp}"'
+        res = subprocess.run(apply_cmd, shell=True, capture_output=True, text=True)
+        
+        if res.returncode != 0:
+            # Jika crontab -l mengembalikan error, mungkin karena format salah
+            # Tapi jika string kosong, kita hapus crontab
+            if not raw_cron.strip():
+                remove_cmd = 'nsenter -m -u -i -n -p -t 1 sh -c "crontab -r"'
+                subprocess.run(remove_cmd, shell=True)
+                audit_log('SYS_MANAGE', "Menghapus semua cron jobs", session.get('username'))
+                return jsonify({'success': True, 'message': 'Semua cron jobs berhasil dihapus.'})
+                
+            return jsonify({'error': f'Format crontab tidak valid: {res.stderr}'}), 400
+            
+        audit_log('SYS_MANAGE', "Memperbarui konfigurasi cron jobs", session.get('username'))
+        return jsonify({'success': True, 'message': 'Penjadwal tugas berhasil disimpan!'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 4. Real-time Log Center Routes
+@app.route('/logs')
+@login_required
+def logs_page():
+    """Tampilan Halaman Log Center"""
+    return render_template('logs.html')
+
+@app.route('/api/logs/containers', methods=['GET'])
+@login_required
+def get_logs_containers():
+    try:
+        import docker
+        client = docker.from_env()
+        containers = []
+        for c in client.containers.list(all=True):
+            containers.append({
+                'id': c.id[:12],
+                'name': c.name,
+                'status': c.status
+            })
+        return jsonify({'containers': containers, 'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Socket.IO Real-time Log Streaming Handlers
+active_log_threads = {}
+
+def log_stream_thread(sid, source, container_id=None):
+    import docker
+    import eventlet
+    client = docker.from_env()
+    
+    try:
+        if source == 'syslog':
+            # Stream syslog menggunakan nsenter
+            cmd = 'nsenter -m -u -i -n -p -t 1 sh -c "tail -f -n 100 /var/log/syslog"'
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            while sid in active_log_threads and active_log_threads[sid] == source:
+                line = proc.stdout.readline()
+                if not line:
+                    break
+                socketio.emit('log_line', {'line': line.strip()}, room=sid)
+                eventlet.sleep(0.05)
+            proc.terminate()
+            
+        elif source == 'docker' and container_id:
+            container = client.containers.get(container_id)
+            log_stream = container.logs(stdout=True, stderr=True, stream=True, tail=100)
+            for line in log_stream:
+                if sid not in active_log_threads or active_log_threads[sid] != source:
+                    break
+                socketio.emit('log_line', {'line': line.decode('utf-8', errors='ignore').strip()}, room=sid)
+                eventlet.sleep(0.01)
+                
+        elif source == 'app':
+            # Cari container dashboard sendiri
+            dashboard_container = None
+            for c in client.containers.list():
+                if 'masandigital_dashboard' in c.name or 'eka_dashboard' in c.name:
+                    dashboard_container = c
+                    break
+            if not dashboard_container:
+                try:
+                    dashboard_container = client.containers.get('masandigital_dashboard')
+                except:
+                    pass
+            
+            if dashboard_container:
+                log_stream = dashboard_container.logs(stdout=True, stderr=True, stream=True, tail=100)
+                for line in log_stream:
+                    if sid not in active_log_threads or active_log_threads[sid] != source:
+                        break
+                    socketio.emit('log_line', {'line': line.decode('utf-8', errors='ignore').strip()}, room=sid)
+                    eventlet.sleep(0.01)
+            else:
+                socketio.emit('log_line', {'line': 'Container dashboard tidak ditemukan.'}, room=sid)
+    except Exception as e:
+        socketio.emit('log_line', {'line': f'ERROR STREAMING: {str(e)}'}, room=sid)
+
+@socketio.on('start_log_stream')
+def handle_start_log_stream(data):
+    sid = request.sid
+    source = data.get('source', 'app')
+    container_id = data.get('container_id')
+    active_log_threads[sid] = source
+    import eventlet
+    eventlet.spawn(log_stream_thread, sid, source, container_id)
+
+@socketio.on('stop_log_stream')
+def handle_stop_log_stream():
+    sid = request.sid
+    if sid in active_log_threads:
+        del active_log_threads[sid]
+
+@socketio.on('disconnect')
+def handle_disconnect_socket():
+    sid = request.sid
+    if sid in active_log_threads:
+        del active_log_threads[sid]
+
+# ==============================================================
 
 if __name__ == '__main__':
     print("Starting Development Server on http://localhost:5000")
